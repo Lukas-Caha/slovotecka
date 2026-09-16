@@ -262,10 +262,39 @@ body {
   background: var(--warn-bg);
   border: 1px solid var(--warn-border);
   border-radius: var(--radius);
-  padding: 9px 16px;
+  padding: 8px 16px;
   font-size: 0.88rem;
   color: #5a4800;
   margin-bottom: 16px;
+}
+.hint-locked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hint-locked-text {
+  font-weight: 500;
+  color: #6b5600;
+}
+.btn-hint {
+  padding: 5px 12px;
+  font-size: 0.82rem;
+  background: #fff;
+  border-color: #d6b840;
+  color: #5a4800;
+}
+.btn-hint:hover {
+  background: #fff3c4;
+}
+.hint-revealed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hint-clown-badge {
+  font-size: 1.1rem;
 }
 
 /* ── Secret word box ── */

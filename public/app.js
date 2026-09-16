@@ -17,6 +17,9 @@ const displayRoomCode = document.getElementById('display-room-code');
 const displayMode = document.getElementById('display-mode');
 const displayDate = document.getElementById('display-date');
 const displayHint = document.getElementById('display-hint');
+const hintLocked = document.getElementById('hint-locked');
+const hintRevealed = document.getElementById('hint-revealed');
+const btnShowHint = document.getElementById('btn-show-hint');
 const secretWordBox = document.getElementById('secret-word-box');
 const displaySecretWord = document.getElementById('display-secret-word');
 const hostControls = document.getElementById('host-controls');
@@ -123,6 +126,14 @@ btnRevealWord.addEventListener('click', () => {
   if (ok) socket.emit('reveal_word', { code: currentRoomCode });
 });
 
+// ── Odhalit nápovědu (získá 🤡) ────────────────────────
+btnShowHint.addEventListener('click', () => {
+  const ok = confirm('Opravdu chceš odhalit nápovědu?\nPozor: všichni v místnosti uvidí vedle tvého jména klauna 🤡!');
+  if (ok && currentRoomCode) {
+    socket.emit('use_hint', { code: currentRoomCode });
+  }
+});
+
 // ── Nové kolo ─────────────────────────────────────────
 btnNextRound.addEventListener('click', () => {
   socket.emit('next_round', { code: currentRoomCode });
@@ -188,7 +199,17 @@ function renderRoomState(state) {
   displayRoomCode.textContent = state.code;
   displayMode.textContent = state.isDaily ? '📅 Dnešní slovo' : '🎲 Náhodná hra';
   displayDate.textContent = state.date;
-  displayHint.textContent = state.hint || '—';
+
+  // Nápověda (skrytá / odemčená s klaunem)
+  if (state.hasUsedHint && state.hint) {
+    hintLocked.style.display = 'none';
+    hintRevealed.style.display = 'flex';
+    displayHint.textContent = state.hint;
+  } else {
+    hintLocked.style.display = 'flex';
+    hintRevealed.style.display = 'none';
+    displayHint.textContent = '';
+  }
 
   hostControls.style.display = state.isHost ? 'block' : 'none';
 
@@ -228,7 +249,10 @@ function renderRoomState(state) {
     if (p.solved)  statusText = '🏆 Uhodl(a)!';
     if (p.gaveUp)  statusText = '❌ Vzdal(a) se';
 
-    const nameLabel = `${p.name}${p.isHost ? ' ★' : ''}${isMe ? ' (ty)' : ''}`;
+    const clown = p.usedHint ? ' 🤡' : '';
+    const hostStar = p.isHost ? ' ★' : '';
+    const isMeTag = isMe ? ' (ty)' : '';
+    const nameLabel = `${p.name}${clown}${hostStar}${isMeTag}`;
 
     li.innerHTML = `
       <span class="player-name">${nameLabel}</span>

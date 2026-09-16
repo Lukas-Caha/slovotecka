@@ -50,6 +50,7 @@ class RoomManager {
           name: hostName || 'Hostitel',
           solved: false,
           gaveUp: false,
+          usedHint: false,
           guessCount: 0,
           solvedAt: null
         }
@@ -80,6 +81,7 @@ class RoomManager {
       name: playerName || `Hráč ${Object.keys(room.players).length + 1}`,
       solved: false,
       gaveUp: false,
+      usedHint: false,
       guessCount: 0,
       solvedAt: null
     };
@@ -186,6 +188,24 @@ class RoomManager {
     };
   }
 
+  // Player unlocks/reveals the hint (gets marked with clown emoji 🤡)
+  useHint(code, socketId) {
+    const room = this.getRoom(code);
+    if (!room) return { error: 'Místnost neexistuje.' };
+
+    const player = room.players[socketId];
+    if (!player) return { error: 'Nejsi v této místnosti.' };
+
+    player.usedHint = true;
+    room.lastActivity = Date.now();
+
+    return {
+      success: true,
+      hint: room.targetWordObj.hint,
+      player: player
+    };
+  }
+
   // Start next round with a new random word (host only)
   nextRound(code, socketId) {
     const room = this.getRoom(code);
@@ -200,6 +220,7 @@ class RoomManager {
     for (const pid of Object.keys(room.players)) {
       room.players[pid].solved = false;
       room.players[pid].gaveUp = false;
+      room.players[pid].usedHint = false;
       room.players[pid].guessCount = 0;
       room.players[pid].solvedAt = null;
     }
@@ -238,13 +259,15 @@ class RoomManager {
       code: room.code,
       isDaily: room.isDaily,
       date: room.targetWordObj.date,
-      hint: room.targetWordObj.hint,
+      hint: player && player.usedHint ? room.targetWordObj.hint : null,
+      hasUsedHint: player ? !!player.usedHint : false,
       isHost: room.hostId === socketId,
       myStatus: player
         ? {
             name: player.name,
             solved: player.solved,
             gaveUp: player.gaveUp,
+            usedHint: !!player.usedHint,
             guessCount: player.guessCount
           }
         : null,
@@ -254,6 +277,7 @@ class RoomManager {
         name: p.name,
         solved: p.solved,
         gaveUp: p.gaveUp,
+        usedHint: !!p.usedHint,
         guessCount: p.guessCount,
         isHost: p.id === room.hostId
       })),

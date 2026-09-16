@@ -61,7 +61,13 @@
     </div>
 
     <div id="hint-bar" class="hint-bar">
-      Nápověda: <strong id="display-hint"></strong>
+      <div id="hint-locked" class="hint-locked">
+        <span class="hint-locked-text">🔒 Nápověda je skrytá</span>
+        <button class="btn btn-secondary btn-hint" id="btn-show-hint">💡 Odhalit nápovědu (dostaneš 🤡)</button>
+      </div>
+      <div id="hint-revealed" class="hint-revealed" style="display:none;">
+        💡 Nápověda: <strong id="display-hint"></strong> <span class="hint-clown-badge" title="Zobrazil jsi nápovědu">🤡</span>
+      </div>
     </div>
 
     <!-- Tajné slovo (viditelné jen po vyřešení / vzdání) -->

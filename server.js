@@ -124,6 +124,26 @@ io.on('connection', (socket) => {
     broadcastRoomState(cleanCode);
   });
 
+  // Hráč odhalí nápovědu (dostane 🤡)
+  socket.on('use_hint', ({ code }) => {
+    const cleanCode = (code || '').trim().toUpperCase();
+    const result = roomManager.useHint(cleanCode, socket.id);
+
+    if (result.error) {
+      socket.emit('error_message', { message: result.error });
+      return;
+    }
+
+    socket.to(cleanCode).emit('notification', {
+      message: `🤡 ${result.player.name} si zobrazil(a) nápovědu a získal(a) klauna!`
+    });
+    socket.emit('notification', {
+      message: `💡 Nápověda odhalena! Získal(a) jsi 🤡 vedle svého jména.`
+    });
+
+    broadcastRoomState(cleanCode);
+  });
+
   // Host starts next round with a new word
   socket.on('next_round', ({ code }) => {
     const cleanCode = (code || '').trim().toUpperCase();
