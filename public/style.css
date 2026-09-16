@@ -41,7 +41,7 @@ body {
   padding: 18px 24px;
 }
 .header-inner {
-  max-width: 900px;
+  max-width: 1120px;
   margin: 0 auto;
   display: flex;
   align-items: baseline;
@@ -64,7 +64,7 @@ body {
 
 /* ── Container ── */
 .container {
-  max-width: 900px;
+  max-width: 1120px;
   margin: 32px auto;
   padding: 0 20px;
 }
@@ -297,7 +297,7 @@ body {
 /* ── Game grid ── */
 .game-grid {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 200px 1fr 280px;
   gap: 16px;
   align-items: start;
 }
@@ -467,6 +467,78 @@ tr.winner-row .word-cell {
   color: var(--accent);
 }
 
+/* ── Chat panel ── */
+.chat-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  height: 540px;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+  margin-bottom: 12px;
+}
+.chat-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  margin-top: 50px;
+}
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  background: var(--bg);
+  padding: 7px 10px;
+  border-radius: 6px;
+  word-break: break-word;
+}
+.chat-msg.is-me {
+  background: var(--accent-light);
+}
+.chat-msg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.chat-msg-author {
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+.chat-msg-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.chat-msg-text {
+  color: var(--text);
+  line-height: 1.35;
+}
+.chat-form {
+  display: flex;
+  gap: 6px;
+}
+.input-chat {
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  flex: 1;
+}
+.btn-chat {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
 /* ── Toast notifications ── */
 #toast-container {
   position: fixed;
@@ -497,6 +569,16 @@ tr.winner-row .word-cell {
 }
 
 /* ── Responsive ── */
+@media (max-width: 960px) {
+  .game-grid {
+    grid-template-columns: 200px 1fr;
+  }
+  .chat-panel {
+    grid-column: 1 / -1;
+    height: 340px;
+  }
+}
+
 @media (max-width: 640px) {
   .game-grid {
     grid-template-columns: 1fr;
@@ -506,6 +588,10 @@ tr.winner-row .word-cell {
   }
   .main-panel {
     order: 1;
+  }
+  .chat-panel {
+    order: 3;
+    height: 340px;
   }
   .header-inner {
     flex-direction: column;

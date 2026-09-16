@@ -141,6 +141,27 @@ io.on('connection', (socket) => {
     broadcastRoomState(cleanCode);
   });
 
+  // Chat v místnosti
+  socket.on('send_chat', ({ code, message }) => {
+    const cleanCode = (code || '').trim().toUpperCase();
+    const cleanMsg = (message || '').trim();
+    if (!cleanMsg) return;
+
+    const room = roomManager.getRoom(cleanCode);
+    if (!room) return;
+
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const chatEntry = {
+      player: player.name,
+      message: cleanMsg.slice(0, 250),
+      time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    io.to(cleanCode).emit('chat_message', chatEntry);
+  });
+
   // Disconnect
   socket.on('disconnect', () => {
     const result = roomManager.removePlayer(socket.id);

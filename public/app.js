@@ -30,6 +30,17 @@ const guessesList = document.getElementById('guesses-list');
 const guessesCount = document.getElementById('guesses-count');
 const toastContainer = document.getElementById('toast-container');
 
+// DOM – Chat
+const chatMessages = document.getElementById('chat-messages');
+const chatForm = document.getElementById('chat-form');
+const chatInput = document.getElementById('chat-input');
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 // ── Toast notifikace ──────────────────────────────────
 function showToast(text, isError = false) {
   const el = document.createElement('div');
@@ -117,7 +128,36 @@ btnNextRound.addEventListener('click', () => {
   socket.emit('next_round', { code: currentRoomCode });
 });
 
+// ── Odeslání zprávy do chatu ──────────────────────────
+chatForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const text = chatInput.value.trim();
+  if (!text || !currentRoomCode) return;
+  socket.emit('send_chat', { code: currentRoomCode, message: text });
+  chatInput.value = '';
+  chatInput.focus();
+});
+
 // ── Server události ───────────────────────────────────
+socket.on('chat_message', (data) => {
+  const emptyMsg = chatMessages.querySelector('.chat-empty');
+  if (emptyMsg) emptyMsg.remove();
+
+  const isMe = data.player === myPlayerName;
+  const div = document.createElement('div');
+  div.className = 'chat-msg' + (isMe ? ' is-me' : '');
+
+  div.innerHTML = `
+    <div class="chat-msg-header">
+      <span class="chat-msg-author">${escapeHtml(data.player)}${isMe ? ' (ty)' : ''}</span>
+      <span class="chat-msg-time">${data.time || ''}</span>
+    </div>
+    <div class="chat-msg-text">${escapeHtml(data.message)}</div>
+  `;
+
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+});
 socket.on('error_message', (data) => {
   showToast(data.message, true);
   setFeedback('');
