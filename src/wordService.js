@@ -5,18 +5,18 @@ const wordsData = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'data', 'words.json'), 'utf-8')
 );
 
-// Helper to remove Czech diacritics (háčky, čárky) for flexible matching
+// Pomocná funkce pro odstranění české diakritiky (háčků a čárek)
 function removeDiacritics(str) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-// Clean and normalize input
+// Očištění a normalizace vstupu
 function normalizeWord(word) {
   if (!word || typeof word !== 'string') return '';
   return word.trim().toLowerCase();
 }
 
-// Simple deterministic hash for string
+// Stabilní deterministický hash pro neměnné pořadí
 function hashString(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -25,32 +25,7 @@ function hashString(str) {
   return Math.abs(hash);
 }
 
-// Trigram similarity for fallback ranking (0.0 to 1.0)
-function getTrigramSimilarity(a, b) {
-  const normA = removeDiacritics(a);
-  const normB = removeDiacritics(b);
-  if (normA === normB) return 1.0;
-  if (normA.length < 2 || normB.length < 2) return 0.0;
-
-  const getTrigrams = (s) => {
-    const padded = ` ${s} `;
-    const trigrams = new Set();
-    for (let i = 0; i < padded.length - 1; i++) {
-      trigrams.add(padded.slice(i, i + 2));
-    }
-    return trigrams;
-  };
-
-  const setA = getTrigrams(normA);
-  const setB = getTrigrams(normB);
-  let matches = 0;
-  for (const t of setA) {
-    if (setB.has(t)) matches++;
-  }
-  return (2.0 * matches) / (setA.size + setB.size);
-}
-
-// Get the daily word based on current date
+// Denní slovo podle aktuálního data (kalendářní den)
 function getDailyWord() {
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
@@ -60,6 +35,7 @@ function getDailyWord() {
   const target = wordsData.targets[targetKey] || {
     word: targetKey,
     hint: 'Denní slovo',
+    category: 'priroda',
     ranks: {}
   };
 
@@ -68,11 +44,12 @@ function getDailyWord() {
     date: dateStr,
     word: target.word,
     hint: target.hint,
+    category: target.category || 'priroda',
     ranks: target.ranks || {}
   };
 }
 
-// Get a random word for casual room rounds
+// Náhodné slovo pro rychlá další kola
 function getRandomWord() {
   const keys = wordsData.dailyTargetWords;
   const index = Math.floor(Math.random() * keys.length);
@@ -83,28 +60,50 @@ function getRandomWord() {
     date: 'náhodná hra',
     word: target.word,
     hint: target.hint,
+    category: target.category || 'priroda',
     ranks: target.ranks || {}
   };
 }
 
-// Calculate the proximity rank of a guess relative to the target word
+// Vyhledání sémantické kategorie slova v databázi
+function findWordCategory(cleanGuess, guessNorm) {
+  const clusters = wordsData.semanticClusters || {};
+  for (const [category, words] of Object.entries(clusters)) {
+    for (const w of words) {
+      if (normalizeWord(w) === cleanGuess || removeDiacritics(w) === guessNorm) {
+        return category;
+      }
+    }
+  }
+
+  // Zkontrolujeme také, zda slovo není přímo jedním z cílů
+  for (const [targetKey, targetObj] of Object.entries(wordsData.targets)) {
+    if (targetKey === cleanGuess || removeDiacritics(targetKey) === guessNorm) {
+      return targetObj.category || null;
+    }
+  }
+
+  return null;
+}
+
+// Hlavní výpočet sémantické blízkosti (1 = tajné slovo, menší číslo = větší významová blízkost)
 function calculateRank(targetWordObj, userGuess) {
   const cleanGuess = normalizeWord(userGuess);
   if (!cleanGuess || cleanGuess.length < 2) {
     return { isValid: false, error: 'Slovo musí mít alespoň 2 písmena.' };
   }
 
-  // Check if string contains invalid characters (allow only Czech/Latin letters)
+  // Povolena pouze česká a latinská písmena
   const czechLetterRegex = /^[a-záčďéěíňóřšťúůýž]+$/i;
   if (!czechLetterRegex.test(cleanGuess)) {
-    return { isValid: false, error: 'Slovo smí obsahovat pouze písmena.' };
+    return { isValid: false, error: 'Slovo smí obsahovat pouze písmena bez čísel a znaků.' };
   }
 
   const targetWord = normalizeWord(targetWordObj.word);
   const targetNorm = removeDiacritics(targetWord);
   const guessNorm = removeDiacritics(cleanGuess);
 
-  // 1. Is it the winning target word?
+  // 1. Uhodnuto vítězné slovo!
   if (cleanGuess === targetWord || guessNorm === targetNorm) {
     return {
       isValid: true,
@@ -114,9 +113,10 @@ function calculateRank(targetWordObj, userGuess) {
     };
   }
 
-  // 2. Is it in the precomputed semantic ranks for this target?
+  // 2. Ručně kalibrované sémantické vazby pro dané slovo
   const ranks = targetWordObj.ranks || {};
-  // Check exact
+
+  // Přesná shoda v ranku
   if (ranks[cleanGuess] !== undefined) {
     return {
       isValid: true,
@@ -126,7 +126,7 @@ function calculateRank(targetWordObj, userGuess) {
     };
   }
 
-  // Check unaccented match in precomputed ranks
+  // Shoda bez diakritiky v ranku (např. 'stene' najde 'štěně')
   for (const [rankedWord, rankValue] of Object.entries(ranks)) {
     if (removeDiacritics(rankedWord) === guessNorm) {
       return {
@@ -138,34 +138,57 @@ function calculateRank(targetWordObj, userGuess) {
     }
   }
 
-  // 3. Check if it's in the common Czech dictionary or known targets
-  const isCommonWord = wordsData.commonCzechWords.some(
-    (w) => normalizeWord(w) === cleanGuess || removeDiacritics(w) === guessNorm
-  );
+  // 3. Kategoriální sémantické řazení (čistě podle významu, ŽÁDNÁ shoda písmen!)
+  const targetCategory = targetWordObj.category || 'priroda';
+  const guessCategory = findWordCategory(cleanGuess, guessNorm);
 
-  const isOtherTarget = Object.keys(wordsData.targets).some(
-    (t) => t === cleanGuess || removeDiacritics(t) === guessNorm
-  );
+  const wordHash = hashString(targetNorm + ':' + guessNorm);
 
-  // Calculate stable deterministic fallback rank
-  const similarity = getTrigramSimilarity(targetWord, cleanGuess);
-  const pairHash = hashString(targetNorm + ':' + guessNorm) % 2000;
+  if (guessCategory) {
+    const affinities = wordsData.categoryAffinities?.[targetCategory] || {};
+    const affinity = affinities[guessCategory] !== undefined ? affinities[guessCategory] : 3;
 
-  let computedRank;
-  if (isCommonWord || isOtherTarget) {
-    // Known Czech word, ranks from 350 to 3500 based on similarity
-    const baseRank = Math.round(350 + (1.0 - similarity) * 2000 + (pairHash % 500));
-    computedRank = Math.max(350, baseRank);
-  } else {
-    // Other valid words, ranks from 1500 to 9500
-    const baseRank = Math.round(1500 + (1.0 - similarity) * 5000 + pairHash);
-    computedRank = Math.max(1200, baseRank);
+    let baseRank;
+    let spread;
+
+    switch (affinity) {
+      case 0: // Stejná kategorie (např. jiné zvíře u psa, jiné jídlo u kávy)
+        baseRank = 80;
+        spread = 220; // 80 až 300
+        break;
+      case 1: // Velmi úzce související kategorie (např. příroda vs zvíře)
+        baseRank = 350;
+        spread = 450; // 350 až 800
+        break;
+      case 2: // Středně související kategorie
+        baseRank = 850;
+        spread = 700; // 850 až 1550
+        break;
+      case 3: // Vzdálenější kategorie
+        baseRank = 1600;
+        spread = 1000; // 1600 až 2600
+        break;
+      default: // Úplně nesouvisející kategorie (např. traktor u psa)
+        baseRank = 2800;
+        spread = 1500; // 2800 až 4300
+        break;
+    }
+
+    const calculatedRank = baseRank + (wordHash % spread);
+    return {
+      isValid: true,
+      isWinner: false,
+      rank: calculatedRank,
+      word: cleanGuess
+    };
   }
 
+  // 4. Ostatní slova v češtině (výrazně vzdálená, žádné náhodné skoky podle písmenek)
+  const fallbackRank = 4500 + (wordHash % 4500); // 4500 až 9000
   return {
     isValid: true,
     isWinner: false,
-    rank: computedRank,
+    rank: fallbackRank,
     word: cleanGuess
   };
 }
