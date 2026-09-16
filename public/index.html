@@ -3,108 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Český Contexto - Multiplayer</title>
+  <title>Slovo dne – Multiplayer</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
-  <h1>Český Contexto - Multiplayer (Testovací verze)</h1>
-  <p>Hledejte tajné slovo podle sémantické blízkosti (číslo 1 je vítězné slovo, čím menší číslo, tím blíže jste významem).</p>
-  <hr>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1 class="logo">slovo<span class="logo-dot">.</span></h1>
+      <p class="tagline">Uhádni tajné slovo podle sémantické blízkosti</p>
+    </div>
+  </header>
 
-  <!-- Notifikace a chybové hlášky -->
-  <div id="messages-container">
-    <p id="error-message" style="color: red;"></p>
-    <p id="status-message" style="color: green;"></p>
-  </div>
+  <!-- Notifikace -->
+  <div id="toast-container" aria-live="polite"></div>
 
-  <!-- Sekce: Přihlášení a vytvoření / připojení k místnosti -->
-  <div id="lobby-section">
-    <h2>Vstup do hry</h2>
-    <p>
-      <label for="player-name">Tvoje jméno / přezdívka:</label><br>
-      <input type="text" id="player-name" placeholder="Např. Martin" maxlength="20">
-    </p>
-
-    <h3>1. Vytvořit novou místnost</h3>
-    <p>
-      <button id="btn-create-daily">Vytvořit místnost (Dnešní slovo)</button>
-      <button id="btn-create-random">Vytvořit místnost (Náhodné slovo)</button>
-    </p>
-
-    <h3>2. Nebo se připojit ke stávající místnosti</h3>
-    <p>
-      <label for="room-code-input">Kód místnosti:</label><br>
-      <input type="text" id="room-code-input" placeholder="Např. AB12" maxlength="6" style="text-transform: uppercase;">
-      <button id="btn-join-room">Připojit se</button>
-    </p>
-  </div>
-
-  <!-- Sekce: Samotná hra -->
-  <div id="game-section" style="display: none;">
-    <h2>Herní místnost: <span id="display-room-code"></span></h2>
-    
-    <p>
-      <strong>Režim hry:</strong> <span id="display-mode"></span> |
-      <strong>Datum / Kolo:</strong> <span id="display-date"></span> |
-      <strong>Nápověda:</strong> <span id="display-hint"></span>
-    </p>
-
-    <div id="secret-word-box" style="display: none;">
-      <p><strong>Tajné slovo:</strong> <span id="display-secret-word" style="font-weight: bold; font-size: 1.2em;"></span></p>
+  <!-- LOBBY -->
+  <main id="lobby-section" class="container">
+    <div class="card">
+      <label class="field-label" for="player-name">Přezdívka</label>
+      <input class="input" type="text" id="player-name" placeholder="Jak ti říkají?" maxlength="20" autocomplete="off">
     </div>
 
-    <!-- Ovládací prvky pro hostitele -->
-    <div id="host-controls" style="display: none;">
-      <button id="btn-next-round">Nové kolo (další náhodné slovo)</button>
+    <div class="lobby-actions">
+      <div class="card">
+        <h2 class="card-title">Nová místnost</h2>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btn-create-daily">📅 Dnešní slovo</button>
+          <button class="btn btn-secondary" id="btn-create-random">🎲 Náhodné slovo</button>
+        </div>
+      </div>
+
+      <div class="divider-or"><span>nebo</span></div>
+
+      <div class="card">
+        <h2 class="card-title">Připojit se</h2>
+        <div class="input-row">
+          <input class="input input-code" type="text" id="room-code-input" placeholder="Kód místnosti" maxlength="6" autocomplete="off">
+          <button class="btn btn-primary" id="btn-join-room">Vstoupit →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- HRA -->
+  <main id="game-section" class="container" style="display:none;">
+
+    <div class="game-header">
+      <div class="room-badge">
+        <span class="room-badge-label">Místnost</span>
+        <span class="room-badge-code" id="display-room-code"></span>
+      </div>
+      <div class="game-meta">
+        <span id="display-mode" class="meta-chip"></span>
+        <span id="display-date" class="meta-chip"></span>
+      </div>
     </div>
 
-    <hr>
-
-    <!-- Hráči v místnosti -->
-    <h3>Hráči v místnosti</h3>
-    <table border="1" cellpadding="5" cellspacing="0" id="players-table">
-      <thead>
-        <tr>
-          <th>Hráč</th>
-          <th>Počet tipů</th>
-          <th>Stav</th>
-        </tr>
-      </thead>
-      <tbody id="players-list">
-        <!-- Generováno dynamicky -->
-      </tbody>
-    </table>
-
-    <hr>
-
-    <!-- Formulář pro hádání -->
-    <h3>Zadej svůj tip</h3>
-    <div id="guess-controls">
-      <input type="text" id="guess-input" placeholder="Napiš slovo a stiskni Enter...">
-      <button id="btn-submit-guess">Hádat</button>
-      <button id="btn-reveal-word">Vzdát se a odhalit slovo</button>
+    <div id="hint-bar" class="hint-bar">
+      Nápověda: <strong id="display-hint"></strong>
     </div>
-    <p id="guess-feedback"></p>
 
-    <hr>
+    <!-- Tajné slovo (viditelné jen po vyřešení / vzdání) -->
+    <div id="secret-word-box" class="secret-box" style="display:none;">
+      <span class="secret-label">Tajné slovo:</span>
+      <span id="display-secret-word" class="secret-word"></span>
+    </div>
 
-    <!-- Živý seznam všech hádaných slov seřazený od nejbližšího -->
-    <h3>Seznam všech hádaných slov (od nejbližších)</h3>
-    <p>Všichni hráči sdílejí nalezená slova. Vítězné slovo (#1) vidí jen ten, kdo ho sám uhodl nebo se vzdal.</p>
-    
-    <table border="1" cellpadding="5" cellspacing="0" id="guesses-table">
-      <thead>
-        <tr>
-          <th>Pořadí (Rank)</th>
-          <th>Slovo</th>
-          <th>Kdo tipoval</th>
-        </tr>
-      </thead>
-      <tbody id="guesses-list">
-        <!-- Generováno dynamicky -->
-      </tbody>
-    </table>
-  </div>
+    <!-- Hlavní herní plocha -->
+    <div class="game-grid">
+
+      <!-- Levý panel: hráči + ovládání -->
+      <aside class="side-panel">
+        <h3 class="panel-title">Hráči</h3>
+        <ul class="players-list" id="players-list"></ul>
+
+        <div id="host-controls" class="host-controls" style="display:none;">
+          <button class="btn btn-secondary btn-full" id="btn-next-round">↺ Nové kolo</button>
+        </div>
+      </aside>
+
+      <!-- Pravý panel: hádání + výsledky -->
+      <section class="main-panel">
+        <div id="guess-controls" class="guess-bar">
+          <input class="input input-guess" type="text" id="guess-input" placeholder="Napiš slovo…" autocomplete="off" autocorrect="off" spellcheck="false">
+          <button class="btn btn-primary" id="btn-submit-guess">Hádat</button>
+          <button class="btn btn-ghost btn-give-up" id="btn-reveal-word">Vzdát se</button>
+        </div>
+        <p id="guess-feedback" class="guess-feedback"></p>
+
+        <div class="guesses-header">
+          <span class="guesses-title">Odhalená slova</span>
+          <span class="guesses-count" id="guesses-count">0 tipů</span>
+        </div>
+
+        <table class="guesses-table" id="guesses-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Slovo</th>
+              <th>Kdo</th>
+            </tr>
+          </thead>
+          <tbody id="guesses-list">
+            <tr class="empty-row">
+              <td colspan="3">Zatím žádné tipy. Začni hádat!</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </main>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/app.js"></script>

@@ -1,8 +1,26 @@
 const { getDailyWord, getRandomWord, calculateRank } = require('./wordService');
 
+const ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 hodiny nečinnosti
+const CLEANUP_INTERVAL_MS = 10 * 60 * 1000; // kontrola každých 10 minut
+
 class RoomManager {
   constructor() {
     this.rooms = new Map(); // roomId -> room object
+    this._startCleanupTimer();
+  }
+
+  // Automaticky maže místnosti bez aktivity déle než ROOM_TTL_MS
+  _startCleanupTimer() {
+    setInterval(() => {
+      const now = Date.now();
+      for (const [code, room] of this.rooms.entries()) {
+        const idle = now - (room.lastActivity || room.createdAt);
+        if (idle > ROOM_TTL_MS) {
+          console.log(`[cleanup] Místnost ${code} smazána po ${Math.round(idle / 60000)} min nečinnosti.`);
+          this.rooms.delete(code);
+        }
+      }
+    }, CLEANUP_INTERVAL_MS);
   }
 
   // Generate a random 4-letter uppercase room code
@@ -36,7 +54,8 @@ class RoomManager {
           solvedAt: null
         }
       },
-      guesses: [] // array of { player, socketId, word, rank, timestamp }
+      guesses: [], // array of { player, socketId, word, rank, timestamp }
+      lastActivity: Date.now()
     };
 
     this.rooms.set(code, room);
@@ -139,6 +158,7 @@ class RoomManager {
     };
 
     room.guesses.push(guessEntry);
+    room.lastActivity = Date.now(); // obnoví TTL místnosti
 
     return {
       success: true,
