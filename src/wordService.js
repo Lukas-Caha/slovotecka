@@ -25,21 +25,31 @@ function hashString(str) {
   return Math.abs(hash);
 }
 
-// Pevné výchozí datum – každý den posune pořadí o 1 slovo dopředu bez náhodného opakování
-const START_DATE = new Date('2026-09-01T00:00:00Z');
-
-function getDailyIndex() {
+// Získání aktuálního data v českém časovém pásmu (Europe/Prague) ve formátu YYYY-MM-DD
+function getCzechDateStr() {
   const now = new Date();
-  const diffMs = now.getTime() - START_DATE.getTime();
-  const dayDiff = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-  return dayDiff % wordsData.dailyTargetWords.length;
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Prague',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(now);
 }
 
-// Denní slovo podle kalendářního dne (neopakuje se, jde popořadě)
+// Pevné výchozí datum (1. září 2026) – každou českou půlnoc se posune o 1 slovo dopředu
+const START_DATE_STR = '2026-09-01';
+
+function getDailyIndex(dateStr) {
+  const d1 = new Date(START_DATE_STR + 'T00:00:00Z');
+  const d2 = new Date((dateStr || getCzechDateStr()) + 'T00:00:00Z');
+  const diffDays = Math.max(0, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)));
+  return diffDays % wordsData.dailyTargetWords.length;
+}
+
+// Denní slovo podle kalendářního dne (střídá se o půlnoci v ČR)
 function getDailyWord() {
-  const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10);
-  const index = getDailyIndex();
+  const dateStr = getCzechDateStr();
+  const index = getDailyIndex(dateStr);
   const targetKey = wordsData.dailyTargetWords[index];
   const target = wordsData.targets[targetKey] || {
     word: targetKey,
@@ -212,5 +222,6 @@ module.exports = {
   getRandomWord,
   calculateRank,
   normalizeWord,
-  removeDiacritics
+  removeDiacritics,
+  getCzechDateStr
 };

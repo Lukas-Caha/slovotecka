@@ -1,20 +1,16 @@
 const socket = io();
 
-let currentRoomCode = null;
-let myPlayerName = '';
+// Globální stav
+let myPlayerName = localStorage.getItem('slovotecka_nickname') || '';
 
 // DOM – Lobby
 const lobbySection = document.getElementById('lobby-section');
 const gameSection = document.getElementById('game-section');
+const joinForm = document.getElementById('join-form');
 const playerNameInput = document.getElementById('player-name');
-const roomCodeInput = document.getElementById('room-code-input');
-const btnCreateDaily = document.getElementById('btn-create-daily');
-const btnCreateRandom = document.getElementById('btn-create-random');
-const btnJoinRoom = document.getElementById('btn-join-room');
 
 // DOM – Hra
-const displayRoomCode = document.getElementById('display-room-code');
-const displayMode = document.getElementById('display-mode');
+const displayDayTitle = document.getElementById('display-day-title');
 const displayDate = document.getElementById('display-date');
 const displayHint = document.getElementById('display-hint');
 const hintLocked = document.getElementById('hint-locked');
@@ -22,8 +18,7 @@ const hintRevealed = document.getElementById('hint-revealed');
 const btnShowHint = document.getElementById('btn-show-hint');
 const secretWordBox = document.getElementById('secret-word-box');
 const displaySecretWord = document.getElementById('display-secret-word');
-const hostControls = document.getElementById('host-controls');
-const btnNextRound = document.getElementById('btn-next-round');
+
 const playersList = document.getElementById('players-list');
 const guessInput = document.getElementById('guess-input');
 const btnSubmitGuess = document.getElementById('btn-submit-guess');
@@ -37,6 +32,11 @@ const toastContainer = document.getElementById('toast-container');
 const chatMessages = document.getElementById('chat-messages');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
+
+// Předvyplnění přezdívky pokud již hráč hrál dříve
+if (myPlayerName) {
+  playerNameInput.value = myPlayerName;
+}
 
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -69,88 +69,81 @@ function rankClass(rank) {
   return 'rank-cool';
 }
 
-// ── Lobby akce ────────────────────────────────────────
-btnCreateDaily.addEventListener('click', () => {
+// ── 1. Vstup do hry ───────────────────────────────────
+joinForm.addEventListener('submit', (e) => {
+  e.preventDefault();
   const name = playerNameInput.value.trim();
-  if (!name) return showToast('Zadej přezdívku.', true);
+  if (!name) return showToast('Zadej své jméno nebo přezdívku.', true);
+
   myPlayerName = name;
-  socket.emit('create_room', { playerName: name, isDaily: true });
+  localStorage.setItem('slovotecka_nickname', name);
+
+  socket.emit('join_game', { playerName: name });
 });
 
-btnCreateRandom.addEventListener('click', () => {
-  const name = playerNameInput.value.trim();
-  if (!name) return showToast('Zadej přezdívku.', true);
-  myPlayerName = name;
-  socket.emit('create_room', { playerName: name, isDaily: false });
-});
-
-btnJoinRoom.addEventListener('click', () => {
-  const name = playerNameInput.value.trim();
-  const code = roomCodeInput.value.trim().toUpperCase();
-  if (!name) return showToast('Zadej přezdívku.', true);
-  if (!code) return showToast('Zadej kód místnosti.', true);
-  myPlayerName = name;
-  socket.emit('join_room', { code, playerName: name });
-});
-
-// Enter v kódu místnosti
-roomCodeInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') btnJoinRoom.click();
-});
-playerNameInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const code = roomCodeInput.value.trim();
-    if (code) btnJoinRoom.click();
-    else btnCreateDaily.click();
+// Automatické znovupřipojení při výpadku spojení
+socket.on('connect', () => {
+  if (myPlayerName && gameSection.style.display !== 'none') {
+    socket.emit('join_game', { playerName: myPlayerName });
   }
 });
 
-// ── Hádat ─────────────────────────────────────────────
+// ── 2. Odeslání tipu ──────────────────────────────────
 function submitGuess() {
   const word = guessInput.value.trim();
   if (!word) return;
-  setFeedback('Ověřuji…');
-  socket.emit('submit_guess', { code: currentRoomCode, word });
+  setFeedback('Ověřuji slovo…');
+  socket.emit('submit_guess', { word });
   guessInput.value = '';
   guessInput.focus();
 }
 
 btnSubmitGuess.addEventListener('click', submitGuess);
 guessInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); submitGuess(); }
-});
-
-// ── Vzdát se ──────────────────────────────────────────
-btnRevealWord.addEventListener('click', () => {
-  const ok = confirm('Opravdu se vzdát? Uvidíš tajné slovo, ale ztratíš možnost hádat.');
-  if (ok) socket.emit('reveal_word', { code: currentRoomCode });
-});
-
-// ── Odhalit nápovědu (získá 🤡) ────────────────────────
-btnShowHint.addEventListener('click', () => {
-  const ok = confirm('Opravdu chceš odhalit nápovědu?\nPozor: všichni v místnosti uvidí vedle tvého jména klauna 🤡!');
-  if (ok && currentRoomCode) {
-    socket.emit('use_hint', { code: currentRoomCode });
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitGuess();
   }
 });
 
-// ── Nové kolo ─────────────────────────────────────────
-btnNextRound.addEventListener('click', () => {
-  socket.emit('next_round', { code: currentRoomCode });
+// ── 3. Vzdát se a odhalit dnešní slovo ────────────────
+btnRevealWord.addEventListener('click', () => {
+  const ok = confirm('Opravdu se chceš vzdát?\nUvidíš dnešní tajné slovo, ale ztratíš možnost dále dnes hádat.');
+  if (ok) socket.emit('reveal_word');
 });
 
-// ── Odeslání zprávy do chatu ──────────────────────────
+// ── 4. Odhalit nápovědu (získá 🤡) ────────────────────
+btnShowHint.addEventListener('click', () => {
+  const ok = confirm('Opravdu chceš odhalit nápovědu?\nPozor: všichni online uvidí vedle tvého jména klauna 🤡!');
+  if (ok) socket.emit('use_hint');
+});
+
+// ── 5. Odeslání zprávy do chatu ───────────────────────
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = chatInput.value.trim();
-  if (!text || !currentRoomCode) return;
-  socket.emit('send_chat', { code: currentRoomCode, message: text });
+  if (!text) return;
+  socket.emit('send_chat', { message: text });
   chatInput.value = '';
   chatInput.focus();
 });
 
 // ── Server události ───────────────────────────────────
+socket.on('error_message', (data) => {
+  showToast(data.message, true);
+  setFeedback('');
+});
+
+socket.on('notification', (data) => {
+  showToast(data.message);
+  setFeedback('');
+});
+
 socket.on('chat_message', (data) => {
+  appendChatMessage(data);
+});
+
+function appendChatMessage(data) {
   const emptyMsg = chatMessages.querySelector('.chat-empty');
   if (emptyMsg) emptyMsg.remove();
 
@@ -168,36 +161,22 @@ socket.on('chat_message', (data) => {
 
   chatMessages.appendChild(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
-});
-socket.on('error_message', (data) => {
-  showToast(data.message, true);
-  setFeedback('');
-});
+}
 
-socket.on('notification', (data) => {
-  showToast(data.message);
-  setFeedback('');
+// ── Vykreslení stavu denní hry ────────────────────────
+socket.on('game_state', (state) => {
+  renderGameState(state);
 });
 
-socket.on('room_joined', (state) => {
-  currentRoomCode = state.code;
-  renderRoomState(state);
-});
+let chatLoaded = false;
 
-socket.on('room_state', (state) => {
-  renderRoomState(state);
-});
-
-// ── Vykreslení stavu hry ──────────────────────────────
-function renderRoomState(state) {
-  currentRoomCode = state.code;
-
+function renderGameState(state) {
+  // Přepnutí do herní plochy
   lobbySection.style.display = 'none';
   gameSection.style.display = 'block';
 
   // Hlavička
-  displayRoomCode.textContent = state.code;
-  displayMode.textContent = state.isDaily ? '📅 Dnešní slovo' : '🎲 Náhodná hra';
+  displayDayTitle.textContent = `Den #${state.dayNumber || '1'}`;
   displayDate.textContent = state.date;
 
   // Nápověda (skrytá / odemčená s klaunem)
@@ -211,9 +190,7 @@ function renderRoomState(state) {
     displayHint.textContent = '';
   }
 
-  hostControls.style.display = state.isHost ? 'block' : 'none';
-
-  // Tajné slovo
+  // Tajné slovo (vidí ten kdo uhodl nebo se vzdal)
   if (state.secretWord) {
     secretWordBox.style.display = 'flex';
     displaySecretWord.textContent = state.secretWord;
@@ -227,14 +204,15 @@ function renderRoomState(state) {
     guessInput.disabled = locked;
     btnSubmitGuess.disabled = locked;
     btnRevealWord.disabled = locked;
+
     if (state.myStatus.solved) {
-      setFeedback('🏆 Slovo jsi uhodl(a)! Gratuluji.');
+      setFeedback('🏆 Dnešní slovo jsi úspěšně uhodl(a)! Gratuluji.');
     } else if (state.myStatus.gaveUp) {
-      setFeedback('Vzdal(a) ses – hádání uzamčeno.');
+      setFeedback('Dnes ses vzdal(a) – hádání je uzamčeno.');
     }
   }
 
-  // Hráči
+  // Hráči online
   playersList.innerHTML = '';
   state.players.forEach((p) => {
     const isMe = p.name === myPlayerName;
@@ -250,9 +228,8 @@ function renderRoomState(state) {
     if (p.gaveUp)  statusText = '❌ Vzdal(a) se';
 
     const clown = p.usedHint ? ' 🤡' : '';
-    const hostStar = p.isHost ? ' ★' : '';
     const isMeTag = isMe ? ' (ty)' : '';
-    const nameLabel = `${p.name}${clown}${hostStar}${isMeTag}`;
+    const nameLabel = `${escapeHtml(p.name)}${clown}${isMeTag}`;
 
     li.innerHTML = `
       <span class="player-name">${nameLabel}</span>
@@ -269,22 +246,28 @@ function renderRoomState(state) {
   if (sorted.length === 0) {
     guessesList.innerHTML = `
       <tr class="empty-row">
-        <td colspan="3">Zatím žádné tipy. Začni hádat!</td>
+        <td colspan="3">Zatím žádné tipy. Začni hádat dnešní slovo!</td>
       </tr>`;
-    return;
+  } else {
+    guessesList.innerHTML = '';
+    sorted.forEach((g) => {
+      const tr = document.createElement('tr');
+      if (g.isWinner) tr.classList.add('winner-row');
+
+      const rClass = rankClass(g.rank);
+      tr.innerHTML = `
+        <td class="rank-cell ${rClass}">${g.rank}</td>
+        <td class="word-cell">${escapeHtml(g.word)}</td>
+        <td class="who-cell">${escapeHtml(g.player)}</td>
+      `;
+      guessesList.appendChild(tr);
+    });
   }
 
-  guessesList.innerHTML = '';
-  sorted.forEach((g) => {
-    const tr = document.createElement('tr');
-    if (g.isWinner) tr.classList.add('winner-row');
-
-    const rClass = rankClass(g.rank);
-    tr.innerHTML = `
-      <td class="rank-cell ${rClass}">${g.rank}</td>
-      <td class="word-cell">${g.word}</td>
-      <td class="who-cell">${g.player}</td>
-    `;
-    guessesList.appendChild(tr);
-  });
+  // Načtení historie chatu při prvním vstupu
+  if (!chatLoaded && state.chatHistory && state.chatHistory.length > 0) {
+    chatMessages.innerHTML = '';
+    state.chatHistory.forEach(msg => appendChatMessage(msg));
+    chatLoaded = true;
+  }
 }

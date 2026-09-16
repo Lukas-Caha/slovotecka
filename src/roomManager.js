@@ -1,84 +1,50 @@
-const { getDailyWord, getRandomWord, calculateRank } = require('./wordService');
+const { getDailyWord, calculateRank, getCzechDateStr } = require('./wordService');
 
-const ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 hodiny nečinnosti
-const CLEANUP_INTERVAL_MS = 10 * 60 * 1000; // kontrola každých 10 minut
-
-class RoomManager {
+class DailyGameManager {
   constructor() {
-    this.rooms = new Map(); // roomId -> room object
-    this._startCleanupTimer();
+    this.activeDate = getCzechDateStr();
+    this.targetWordObj = getDailyWord();
+    this.players = {}; // socketId -> player object
+    this.guesses = []; // array of guesses
+    this.chatHistory = []; // array of last 50 chat messages
   }
 
-  // Automaticky maže místnosti bez aktivity déle než ROOM_TTL_MS
-  _startCleanupTimer() {
-    setInterval(() => {
-      const now = Date.now();
-      for (const [code, room] of this.rooms.entries()) {
-        const idle = now - (room.lastActivity || room.createdAt);
-        if (idle > ROOM_TTL_MS) {
-          console.log(`[cleanup] Místnost ${code} smazána po ${Math.round(idle / 60000)} min nečinnosti.`);
-          this.rooms.delete(code);
-        }
+  // Kontrola přechodu přes půlnoc (automatický posun na nové slovo)
+  checkMidnightRoll() {
+    const todayStr = getCzechDateStr();
+    if (todayStr !== this.activeDate) {
+      console.log(`[PŮLNOC] Půlnoční reset: ${this.activeDate} -> ${todayStr}`);
+      this.activeDate = todayStr;
+      this.targetWordObj = getDailyWord();
+      this.guesses = [];
+
+      // Reset stavu všech připojených hráčů na nový den
+      for (const pid of Object.keys(this.players)) {
+        this.players[pid].solved = false;
+        this.players[pid].gaveUp = false;
+        this.players[pid].usedHint = false;
+        this.players[pid].guessCount = 0;
+        this.players[pid].solvedAt = null;
       }
-    }, CLEANUP_INTERVAL_MS);
-  }
 
-  // Generate a random 4-letter uppercase room code
-  generateRoomCode() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let code = '';
-    for (let i = 0; i < 4; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+      return {
+        isNewDay: true,
+        date: this.activeDate,
+        dayNumber: this.targetWordObj.dayNumber
+      };
     }
-    return this.rooms.has(code) ? this.generateRoomCode() : code;
+    return { isNewDay: false };
   }
 
-  // Create a new room
-  createRoom(hostSocketId, hostName, isDaily = true) {
-    const code = this.generateRoomCode();
-    const targetWordObj = isDaily ? getDailyWord() : getRandomWord();
+  // Připojení hráče do společné denní hry
+  joinPlayer(socketId, playerName) {
+    this.checkMidnightRoll();
 
-    const room = {
-      code,
-      isDaily,
-      targetWordObj,
-      hostId: hostSocketId,
-      createdAt: Date.now(),
-      players: {
-        [hostSocketId]: {
-          id: hostSocketId,
-          name: hostName || 'Hostitel',
-          solved: false,
-          gaveUp: false,
-          usedHint: false,
-          guessCount: 0,
-          solvedAt: null
-        }
-      },
-      guesses: [], // array of { player, socketId, word, rank, timestamp }
-      lastActivity: Date.now()
-    };
+    const cleanName = (playerName || '').trim() || `Hráč_${Object.keys(this.players).length + 1}`;
 
-    this.rooms.set(code, room);
-    return room;
-  }
-
-  // Get room by code
-  getRoom(code) {
-    if (!code) return null;
-    return this.rooms.get(code.toUpperCase().trim()) || null;
-  }
-
-  // Join existing room
-  joinRoom(code, socketId, playerName) {
-    const room = this.getRoom(code);
-    if (!room) {
-      return { error: 'Místnost nebyla nalezena.' };
-    }
-
-    room.players[socketId] = {
+    const player = {
       id: socketId,
-      name: playerName || `Hráč ${Object.keys(room.players).length + 1}`,
+      name: cleanName,
       solved: false,
       gaveUp: false,
       usedHint: false,
@@ -86,62 +52,41 @@ class RoomManager {
       solvedAt: null
     };
 
-    return { room };
+    this.players[socketId] = player;
+    return player;
   }
 
-  // Player disconnects
+  // Odpojení hráče
   removePlayer(socketId) {
-    for (const [code, room] of this.rooms.entries()) {
-      if (room.players[socketId]) {
-        const playerName = room.players[socketId].name;
-        delete room.players[socketId];
-
-        const remainingPlayerIds = Object.keys(room.players);
-        if (remainingPlayerIds.length === 0) {
-          // Delete empty room
-          this.rooms.delete(code);
-          return { roomDeleted: true, code };
-        } else {
-          // Migrate host if needed
-          if (room.hostId === socketId) {
-            room.hostId = remainingPlayerIds[0];
-          }
-          return {
-            roomDeleted: false,
-            code,
-            playerName,
-            newHostId: room.hostId,
-            room
-          };
-        }
-      }
+    const player = this.players[socketId];
+    if (player) {
+      delete this.players[socketId];
+      return player;
     }
     return null;
   }
 
-  // Submit a guess
-  submitGuess(code, socketId, rawWord) {
-    const room = this.getRoom(code);
-    if (!room) return { error: 'Místnost neexistuje.' };
+  // Odeslání tipu od hráče
+  submitGuess(socketId, rawWord) {
+    this.checkMidnightRoll();
 
-    const player = room.players[socketId];
-    if (!player) return { error: 'Nejsi v této místnosti.' };
+    const player = this.players[socketId];
+    if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
 
     if (player.gaveUp) {
-      return { error: 'Vzdal(a) ses a odhalil(a) slovo. Již nemůžeš hádat.' };
+      return { error: 'Vzdal(a) ses a odhalil(a) slovo. Již nemůžeš dnes hádat.' };
     }
 
     if (player.solved) {
-      return { error: 'Gratulujeme, již jsi vítězné slovo uhodl(a)!' };
+      return { error: 'Gratulujeme, již jsi dnešní vítězné slovo uhodl(a)!' };
     }
 
-    const rankResult = calculateRank(room.targetWordObj, rawWord);
+    const rankResult = calculateRank(this.targetWordObj, rawWord);
     if (!rankResult.isValid) {
       return { error: rankResult.error || 'Neplatné slovo.' };
     }
 
     player.guessCount += 1;
-
     const isWinner = rankResult.isWinner || rankResult.rank === 1;
 
     if (isWinner) {
@@ -159,8 +104,7 @@ class RoomManager {
       timestamp: Date.now()
     };
 
-    room.guesses.push(guessEntry);
-    room.lastActivity = Date.now(); // obnoví TTL místnosti
+    this.guesses.push(guessEntry);
 
     return {
       success: true,
@@ -170,71 +114,63 @@ class RoomManager {
     };
   }
 
-  // Player surrenders and reveals the secret word
-  revealWord(code, socketId) {
-    const room = this.getRoom(code);
-    if (!room) return { error: 'Místnost neexistuje.' };
-
-    const player = room.players[socketId];
-    if (!player) return { error: 'Nejsi v této místnosti.' };
+  // Hráč se vzdá a odhalí slovo
+  revealWord(socketId) {
+    const player = this.players[socketId];
+    if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
 
     player.gaveUp = true;
 
     return {
       success: true,
-      targetWord: room.targetWordObj.word,
-      hint: room.targetWordObj.hint,
+      targetWord: this.targetWordObj.word,
       player: player
     };
   }
 
-  // Player unlocks/reveals the hint (gets marked with clown emoji 🤡)
-  useHint(code, socketId) {
-    const room = this.getRoom(code);
-    if (!room) return { error: 'Místnost neexistuje.' };
-
-    const player = room.players[socketId];
-    if (!player) return { error: 'Nejsi v této místnosti.' };
+  // Hráč odhalí nápovědu (získá 🤡)
+  useHint(socketId) {
+    const player = this.players[socketId];
+    if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
 
     player.usedHint = true;
-    room.lastActivity = Date.now();
 
     return {
       success: true,
-      hint: room.targetWordObj.hint,
+      hint: this.targetWordObj.hint,
       player: player
     };
   }
 
-  // Start next round with a new random word (host only)
-  nextRound(code, socketId) {
-    const room = this.getRoom(code);
-    if (!room) return { error: 'Místnost neexistuje.' };
-    if (room.hostId !== socketId) return { error: 'Pouze hostitel může zahájit další kolo.' };
+  // Uložení zprávy do chatu
+  addChatMessage(player, message) {
+    const time = new Date().toLocaleTimeString('cs-CZ', {
+      timeZone: 'Europe/Prague',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
 
-    room.targetWordObj = getRandomWord();
-    room.isDaily = false;
-    room.guesses = [];
+    const entry = {
+      player,
+      message: message.slice(0, 250),
+      time
+    };
 
-    // Reset players
-    for (const pid of Object.keys(room.players)) {
-      room.players[pid].solved = false;
-      room.players[pid].gaveUp = false;
-      room.players[pid].usedHint = false;
-      room.players[pid].guessCount = 0;
-      room.players[pid].solvedAt = null;
+    this.chatHistory.push(entry);
+    if (this.chatHistory.length > 60) {
+      this.chatHistory.shift();
     }
 
-    return { success: true, room };
+    return entry;
   }
 
-  // Format room state for a specific player (masking winning word if unrevealed)
-  getRoomStateForPlayer(room, socketId) {
-    const player = room.players[socketId];
+  // Vygenerování stavu hry na míru pro daného hráče (skrytí #1 a nápovědy)
+  getGameStateForPlayer(socketId) {
+    const player = this.players[socketId];
     const canSeeSecret = player && (player.solved || player.gaveUp);
 
-    // Sanitize guesses
-    const sanitizedGuesses = room.guesses.map((g) => {
+    // Sanitizace hádaných slov pro ty, kteří ještě nevyhráli / nevzdali se
+    const sanitizedGuesses = this.guesses.map((g) => {
       if (g.rank === 1 && !canSeeSecret) {
         return {
           id: g.id,
@@ -256,12 +192,10 @@ class RoomManager {
     });
 
     return {
-      code: room.code,
-      isDaily: room.isDaily,
-      date: room.targetWordObj.date,
-      hint: player && player.usedHint ? room.targetWordObj.hint : null,
+      date: this.activeDate,
+      dayNumber: this.targetWordObj.dayNumber,
+      hint: player && player.usedHint ? this.targetWordObj.hint : null,
       hasUsedHint: player ? !!player.usedHint : false,
-      isHost: room.hostId === socketId,
       myStatus: player
         ? {
             name: player.name,
@@ -271,19 +205,19 @@ class RoomManager {
             guessCount: player.guessCount
           }
         : null,
-      secretWord: canSeeSecret ? room.targetWordObj.word : null,
-      players: Object.values(room.players).map((p) => ({
+      secretWord: canSeeSecret ? this.targetWordObj.word : null,
+      players: Object.values(this.players).map((p) => ({
         id: p.id,
         name: p.name,
         solved: p.solved,
         gaveUp: p.gaveUp,
         usedHint: !!p.usedHint,
-        guessCount: p.guessCount,
-        isHost: p.id === room.hostId
+        guessCount: p.guessCount
       })),
-      guesses: sanitizedGuesses
+      guesses: sanitizedGuesses,
+      chatHistory: this.chatHistory
     };
   }
 }
 
-module.exports = new RoomManager();
+module.exports = new DailyGameManager();
