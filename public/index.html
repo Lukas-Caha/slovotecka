@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Český Contexto - Multiplayer</title>
+</head>
+<body>
+
+  <h1>Český Contexto - Multiplayer (Testovací verze)</h1>
+  <p>Hledejte tajné slovo podle sémantické blízkosti (číslo 1 je vítězné slovo, čím menší číslo, tím blíže jste významem).</p>
+  <hr>
+
+  <!-- Notifikace a chybové hlášky -->
+  <div id="messages-container">
+    <p id="error-message" style="color: red;"></p>
+    <p id="status-message" style="color: green;"></p>
+  </div>
+
+  <!-- Sekce: Přihlášení a vytvoření / připojení k místnosti -->
+  <div id="lobby-section">
+    <h2>Vstup do hry</h2>
+    <p>
+      <label for="player-name">Tvoje jméno / přezdívka:</label><br>
+      <input type="text" id="player-name" placeholder="Např. Martin" maxlength="20">
+    </p>
+
+    <h3>1. Vytvořit novou místnost</h3>
+    <p>
+      <button id="btn-create-daily">Vytvořit místnost (Dnešní slovo)</button>
+      <button id="btn-create-random">Vytvořit místnost (Náhodné slovo)</button>
+    </p>
+
+    <h3>2. Nebo se připojit ke stávající místnosti</h3>
+    <p>
+      <label for="room-code-input">Kód místnosti:</label><br>
+      <input type="text" id="room-code-input" placeholder="Např. AB12" maxlength="6" style="text-transform: uppercase;">
+      <button id="btn-join-room">Připojit se</button>
+    </p>
+  </div>
+
+  <!-- Sekce: Samotná hra -->
+  <div id="game-section" style="display: none;">
+    <h2>Herní místnost: <span id="display-room-code"></span></h2>
+    
+    <p>
+      <strong>Režim hry:</strong> <span id="display-mode"></span> |
+      <strong>Datum / Kolo:</strong> <span id="display-date"></span> |
+      <strong>Nápověda:</strong> <span id="display-hint"></span>
+    </p>
+
+    <div id="secret-word-box" style="display: none;">
+      <p><strong>Tajné slovo:</strong> <span id="display-secret-word" style="font-weight: bold; font-size: 1.2em;"></span></p>
+    </div>
+
+    <!-- Ovládací prvky pro hostitele -->
+    <div id="host-controls" style="display: none;">
+      <button id="btn-next-round">Nové kolo (další náhodné slovo)</button>
+    </div>
+
+    <hr>
+
+    <!-- Hráči v místnosti -->
+    <h3>Hráči v místnosti</h3>
+    <table border="1" cellpadding="5" cellspacing="0" id="players-table">
+      <thead>
+        <tr>
+          <th>Hráč</th>
+          <th>Počet tipů</th>
+          <th>Stav</th>
+        </tr>
+      </thead>
+      <tbody id="players-list">
+        <!-- Generováno dynamicky -->
+      </tbody>
+    </table>
+
+    <hr>
+
+    <!-- Formulář pro hádání -->
+    <h3>Zadej svůj tip</h3>
+    <div id="guess-controls">
+      <input type="text" id="guess-input" placeholder="Napiš slovo a stiskni Enter...">
+      <button id="btn-submit-guess">Hádat</button>
+      <button id="btn-reveal-word">Vzdát se a odhalit slovo</button>
+    </div>
+    <p id="guess-feedback"></p>
+
+    <hr>
+
+    <!-- Živý seznam všech hádaných slov seřazený od nejbližšího -->
+    <h3>Seznam všech hádaných slov (od nejbližších)</h3>
+    <p>Všichni hráči sdílejí nalezená slova. Vítězné slovo (#1) vidí jen ten, kdo ho sám uhodl nebo se vzdal.</p>
+    
+    <table border="1" cellpadding="5" cellspacing="0" id="guesses-table">
+      <thead>
+        <tr>
+          <th>Pořadí (Rank)</th>
+          <th>Slovo</th>
+          <th>Kdo tipoval</th>
+        </tr>
+      </thead>
+      <tbody id="guesses-list">
+        <!-- Generováno dynamicky -->
+      </tbody>
+    </table>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

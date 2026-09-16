@@ -1,0 +1,21 @@
+{
+  "name": "cesky-contexto-multiplayer",
+  "version": "1.0.0",
+  "description": "Multiplayer Contexto-style word guessing game in Czech",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "contexto",
+    "czech",
+    "multiplayer",
+    "socket.io"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
