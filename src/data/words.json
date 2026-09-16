@@ -14,7 +14,22 @@
     "hudba",
     "zahrada",
     "hory",
-    "lékař"
+    "lékař",
+    "hrad",
+    "vlak",
+    "jablko",
+    "oheň",
+    "postel",
+    "pivo",
+    "telefon",
+    "stůl",
+    "zima",
+    "ryba",
+    "obraz",
+    "město",
+    "strom",
+    "čaj",
+    "bota"
   ],
   "categoryAffinities": {
     "zvire": {
@@ -24,7 +39,18 @@
       "jidlo": 3,
       "domov": 3,
       "kultura": 4,
-      "doprava": 5
+      "doprava": 5,
+      "mesto": 4
+    },
+    "mesto": {
+      "mesto": 0,
+      "domov": 1,
+      "doprava": 1,
+      "kultura": 2,
+      "clovek": 2,
+      "priroda": 3,
+      "jidlo": 3,
+      "zvire": 4
     },
     "jidlo": {
       "jidlo": 0,
@@ -638,6 +664,164 @@
         "uzdravení": 35,
         "tělo": 50,
         "člověk": 70
+      }
+    },
+    "hrad": {
+      "word": "hrad",
+      "hint": "Středověké kamenné sídlo králů a pánů",
+      "category": "mesto",
+      "ranks": {
+        "zámek": 2, "věž": 3, "hradby": 4, "král": 5, "rytíř": 6, "brána": 7, "cimbuří": 8, "pevnost": 9,
+        "zřícenina": 10, "příkop": 11, "kámen": 12, "historie": 13, "hradní": 14, "nádvoří": 15, "most": 16,
+        "královna": 17, "panovník": 18, "středověk": 19, "palác": 20, "zbroj": 22, "meč": 25, "karlštejn": 28,
+        "vězení": 32, "sklepení": 35, "hradisko": 40, "architektura": 50, "turista": 65, "památka": 75, "kopec": 90
+      }
+    },
+    "vlak": {
+      "word": "vlak",
+      "hint": "Souprava vozů jedoucí po kolejích",
+      "category": "doprava",
+      "ranks": {
+        "koleje": 2, "nádraží": 3, "lokomotiva": 4, "vagón": 5, "průvodčí": 6, "perón": 7, "stanice": 8,
+        "kolejnice": 9, "zpoždění": 10, "cestování": 11, "jízdenka": 12, "rychlík": 13, "trať": 14, "vlakový": 15,
+        "kupé": 16, "pasažér": 17, "doprava": 18, "jízdní": 19, "přejezd": 20, "strojvedoucí": 22, "cesta": 25,
+        "autobus": 35, "tramvaj": 40, "metro": 45, "auto": 55, "výlet": 70, "město": 95
+      }
+    },
+    "jablko": {
+      "word": "jablko",
+      "hint": "Šťavnaté kulaté ovoce rostoucí na jabloni",
+      "category": "jidlo",
+      "ranks": {
+        "ovoce": 2, "strom": 3, "hruška": 4, "sad": 5, "červené": 6, "sladké": 7, "větev": 8, "jabloň": 9,
+        "šťáva": 10, "mošt": 11, "štrúdl": 12, "kompot": 13, "slupka": 14, "jadřinec": 15, "vitamín": 16,
+        "červík": 17, "sklizeň": 18, "zelené": 19, "chuť": 20, "koláč": 22, "švestka": 25, "jahoda": 28,
+        "banán": 32, "zahrada": 40, "jídlo": 60, "příroda": 90
+      }
+    },
+    "oheň": {
+      "word": "oheň",
+      "hint": "Horký živel produkující plameny a kouř",
+      "category": "priroda",
+      "ranks": {
+        "plamen": 2, "kouř": 3, "teplo": 4, "táborák": 5, "popel": 6, "jiskra": 7, "dřevo": 8, "ohniště": 9,
+        "zápalka": 10, "hoření": 11, "žár": 12, "hasič": 13, "popálenina": 14, "ohnivý": 15, "požár": 16,
+        "uhlí": 17, "kamna": 18, "krb": 19, "zapalovač": 20, "horko": 22, "světlo": 25, "noc": 35,
+        "slunce": 45, "les": 85, "nebezpečí": 110
+      }
+    },
+    "postel": {
+      "word": "postel",
+      "hint": "Nábytek určený pro noční odpočinek a spánek",
+      "category": "domov",
+      "ranks": {
+        "spánek": 2, "peřina": 3, "polštář": 4, "matrace": 5, "ložnice": 6, "povlečení": 7, "noc": 8,
+        "odpočinek": 9, "deka": 10, "spaní": 11, "unavený": 12, "probuzení": 13, "rošt": 14, "lenošení": 15,
+        "sen": 16, "peřiny": 17, "usínání": 18, "gauč": 20, "pokoj": 25, "dům": 35, "nábytek": 45,
+        "tělo": 65, "ráno": 85, "klid": 110
+      }
+    },
+    "pivo": {
+      "word": "pivo",
+      "hint": "Český národní hořký kvašený nápoj z chmele a sladu",
+      "category": "jidlo",
+      "ranks": {
+        "hospoda": 2, "půllitr": 3, "pěna": 4, "chmel": 5, "slad": 6, "ležák": 7, "pivovar": 8, "točené": 9,
+        "alkohol": 10, "orosené": 11, "nápoj": 12, "hospodský": 13, "desítka": 14, "dvanáctka": 15, "láhev": 16,
+        "víno": 17, "sklenice": 18, "žízeň": 19, "kocovina": 20, "bar": 22, "pivko": 25, "kamarádi": 35,
+        "večer": 45, "pití": 55, "jídlo": 80
+      }
+    },
+    "telefon": {
+      "word": "telefon",
+      "hint": "Přístroj na volání, zprávy a brouzdání po internetu",
+      "category": "kultura",
+      "ranks": {
+        "mobil": 2, "volání": 3, "displej": 4, "nabíječka": 5, "zpráva": 6, "číslo": 7, "hovor": 8,
+        "baterie": 9, "aplikace": 10, "smartphone": 11, "internet": 12, "vyzvánění": 13, "sms": 14, "sluchátka": 15,
+        "kabel": 16, "dotykový": 17, "kontakt": 18, "signál": 19, "počítač": 22, "komunikace": 25, "fotka": 30,
+        "elektronika": 45, "technologie": 60, "člověk": 90
+      }
+    },
+    "stůl": {
+      "word": "stůl",
+      "hint": "Nábytek s vodorovnou deskou a nohama",
+      "category": "domov",
+      "ranks": {
+        "židle": 2, "nábytek": 3, "deska": 4, "noha": 5, "ubrus": 6, "dřevo": 7, "jídelna": 8, "kuchyň": 9,
+        "oběd": 10, "talíř": 11, "pracovna": 12, "psací": 13, "pokoj": 14, "sezení": 15, "prostírání": 16,
+        "konferenční": 17, "skříň": 20, "postel": 25, "dům": 35, "domov": 45, "jídlo": 60, "práce": 85
+      }
+    },
+    "zima": {
+      "word": "zima",
+      "hint": "Nejchladnější roční období plné sněhu a mrazu",
+      "category": "priroda",
+      "ranks": {
+        "sníh": 2, "mráz": 3, "led": 4, "vločka": 5, "chlad": 6, "kabát": 7, "rukavice": 8, "čepice": 9,
+        "lyžování": 10, "vánoce": 11, "prosinec": 12, "leden": 13, "rampouch": 14, "studeno": 15, "bunda": 16,
+        "sněhulák": 17, "bruslení": 18, "sáňky": 19, "lyže": 20, "podzim": 22, "jaro": 25, "léto": 30,
+        "počasí": 40, "teploměr": 50, "hory": 65, "příroda": 90
+      }
+    },
+    "ryba": {
+      "word": "ryba",
+      "hint": "Šupinatý vodní živočich dýchající žábrami",
+      "category": "zvire",
+      "ranks": {
+        "voda": 2, "rybník": 3, "řeka": 4, "kapr": 5, "ploutev": 6, "šupina": 7, "rybář": 8, "prut": 9,
+        "udice": 10, "akvárium": 11, "plavání": 12, "žábry": 13, "úlovek": 14, "pstruh": 15, "štika": 16,
+        "moře": 17, "oceán": 18, "háček": 19, "sádka": 22, "zvíře": 25, "loď": 35, "maso": 45, "příroda": 65
+      }
+    },
+    "obraz": {
+      "word": "obraz",
+      "hint": "Malířské umělecké dílo zavěšené v rámu",
+      "category": "kultura",
+      "ranks": {
+        "malba": 2, "malíř": 3, "rám": 4, "plátno": 5, "štětec": 6, "barvy": 7, "galerie": 8, "umění": 9,
+        "portrét": 10, "výstava": 11, "kresba": 12, "krajina": 13, "olejomalba": 14, "zeď": 15,
+        "umělec": 17, "muzeum": 18, "socha": 20, "barva": 22, "krása": 35, "kultura": 50, "pokoj": 70
+      }
+    },
+    "město": {
+      "word": "město",
+      "hint": "Větší osídlené místo s ulicemi, náměstím a radnicí",
+      "category": "mesto",
+      "ranks": {
+        "ulice": 2, "náměstí": 3, "domy": 4, "budovy": 5, "lidé": 6, "doprava": 7, "radnice": 8, "centrum": 9,
+        "semafor": 10, "sídliště": 11, "městský": 12, "chodník": 13, "vesnice": 14, "obyvatelé": 15, "obchody": 16,
+        "park": 17, "kostel": 18, "auto": 20, "panelák": 22, "škola": 25, "metro": 30, "práce": 45
+      }
+    },
+    "strom": {
+      "word": "strom",
+      "hint": "Mohutná dřevitá rostlina s kmenem a korunou",
+      "category": "priroda",
+      "ranks": {
+        "les": 2, "dřevo": 3, "větev": 4, "list": 5, "kmen": 6, "kůra": 7, "kořen": 8, "stín": 9,
+        "koruna": 10, "jehličí": 11, "pařez": 12, "dub": 13, "smrk": 14, "borovice": 15, "bříza": 16,
+        "stromy": 17, "příroda": 18, "listí": 19, "zelený": 20, "park": 25, "zahrada": 30, "pták": 40
+      }
+    },
+    "čaj": {
+      "word": "čaj",
+      "hint": "Teplý nápoj připravený louhováním sušených lístků nebo bylin",
+      "category": "jidlo",
+      "ranks": {
+        "bylinky": 2, "konvice": 3, "hrnek": 4, "horký": 5, "med": 6, "citrón": 7, "šálek": 8, "sáček": 9,
+        "louhování": 10, "nápoj": 11, "zelený": 12, "černý": 13, "zázvor": 14, "káva": 15, "teplo": 16,
+        "pití": 17, "voda": 18, "cukr": 19, "lžička": 20, "nemoc": 25, "zima": 30, "ráno": 45, "klid": 65
+      }
+    },
+    "bota": {
+      "word": "bota",
+      "hint": "Obuv na nohu chránící chodidlo při chůzi",
+      "category": "clovek",
+      "ranks": {
+        "noha": 2, "tkanička": 3, "podrážka": 4, "chůze": 5, "teniska": 6, "obuv": 7, "podpatek": 8,
+        "sandál": 9, "botička": 10, "švec": 11, "kožená": 12, "ponožka": 13, "polobotka": 14, "přezutí": 15,
+        "krok": 16, "chodidlo": 17, "pantofle": 18, "oblečení": 25, "kalhoty": 30, "cesta": 45, "běh": 60
       }
     }
   },

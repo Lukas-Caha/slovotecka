@@ -25,12 +25,21 @@ function hashString(str) {
   return Math.abs(hash);
 }
 
-// Denní slovo podle aktuálního data (kalendářní den)
+// Pevné výchozí datum – každý den posune pořadí o 1 slovo dopředu bez náhodného opakování
+const START_DATE = new Date('2026-09-01T00:00:00Z');
+
+function getDailyIndex() {
+  const now = new Date();
+  const diffMs = now.getTime() - START_DATE.getTime();
+  const dayDiff = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+  return dayDiff % wordsData.dailyTargetWords.length;
+}
+
+// Denní slovo podle kalendářního dne (neopakuje se, jde popořadě)
 function getDailyWord() {
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
-  const hash = hashString(dateStr);
-  const index = hash % wordsData.dailyTargetWords.length;
+  const index = getDailyIndex();
   const targetKey = wordsData.dailyTargetWords[index];
   const target = wordsData.targets[targetKey] || {
     word: targetKey,
@@ -42,6 +51,7 @@ function getDailyWord() {
   return {
     key: targetKey,
     date: dateStr,
+    dayNumber: index + 1,
     word: target.word,
     hint: target.hint,
     category: target.category || 'priroda',
@@ -49,15 +59,19 @@ function getDailyWord() {
   };
 }
 
-// Náhodné slovo pro rychlá další kola
+// Náhodná hra smí losovat POUZE ze starých slov, která už v Daily proběhla (archiv)
 function getRandomWord() {
-  const keys = wordsData.dailyTargetWords;
-  const index = Math.floor(Math.random() * keys.length);
-  const targetKey = keys[index];
+  const todayIndex = getDailyIndex();
+  // Stará slova, která už byla v denní výzvě před dneškem
+  const pastWords = wordsData.dailyTargetWords.slice(0, Math.max(1, todayIndex));
+
+  const randomIndex = Math.floor(Math.random() * pastWords.length);
+  const targetKey = pastWords[randomIndex];
   const target = wordsData.targets[targetKey];
+
   return {
     key: targetKey,
-    date: 'náhodná hra',
+    date: 'archivní náhodná hra',
     word: target.word,
     hint: target.hint,
     category: target.category || 'priroda',
