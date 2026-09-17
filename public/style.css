@@ -1814,13 +1814,13 @@ body {
 
 .yt-player-hidden {
   position: fixed;
-  top: -9999px;
-  left: -9999px;
+  bottom: 0;
+  right: 0;
   width: 200px;
   height: 200px;
-  opacity: 0.01;
+  opacity: 0.001;
   pointer-events: none;
-  z-index: -100;
+  z-index: -999;
 }
 
 @media (max-width: 768px) {

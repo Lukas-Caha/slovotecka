@@ -484,6 +484,15 @@ chatForm.addEventListener('submit', (e) => {
   if (!text) return;
   if (text.toLowerCase().startsWith('!play')) {
     musicAllowed = true;
+    try {
+      sessionStorage.setItem('slovotecka_music_allowed', 'true');
+    } catch (err) {}
+    if (ytPlayer && typeof ytPlayer.unMute === 'function') {
+      try {
+        ytPlayer.unMute();
+        ytPlayer.setVolume(currentVolume);
+      } catch (err) {}
+    }
   }
   socket.emit('send_chat', { message: text });
   chatInput.value = '';
@@ -738,6 +747,9 @@ let musicTicker = null;
 let isLocalPaused = false;
 let isLocalMuted = false;
 let musicAllowed = false; // Každý uživatel si musí přehrávání hudby explicitně povolit / zapnout jak přijde
+try {
+  musicAllowed = sessionStorage.getItem('slovotecka_music_allowed') === 'true';
+} catch (err) {}
 
 // Výchozí hlasitost 20% ("aby to nebylo nahlas prvně") s uložením do localStorage
 let currentVolume = 20;
@@ -751,48 +763,92 @@ if (savedVol !== null) {
 if (musicVolumeSlider) musicVolumeSlider.value = currentVolume;
 if (musicVolumeVal) musicVolumeVal.textContent = `${currentVolume}%`;
 
-// Inicializace YouTube Iframe API
-window.onYouTubeIframeAPIReady = function() {
-  ytPlayer = new YT.Player('yt-player', {
-    height: '200',
-    width: '200',
-    playerVars: {
-      autoplay: 1,
-      controls: 0,
-      disablekb: 1,
-      fs: 0,
-      modestbranding: 1,
-      playsinline: 1,
-      rel: 0
-    },
-    events: {
-      onReady: (e) => {
-        isYtReady = true;
-        e.target.setVolume(currentVolume);
-        if (pendingTrack && musicAllowed) {
-          playTrack(pendingTrack);
-          pendingTrack = null;
-        }
+// Robustní inicializace YouTube Iframe API
+function initYouTubePlayer() {
+  if (ytPlayer) return;
+  if (!window.YT || !window.YT.Player) return;
+  const target = document.getElementById('yt-player');
+  if (!target) return;
+
+  try {
+    ytPlayer = new YT.Player('yt-player', {
+      height: '200',
+      width: '200',
+      playerVars: {
+        autoplay: 1,
+        controls: 0,
+        disablekb: 1,
+        fs: 0,
+        modestbranding: 1,
+        playsinline: 1,
+        rel: 0,
+        origin: window.location.origin
       },
-      onStateChange: (e) => {
-        if (e.data === YT.PlayerState.PLAYING) {
-          isLocalPaused = false;
-          if (musicToggleIcon) musicToggleIcon.textContent = '⏸';
-        } else if (e.data === YT.PlayerState.PAUSED) {
-          isLocalPaused = true;
-          if (musicToggleIcon) musicToggleIcon.textContent = '▶';
-        } else if (e.data === YT.PlayerState.ENDED) {
+      events: {
+        onReady: (e) => {
+          isYtReady = true;
+          try {
+            e.target.setVolume(currentVolume);
+          } catch (err) {}
+
+          const toPlay = activeTrack || pendingTrack;
+          if (toPlay && musicAllowed) {
+            pendingTrack = null;
+            playTrack(toPlay);
+          }
+        },
+        onStateChange: (e) => {
+          if (e.data === YT.PlayerState.PLAYING) {
+            isLocalPaused = false;
+            if (musicToggleIcon) musicToggleIcon.textContent = '⏸';
+            if (btnMusicToggle) btnMusicToggle.title = 'Pozastavit hudbu pro tebe';
+          } else if (e.data === YT.PlayerState.PAUSED) {
+            isLocalPaused = true;
+            if (musicToggleIcon) musicToggleIcon.textContent = '▶';
+            if (btnMusicToggle) btnMusicToggle.title = 'Spustit hudbu';
+          } else if (e.data === YT.PlayerState.ENDED) {
+            stopMusicLocal();
+          } else if (e.data === YT.PlayerState.CUED || e.data === YT.PlayerState.BUFFERING) {
+            if (isLocalPaused && musicToggleIcon) {
+              musicToggleIcon.textContent = '▶';
+            }
+          }
+        },
+        onError: (e) => {
+          console.warn('Chyba YouTube přehrávače:', e.data);
+          showToast('Skladbu nelze přehrát (autorská práva nebo omezení vloženého videa).', true);
           stopMusicLocal();
         }
-      },
-      onError: (e) => {
-        console.warn('Chyba YouTube přehrávače:', e.data);
-        showToast('Skladbu nelze přehrát (autorská práva nebo omezení vloženého videa).', true);
-        stopMusicLocal();
       }
-    }
-  });
+    });
+  } catch (err) {
+    console.error('Chyba při vytváření YT.Player:', err);
+  }
+}
+
+// 1. YouTube API callback
+window.onYouTubeIframeAPIReady = function() {
+  initYouTubePlayer();
 };
+
+// 2. Pokud už je YT API načtené dřív než app.js
+if (window.YT && window.YT.Player) {
+  initYouTubePlayer();
+} else if (window.YT && typeof window.YT.ready === 'function') {
+  window.YT.ready(initYouTubePlayer);
+}
+
+// 3. Fallback interval pro načtení API
+const ytInitInterval = setInterval(() => {
+  if (ytPlayer && isYtReady) {
+    clearInterval(ytInitInterval);
+    return;
+  }
+  if (window.YT && window.YT.Player) {
+    initYouTubePlayer();
+  }
+}, 300);
+setTimeout(() => clearInterval(ytInitInterval), 15000);
 
 function formatTime(sec) {
   const m = Math.floor(sec / 60);
@@ -850,6 +906,8 @@ function playTrack(track) {
 
   if (!isYtReady || !ytPlayer || typeof ytPlayer.loadVideoById !== 'function') {
     pendingTrack = track;
+    initYouTubePlayer();
+    if (musicTime) musicTime.textContent = 'NAČÍTÁM...';
     return;
   }
 
@@ -901,7 +959,7 @@ function tickMusic() {
         stopMusicLocal();
       }
     } else {
-      if (musicTime) musicTime.textContent = `--:--`;
+      if (musicTime) musicTime.textContent = cur > 0 ? formatTime(cur) : '0:00';
       if (musicProgressBar) musicProgressBar.style.width = `0%`;
     }
   } catch (err) {
@@ -933,28 +991,53 @@ function stopMusicLocal() {
 if (btnMusicEnable) {
   btnMusicEnable.addEventListener('click', () => {
     musicAllowed = true;
+    try {
+      sessionStorage.setItem('slovotecka_music_allowed', 'true');
+    } catch (err) {}
     showToast('🎵 Hudba zapnuta (výchozí hlasitost 20%).');
     if (activeTrack) {
       playTrack(activeTrack);
+    }
+    if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+      try {
+        ytPlayer.unMute();
+        ytPlayer.setVolume(currentVolume);
+        ytPlayer.playVideo();
+      } catch (e) {}
     }
   });
 }
 
 // Ovládání přehrávače
-if (btnMusicToggle) {
-  btnMusicToggle.addEventListener('click', () => {
-    if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
+function toggleMusic() {
+  if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') {
+    if (activeTrack) {
+      playTrack(activeTrack);
+    }
+    return;
+  }
+  try {
     const state = ytPlayer.getPlayerState();
     if (state === YT.PlayerState.PLAYING) {
       ytPlayer.pauseVideo();
       isLocalPaused = true;
       if (musicToggleIcon) musicToggleIcon.textContent = '▶';
+      if (btnMusicToggle) btnMusicToggle.title = 'Spustit hudbu';
     } else {
+      ytPlayer.unMute();
+      ytPlayer.setVolume(currentVolume);
       ytPlayer.playVideo();
       isLocalPaused = false;
       if (musicToggleIcon) musicToggleIcon.textContent = '⏸';
+      if (btnMusicToggle) btnMusicToggle.title = 'Pozastavit hudbu pro tebe';
     }
-  });
+  } catch (e) {
+    console.warn('Chyba v toggleMusic:', e);
+  }
+}
+
+if (btnMusicToggle) {
+  btnMusicToggle.addEventListener('click', toggleMusic);
 }
 
 if (musicVolumeSlider) {
@@ -1022,14 +1105,19 @@ socket.on('music_stop', () => {
   stopMusicLocal();
 });
 
-// Podpora pro browser autoplay politiku (spustí zvuk po prvním kliknutí uživatele, pouze pokud má hudbu povolenou)
-document.addEventListener('click', () => {
-  if (musicAllowed && activeTrack && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
-    const state = ytPlayer.getPlayerState();
-    if (state !== YT.PlayerState.PLAYING && !isLocalPaused) {
-      try {
+// Podpora pro browser autoplay politiku: při jakémkoli kliknutí nebo stisku klávesy se pokusí spustit zvuk, pokud má uživatel hudbu povolenou
+function tryResumePlayback() {
+  if (!musicAllowed || !activeTrack || isLocalPaused) return;
+  if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+    try {
+      const state = ytPlayer.getPlayerState();
+      if (state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING) {
+        ytPlayer.unMute();
+        ytPlayer.setVolume(currentVolume);
         ytPlayer.playVideo();
-      } catch (e) {}
-    }
+      }
+    } catch (e) {}
   }
-}, { once: true });
+}
+document.addEventListener('click', tryResumePlayback);
+document.addEventListener('keydown', tryResumePlayback);
