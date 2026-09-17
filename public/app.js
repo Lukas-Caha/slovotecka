@@ -101,8 +101,13 @@ const musicMuteIcon = document.getElementById('music-mute-icon');
 const musicVolumeSlider = document.getElementById('music-volume-slider');
 const musicVolumeVal = document.getElementById('music-volume-val');
 const btnMusicStop = document.getElementById('btn-music-stop');
+const btnMusicSkip = document.getElementById('btn-music-skip');
+const musicSkipBadge = document.getElementById('music-skip-badge');
 const btnMusicEnable = document.getElementById('btn-music-enable');
 const musicControlsActive = document.getElementById('music-controls-active');
+
+// DOM – Nápověda příkazů chatu
+const chatCommandsPopover = document.getElementById('chat-commands-popover');
 
 // DOM – Poslední tip (Contexto styl)
 const lastGuessContainer = document.getElementById('last-guess-container');
@@ -392,6 +397,86 @@ document.addEventListener('keydown', (e) => {
 
 initEmotes();
 
+// ── Nápověda příkazů chatu (autocomplete při zadání znaku !) ───────────
+function updateCommandAutocomplete() {
+  if (!chatCommandsPopover) return;
+  const val = chatInput.value;
+  if (val.startsWith('!')) {
+    const q = val.toLowerCase().trim();
+    const items = chatCommandsPopover.querySelectorAll('.chat-command-item');
+    let hasVisible = false;
+
+    items.forEach((item) => {
+      const cmd = item.getAttribute('data-command').toLowerCase();
+      if (q === '!' || cmd.startsWith(q) || cmd.includes(q.slice(1))) {
+        item.style.display = 'flex';
+        hasVisible = true;
+      } else {
+        item.style.display = 'none';
+      }
+    });
+
+    chatCommandsPopover.style.display = hasVisible ? 'block' : 'none';
+    closeEmotePicker();
+  } else {
+    chatCommandsPopover.style.display = 'none';
+  }
+}
+
+function closeCommandAutocomplete() {
+  if (chatCommandsPopover) {
+    chatCommandsPopover.style.display = 'none';
+  }
+}
+
+chatInput.addEventListener('input', updateCommandAutocomplete);
+
+if (chatCommandsPopover) {
+  chatCommandsPopover.addEventListener('click', (e) => {
+    const item = e.target.closest('.chat-command-item');
+    if (!item) return;
+    const cmd = item.getAttribute('data-command');
+    if (cmd) {
+      chatInput.value = cmd;
+      closeCommandAutocomplete();
+      chatInput.focus();
+      const len = chatInput.value.length;
+      chatInput.setSelectionRange(len, len);
+    }
+  });
+}
+
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (chatCommandsPopover && chatCommandsPopover.style.display !== 'none') {
+      closeCommandAutocomplete();
+      e.stopPropagation();
+      return;
+    }
+  }
+  if (chatCommandsPopover && chatCommandsPopover.style.display !== 'none') {
+    const visibleItems = Array.from(chatCommandsPopover.querySelectorAll('.chat-command-item')).filter(
+      (el) => el.style.display !== 'none'
+    );
+    if (visibleItems.length > 0 && e.key === 'Tab') {
+      e.preventDefault();
+      const cmd = visibleItems[0].getAttribute('data-command');
+      chatInput.value = cmd;
+      closeCommandAutocomplete();
+      const len = chatInput.value.length;
+      chatInput.setSelectionRange(len, len);
+    }
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (chatCommandsPopover && chatCommandsPopover.style.display !== 'none') {
+    if (!chatCommandsPopover.contains(e.target) && e.target !== chatInput) {
+      closeCommandAutocomplete();
+    }
+  }
+});
+
 // ── 6. Odeslání zprávy do chatu ───────────────────────
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -403,6 +488,7 @@ chatForm.addEventListener('submit', (e) => {
   socket.emit('send_chat', { message: text });
   chatInput.value = '';
   closeEmotePicker();
+  closeCommandAutocomplete();
   chatInput.focus();
 });
 
@@ -631,6 +717,12 @@ function renderGameState(state) {
   if (state.currentMusic) {
     if (!activeTrack || activeTrack.videoId !== state.currentMusic.videoId) {
       playTrack(state.currentMusic);
+    } else {
+      updateMusicSkipUI(
+        state.currentMusic.skipVotes,
+        state.currentMusic.requiredSkipVotes,
+        state.currentMusic.hasVotedSkip
+      );
     }
   } else if (activeTrack) {
     stopMusicLocal();
@@ -708,6 +800,21 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
+function updateMusicSkipUI(skipVotes, requiredSkipVotes, hasVotedSkip) {
+  if (musicSkipBadge) {
+    musicSkipBadge.textContent = `${skipVotes || 0}/${requiredSkipVotes || 1}`;
+  }
+  if (btnMusicSkip) {
+    if (hasVotedSkip) {
+      btnMusicSkip.classList.add('has-voted');
+      btnMusicSkip.title = `Hlasoval(a) jsi pro přeskočení (${skipVotes}/${requiredSkipVotes}). Kliknutím hlas zrušíš.`;
+    } else {
+      btnMusicSkip.classList.remove('has-voted');
+      btnMusicSkip.title = `Hlasovat pro přeskočení skladby (!skip, aktuálně ${skipVotes || 0}/${requiredSkipVotes || 1})`;
+    }
+  }
+}
+
 function playTrack(track) {
   if (!track || !track.videoId) return;
 
@@ -720,6 +827,8 @@ function playTrack(track) {
   if (musicRequester) {
     musicRequester.textContent = track.requestedBy ? `(od ${track.requestedBy})` : '';
   }
+
+  updateMusicSkipUI(track.skipVotes, track.requiredSkipVotes, track.hasVotedSkip);
 
   // Každý si musí hudbu explicitně zapnout ("jak přijde, musí si to každý zapnout")
   if (!musicAllowed) {
@@ -817,6 +926,7 @@ function stopMusicLocal() {
   if (musicControlsActive) musicControlsActive.style.display = 'none';
   if (musicProgressBar) musicProgressBar.style.width = '0%';
   if (musicTime) musicTime.textContent = '-:--';
+  updateMusicSkipUI(0, 1, false);
 }
 
 // Tlačítko pro explicitní zapnutí hudby
@@ -878,6 +988,13 @@ if (btnMusicMute) {
   });
 }
 
+// Tlačítko pro hlasování o přeskočení hudby (!skip)
+if (btnMusicSkip) {
+  btnMusicSkip.addEventListener('click', () => {
+    socket.emit('skip_music');
+  });
+}
+
 if (btnMusicStop) {
   btnMusicStop.addEventListener('click', () => {
     const ok = confirm('Opravdu chceš zastavit hudbu pro celou arénu?');
@@ -890,6 +1007,15 @@ if (btnMusicStop) {
 // Socket události pro hudbu
 socket.on('music_play', (track) => {
   playTrack(track);
+});
+
+socket.on('music_skip_update', (data) => {
+  if (activeTrack) {
+    activeTrack.skipVotes = data.skipVotes;
+    activeTrack.requiredSkipVotes = data.requiredSkipVotes;
+  }
+  const hasVoted = btnMusicSkip ? btnMusicSkip.classList.contains('has-voted') : false;
+  updateMusicSkipUI(data.skipVotes, data.requiredSkipVotes, hasVoted);
 });
 
 socket.on('music_stop', () => {

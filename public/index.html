@@ -57,6 +57,11 @@
               <input type="range" min="0" max="100" value="20" id="music-volume-slider" class="music-volume-slider" title="Hlasitost hudby (výchozí 20%)" aria-label="Hlasitost hudby">
               <span class="music-volume-val" id="music-volume-val">20%</span>
             </div>
+            <!-- Tlačítko pro přeskočení skladby hlasováním (!skip) -->
+            <button type="button" class="music-btn btn-music-skip" id="btn-music-skip" title="Hlasovat pro přeskočení hudby (!skip)" aria-label="Hlasovat pro přeskočení">
+              <span class="music-skip-icon">⏭</span>
+              <span class="music-skip-badge" id="music-skip-badge">0/1</span>
+            </button>
             <button type="button" class="music-btn btn-music-stop" id="btn-music-stop" title="Zastavit hudbu pro celou arénu" aria-label="Zastavit hudbu pro celou arénu">
               <span>⏹</span>
             </button>
@@ -290,6 +295,28 @@
             </div>
             <div class="emote-picker-grid" id="emote-picker-grid">
               <!-- Dynamicky generované emoty -->
+            </div>
+          </div>
+
+          <!-- Nápověda příkazů chatu (autocomplete při zadání !) -->
+          <div class="chat-commands-popover" id="chat-commands-popover" style="display: none;">
+            <div class="chat-commands-header">
+              <span class="chat-commands-tag">[ PŘÍKAZY CHATU ]</span>
+              <span class="chat-commands-hint">Vyber kliknutím nebo dopiš</span>
+            </div>
+            <div class="chat-commands-list" id="chat-commands-list">
+              <button type="button" class="chat-command-item" data-command="!play ">
+                <span class="cmd-code">!play &lt;odkaz&gt;</span>
+                <span class="cmd-desc">Pustí YouTube hudbu pro celou arénu</span>
+              </button>
+              <button type="button" class="chat-command-item" data-command="!skip">
+                <span class="cmd-code">!skip</span>
+                <span class="cmd-desc">Hlasovat pro přeskočení skladby (&gt;50 % hlasů)</span>
+              </button>
+              <button type="button" class="chat-command-item" data-command="!stop">
+                <span class="cmd-code">!stop</span>
+                <span class="cmd-desc">Zastavit hudbu pro celou arénu</span>
+              </button>
             </div>
           </div>
 

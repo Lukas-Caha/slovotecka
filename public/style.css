@@ -1844,4 +1844,113 @@ body {
   }
 }
 
+/* ── Music Skip Button ─────────────────────────────────────────────────── */
+.btn-music-skip {
+  width: auto;
+  min-width: 50px;
+  padding: 0 6px;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.btn-music-skip:hover {
+  background: var(--color-amber);
+  color: var(--color-base-100);
+  border-color: var(--color-amber);
+}
+
+.btn-music-skip.has-voted {
+  background: var(--color-amber);
+  color: var(--color-base-100);
+  border-color: var(--color-amber);
+}
+
+.music-skip-badge {
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* ── Chat Commands Popover (Autocomplete for !) ─────────────────────────── */
+.chat-commands-popover {
+  background: rgba(22, 20, 19, 0.98);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.6);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  animation: popoverFadeIn 0.15s ease-out;
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-commands-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(250, 248, 245, 0.12);
+}
+
+.chat-commands-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-amber);
+  letter-spacing: 0.08em;
+}
+
+.chat-commands-hint {
+  font-size: 0.65rem;
+  color: var(--color-base-600);
+}
+
+.chat-commands-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-command-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: rgba(250, 248, 245, 0.03);
+  border: 1px solid transparent;
+  padding: 6px 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s ease;
+  font-family: var(--font-mono);
+  width: 100%;
+}
+
+.chat-command-item:hover,
+.chat-command-item.is-selected {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.chat-command-item .cmd-code {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-amber);
+  letter-spacing: 0.04em;
+}
+
+.chat-command-item .cmd-desc {
+  font-size: 0.72rem;
+  color: var(--color-base-700);
+  line-height: 1.2;
+}
+
+.chat-command-item:hover .cmd-desc,
+.chat-command-item.is-selected .cmd-desc {
+  color: var(--color-base-900);
+}
+
 

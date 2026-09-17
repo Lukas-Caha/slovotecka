@@ -249,6 +249,36 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Příkaz pro přeskočení hudby: !skip (více jak polovina hráčů)
+    if (cleanMsg.toLowerCase() === '!skip') {
+      const skipRes = room.voteSkipMusic(socket.id);
+      if (skipRes.error) {
+        socket.emit('error_message', { message: skipRes.error });
+        return;
+      }
+
+      const chatEntry = room.addChatMessage(player.name, cleanMsg);
+      io.to(mode).emit('chat_message', chatEntry);
+
+      if (skipRes.skipped) {
+        io.to(mode).emit('music_stop', { stoppedBy: 'hlasování (skip)' });
+        io.to(mode).emit('notification', {
+          message: `⏭️ Hudba byla přeskočena na základě hlasování většiny hráčů (${skipRes.votesCount}/${skipRes.requiredVotes})!`
+        });
+        broadcastGameState(mode);
+      } else {
+        const actionText = skipRes.hasVoted ? 'hlasoval(a) pro přeskočení hudby' : 'zrušil(a) svůj hlas pro přeskočení';
+        io.to(mode).emit('notification', {
+          message: `⏭️ ${player.name} ${actionText} (${skipRes.votesCount}/${skipRes.requiredVotes}).`
+        });
+        io.to(mode).emit('music_skip_update', {
+          skipVotes: skipRes.votesCount,
+          requiredSkipVotes: skipRes.requiredVotes
+        });
+      }
+      return;
+    }
+
     // Příkaz pro zastavení hudby: !stop
     if (cleanMsg.toLowerCase() === '!stop') {
       if (!room.currentMusic) {
@@ -268,8 +298,46 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Nápověda příkazů: !, !help, !prikazy
+    if (['!', '!help', '!prikazy', '!commands'].includes(cleanMsg.toLowerCase())) {
+      const helpMsg = room.addChatMessage('ℹ️ NÁPOVĚDA', 'Příkazy: !play [YouTube odkaz] (pustit hudbu), !skip (hlasovat pro přeskočení skladby), !stop (zastavení)');
+      socket.emit('chat_message', helpMsg);
+      return;
+    }
+
     const chatEntry = room.addChatMessage(player.name, cleanMsg);
     io.to(mode).emit('chat_message', chatEntry);
+  });
+
+  // Hlasování o přeskočení hudby tlačítkem z horního baru
+  socket.on('skip_music', () => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const skipRes = room.voteSkipMusic(socket.id);
+    if (skipRes.error) {
+      socket.emit('error_message', { message: skipRes.error });
+      return;
+    }
+
+    if (skipRes.skipped) {
+      io.to(mode).emit('music_stop', { stoppedBy: 'hlasování (skip)' });
+      io.to(mode).emit('notification', {
+        message: `⏭️ Hudba byla přeskočena na základě hlasování většiny hráčů (${skipRes.votesCount}/${skipRes.requiredVotes})!`
+      });
+      broadcastGameState(mode);
+    } else {
+      const actionText = skipRes.hasVoted ? 'hlasoval(a) pro přeskočení hudby' : 'zrušil(a) svůj hlas pro přeskočení';
+      io.to(mode).emit('notification', {
+        message: `⏭️ ${player.name} ${actionText} (${skipRes.votesCount}/${skipRes.requiredVotes}).`
+      });
+      io.to(mode).emit('music_skip_update', {
+        skipVotes: skipRes.votesCount,
+        requiredSkipVotes: skipRes.requiredVotes
+      });
+    }
   });
 
   // Zastavení hudby tlačítkem z horního baru

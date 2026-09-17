@@ -8,16 +8,77 @@ class BaseGameRoom {
     this.guesses = []; // pole tipů
     this.chatHistory = []; // historie zpráv chatu
     this.currentMusic = null; // aktuálně přehrávaná YouTube hudba { videoId, title, requestedBy, startedAt }
+    this.musicSkipVotes = new Set(); // socketIds hráčů, kteří hlasovali pro přeskočení skladby
+  }
+
+  // Výpočet potřebné většiny pro přeskočení hudby: Math.floor(počet / 2) + 1
+  getRequiredSkipVotes() {
+    const total = Object.keys(this.players).length;
+    if (total <= 0) return 0;
+    return Math.floor(total / 2) + 1;
   }
 
   // Správa přehrávané hudby
   setMusicTrack(track) {
     this.currentMusic = track;
+    this.musicSkipVotes.clear();
     return this.currentMusic;
   }
 
   clearMusicTrack() {
     this.currentMusic = null;
+    this.musicSkipVotes.clear();
+  }
+
+  // Hlasování o přeskočení hudby (skip vote)
+  voteSkipMusic(socketId) {
+    const player = this.players[socketId];
+    if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
+    if (!this.currentMusic) return { error: 'Právě nehraje žádná hudba.' };
+
+    let hasVoted = false;
+    if (this.musicSkipVotes.has(socketId)) {
+      this.musicSkipVotes.delete(socketId);
+      hasVoted = false;
+    } else {
+      this.musicSkipVotes.add(socketId);
+      hasVoted = true;
+    }
+
+    const requiredVotes = this.getRequiredSkipVotes();
+    const votesCount = this.musicSkipVotes.size;
+
+    // Pokud je splněna většina (> 50 % hráčů v aréně)
+    if (votesCount >= requiredVotes && requiredVotes > 0) {
+      const skippedTrack = this.currentMusic;
+      this.clearMusicTrack();
+      return {
+        success: true,
+        skipped: true,
+        skippedTrack,
+        votesCount,
+        requiredVotes,
+        player
+      };
+    }
+
+    return {
+      success: true,
+      skipped: false,
+      hasVoted,
+      votesCount,
+      requiredVotes,
+      player
+    };
+  }
+
+  // Získání stavu hlasování o přeskočení pro daného hráče
+  getSkipVoteStatus(socketId) {
+    return {
+      skipVotes: this.musicSkipVotes.size,
+      requiredSkipVotes: this.getRequiredSkipVotes(),
+      hasVotedSkip: socketId ? this.musicSkipVotes.has(socketId) : false
+    };
   }
 
   // Připojení hráče do místnosti
@@ -53,6 +114,7 @@ class BaseGameRoom {
 
   // Odebrání hráče z místnosti
   removePlayer(socketId) {
+    this.musicSkipVotes.delete(socketId);
     const player = this.players[socketId];
     if (player) {
       delete this.players[socketId];
@@ -278,7 +340,10 @@ class DailyGameRoom extends BaseGameRoom {
       guesses: this.getSanitizedGuesses(socketId, canSeeSecret),
       chatHistory: this.chatHistory,
       voting: null,
-      currentMusic: this.currentMusic
+      currentMusic: this.currentMusic ? {
+        ...this.currentMusic,
+        ...this.getSkipVoteStatus(socketId)
+      } : null
     };
   }
 }
@@ -442,7 +507,10 @@ class UnlimitedGameRoom extends BaseGameRoom {
         hasVoted: this.votes.has(socketId),
         totalPlayers: Object.keys(this.players).length
       },
-      currentMusic: this.currentMusic
+      currentMusic: this.currentMusic ? {
+        ...this.currentMusic,
+        ...this.getSkipVoteStatus(socketId)
+      } : null
     };
   }
 }
