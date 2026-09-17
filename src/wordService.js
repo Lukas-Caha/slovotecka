@@ -1,13 +1,25 @@
 const fs = require('fs');
 const path = require('path');
 
-const wordsData = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'data', 'words.json'), 'utf-8')
-);
+// Načtení případných doplňkových dat (nápovědy, kategorie)
+let wordsData = { targets: {} };
+try {
+  const jsonPath = path.join(__dirname, 'data', 'words.json');
+  if (fs.existsSync(jsonPath)) {
+    wordsData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+  }
+} catch (err) {
+  console.warn('[wordService] words.json se nepodařilo načíst:', err.message);
+}
+
+// Cesty ke složce s vygenerovanými slovy na dny
+const VYSTUP_DIR = path.join(__dirname, '..', 'vystup');
+const HARMONOGRAM_PATH = path.join(VYSTUP_DIR, 'harmonogram.csv');
 
 // Pomocná funkce pro odstranění české diakritiky (háčků a čárek)
 function removeDiacritics(str) {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (!str || typeof str !== 'string') return '';
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 // Očištění a normalizace vstupu
@@ -16,108 +28,188 @@ function normalizeWord(word) {
   return word.trim().toLowerCase();
 }
 
-// Stabilní deterministický hash pro neměnné pořadí
-function hashString(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash * 31 + str.charCodeAt(i)) & 0xffffffff;
-  }
-  return Math.abs(hash);
-}
-
 // Získání aktuálního data v českém časovém pásmu (Europe/Prague) ve formátu YYYY-MM-DD
-function getCzechDateStr() {
-  const now = new Date();
+function getCzechDateStr(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Prague',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
-  }).format(now);
+  }).format(date);
 }
 
-// Pevné výchozí datum (1. září 2026) – každou českou půlnoc se posune o 1 slovo dopředu
+// Pevné výchozí datum (1. září 2026 = Den #1)
+// 17. září 2026 = Den #17, po půlnoci 18. září 2026 = Den #18
 const START_DATE_STR = '2026-09-01';
 
-function getDailyIndex(dateStr) {
-  const d1 = new Date(START_DATE_STR + 'T00:00:00Z');
-  const d2 = new Date((dateStr || getCzechDateStr()) + 'T00:00:00Z');
-  const diffDays = Math.max(0, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)));
-  return diffDays % wordsData.dailyTargetWords.length;
+// Načtení harmonogramu dnů a tajných slov z vystup/harmonogram.csv
+function loadSchedule() {
+  if (!fs.existsSync(HARMONOGRAM_PATH)) {
+    throw new Error(`Harmonogram nenalezen na cestě: ${HARMONOGRAM_PATH}`);
+  }
+  const content = fs.readFileSync(HARMONOGRAM_PATH, 'utf-8');
+  const lines = content.split(/\r?\n/);
+  const schedule = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const [dayStr, word] = line.split(',');
+    if (!dayStr || !word) continue;
+    schedule.push({
+      day: parseInt(dayStr.trim(), 10),
+      word: word.trim().toLowerCase()
+    });
+  }
+  if (schedule.length === 0) {
+    throw new Error('Harmonogram je prázdný.');
+  }
+  return schedule;
 }
 
-// Denní slovo podle kalendářního dne (střídá se o půlnoci v ČR)
-function getDailyWord() {
-  const dateStr = getCzechDateStr();
-  const index = getDailyIndex(dateStr);
-  const targetKey = wordsData.dailyTargetWords[index];
-  const target = wordsData.targets[targetKey] || {
-    word: targetKey,
-    hint: 'Denní slovo',
-    category: 'priroda',
-    ranks: {}
+const schedule = loadSchedule();
+
+// Výpočet pořadového čísla dne od 1. září 2026
+function getDayNumber(dateStr) {
+  const targetDateStr = dateStr || getCzechDateStr();
+  const [sy, sm, sd] = START_DATE_STR.split('-').map(Number);
+  const [ty, tm, td] = targetDateStr.split('-').map(Number);
+
+  const utc1 = Date.UTC(sy, sm - 1, sd);
+  const utc2 = Date.UTC(ty, tm - 1, td);
+  const diffDays = Math.max(0, Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24)));
+  return diffDays + 1;
+}
+
+// Vyrovnávací paměť načtených dnů pro okamžitý lookup
+const dayCache = new Map();
+
+// Načtení a zaindexování CSV souboru pro konkrétní den
+function loadDayData(day, targetWord) {
+  if (dayCache.has(day)) {
+    return dayCache.get(day);
+  }
+
+  const numStr = String(day).padStart(2, '0');
+  let fileName = `den_${numStr}_${targetWord}.csv`;
+  let filePath = path.join(VYSTUP_DIR, fileName);
+
+  if (!fs.existsSync(filePath)) {
+    const allFiles = fs.readdirSync(VYSTUP_DIR);
+    const match = allFiles.find((f) => f.startsWith(`den_${numStr}_`));
+    if (match) {
+      filePath = path.join(VYSTUP_DIR, match);
+    }
+  }
+
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Soubor s herními daty pro den ${day} nebyl nalezen (${filePath})`);
+  }
+
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const lines = content.split(/\r?\n/);
+
+  const exactMap = new Map();
+  const normalizedMap = new Map();
+  let maxRank = 1;
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const commaIdx = line.lastIndexOf(',');
+    if (commaIdx === -1) continue;
+
+    const word = line.substring(0, commaIdx).trim().toLowerCase();
+    const rank = parseInt(line.substring(commaIdx + 1), 10);
+    if (isNaN(rank)) continue;
+
+    if (rank > maxRank) maxRank = rank;
+
+    if (!exactMap.has(word)) {
+      exactMap.set(word, rank);
+    }
+
+    const norm = removeDiacritics(word);
+    const existing = normalizedMap.get(norm);
+    if (!existing || existing.rank > rank) {
+      normalizedMap.set(norm, { word, rank });
+    }
+  }
+
+  // Garantujeme, že cílové slovo má rank 1
+  const cleanTarget = normalizeWord(targetWord);
+  exactMap.set(cleanTarget, 1);
+  normalizedMap.set(removeDiacritics(cleanTarget), { word: cleanTarget, rank: 1 });
+
+  const dayData = {
+    day,
+    targetWord: cleanTarget,
+    exactMap,
+    normalizedMap,
+    maxRank
   };
+
+  dayCache.set(day, dayData);
+  return dayData;
+}
+
+// Získání denního slova a herního balíčku pro daný kalendářní den
+function getDailyWord(dateStr) {
+  const currentDateStr = dateStr || getCzechDateStr();
+  const dayNumber = getDayNumber(currentDateStr);
+  const scheduleIndex = (dayNumber - 1) % schedule.length;
+  const scheduleEntry = schedule[scheduleIndex];
+
+  const dayData = loadDayData(scheduleEntry.day, scheduleEntry.word);
+
+  let hint = wordsData.targets?.[scheduleEntry.word]?.hint;
+  if (!hint) {
+    hint = `Slovo má ${scheduleEntry.word.length} písmen a začíná na písmeno "${scheduleEntry.word[0].toUpperCase()}".`;
+  }
 
   return {
-    key: targetKey,
-    date: dateStr,
-    dayNumber: index + 1,
-    word: target.word,
-    hint: target.hint,
-    category: target.category || 'priroda',
-    ranks: target.ranks || {}
+    key: scheduleEntry.word,
+    date: currentDateStr,
+    dayNumber: dayNumber,
+    word: scheduleEntry.word,
+    hint: hint,
+    category: wordsData.targets?.[scheduleEntry.word]?.category || 'obecné',
+    dayData: dayData
   };
 }
 
-// Náhodná hra smí losovat POUZE ze starých slov, která už v Daily proběhla (archiv)
+// Náhodná archivní hra (ze starších dnů)
 function getRandomWord() {
-  const todayIndex = getDailyIndex();
-  // Stará slova, která už byla v denní výzvě před dneškem
-  const pastWords = wordsData.dailyTargetWords.slice(0, Math.max(1, todayIndex));
+  const currentDateStr = getCzechDateStr();
+  const dayNumber = getDayNumber(currentDateStr);
+  const pastDaysCount = Math.max(1, Math.min(dayNumber - 1, schedule.length));
+  const randomIndex = Math.floor(Math.random() * pastDaysCount);
+  const entry = schedule[randomIndex];
 
-  const randomIndex = Math.floor(Math.random() * pastWords.length);
-  const targetKey = pastWords[randomIndex];
-  const target = wordsData.targets[targetKey];
+  const dayData = loadDayData(entry.day, entry.word);
+  let hint = wordsData.targets?.[entry.word]?.hint;
+  if (!hint) {
+    hint = `Slovo má ${entry.word.length} písmen a začíná na písmeno "${entry.word[0].toUpperCase()}".`;
+  }
 
   return {
-    key: targetKey,
+    key: entry.word,
     date: 'archivní náhodná hra',
-    word: target.word,
-    hint: target.hint,
-    category: target.category || 'priroda',
-    ranks: target.ranks || {}
+    dayNumber: entry.day,
+    word: entry.word,
+    hint: hint,
+    category: wordsData.targets?.[entry.word]?.category || 'obecné',
+    dayData: dayData
   };
 }
 
-// Vyhledání sémantické kategorie slova v databázi
-function findWordCategory(cleanGuess, guessNorm) {
-  const clusters = wordsData.semanticClusters || {};
-  for (const [category, words] of Object.entries(clusters)) {
-    for (const w of words) {
-      if (normalizeWord(w) === cleanGuess || removeDiacritics(w) === guessNorm) {
-        return category;
-      }
-    }
-  }
-
-  // Zkontrolujeme také, zda slovo není přímo jedním z cílů
-  for (const [targetKey, targetObj] of Object.entries(wordsData.targets)) {
-    if (targetKey === cleanGuess || removeDiacritics(targetKey) === guessNorm) {
-      return targetObj.category || null;
-    }
-  }
-
-  return null;
-}
-
-// Hlavní výpočet sémantické blízkosti (1 = tajné slovo, menší číslo = větší významová blízkost)
+// Výpočet sémantické blízkosti podle vygenerovaných embedding dat
 function calculateRank(targetWordObj, userGuess) {
   const cleanGuess = normalizeWord(userGuess);
   if (!cleanGuess || cleanGuess.length < 2) {
     return { isValid: false, error: 'Slovo musí mít alespoň 2 písmena.' };
   }
 
-  // Povolena pouze česká a latinská písmena
+  // Povolena pouze písmena české a latinské abecedy
   const czechLetterRegex = /^[a-záčďéěíňóřšťúůýž]+$/i;
   if (!czechLetterRegex.test(cleanGuess)) {
     return { isValid: false, error: 'Slovo smí obsahovat pouze písmena bez čísel a znaků.' };
@@ -137,83 +229,39 @@ function calculateRank(targetWordObj, userGuess) {
     };
   }
 
-  // 2. Ručně kalibrované sémantické vazby pro dané slovo
-  const ranks = targetWordObj.ranks || {};
+  const dayData = targetWordObj.dayData;
+  if (!dayData) {
+    return { isValid: false, error: 'Chyba herních dat pro dnešní den.' };
+  }
 
-  // Přesná shoda v ranku
-  if (ranks[cleanGuess] !== undefined) {
+  // 2. Přesná shoda v herním slovníku daného dne
+  if (dayData.exactMap.has(cleanGuess)) {
+    const rank = dayData.exactMap.get(cleanGuess);
+    const isWinner = rank === 1;
     return {
       isValid: true,
-      isWinner: false,
-      rank: ranks[cleanGuess],
-      word: cleanGuess
+      isWinner: isWinner,
+      rank: rank,
+      word: isWinner ? targetWordObj.word : cleanGuess
     };
   }
 
-  // Shoda bez diakritiky v ranku (např. 'stene' najde 'štěně')
-  for (const [rankedWord, rankValue] of Object.entries(ranks)) {
-    if (removeDiacritics(rankedWord) === guessNorm) {
-      return {
-        isValid: true,
-        isWinner: false,
-        rank: rankValue,
-        word: rankedWord
-      };
-    }
-  }
-
-  // 3. Kategoriální sémantické řazení (čistě podle významu, ŽÁDNÁ shoda písmen!)
-  const targetCategory = targetWordObj.category || 'priroda';
-  const guessCategory = findWordCategory(cleanGuess, guessNorm);
-
-  const wordHash = hashString(targetNorm + ':' + guessNorm);
-
-  if (guessCategory) {
-    const affinities = wordsData.categoryAffinities?.[targetCategory] || {};
-    const affinity = affinities[guessCategory] !== undefined ? affinities[guessCategory] : 3;
-
-    let baseRank;
-    let spread;
-
-    switch (affinity) {
-      case 0: // Stejná kategorie (např. jiné zvíře u psa, jiné jídlo u kávy)
-        baseRank = 80;
-        spread = 220; // 80 až 300
-        break;
-      case 1: // Velmi úzce související kategorie (např. příroda vs zvíře)
-        baseRank = 350;
-        spread = 450; // 350 až 800
-        break;
-      case 2: // Středně související kategorie
-        baseRank = 850;
-        spread = 700; // 850 až 1550
-        break;
-      case 3: // Vzdálenější kategorie
-        baseRank = 1600;
-        spread = 1000; // 1600 až 2600
-        break;
-      default: // Úplně nesouvisející kategorie (např. traktor u psa)
-        baseRank = 2800;
-        spread = 1500; // 2800 až 4300
-        break;
-    }
-
-    const calculatedRank = baseRank + (wordHash % spread);
+  // 3. Shoda bez diakritiky (např. 'aktualne' -> 'aktuálně')
+  if (dayData.normalizedMap.has(guessNorm)) {
+    const match = dayData.normalizedMap.get(guessNorm);
+    const isWinner = match.rank === 1;
     return {
       isValid: true,
-      isWinner: false,
-      rank: calculatedRank,
-      word: cleanGuess
+      isWinner: isWinner,
+      rank: match.rank,
+      word: isWinner ? targetWordObj.word : match.word
     };
   }
 
-  // 4. Ostatní slova v češtině (výrazně vzdálená, žádné náhodné skoky podle písmenek)
-  const fallbackRank = 4500 + (wordHash % 4500); // 4500 až 9000
+  // 4. Slovo není ve slovníku
   return {
-    isValid: true,
-    isWinner: false,
-    rank: fallbackRank,
-    word: cleanGuess
+    isValid: false,
+    error: `Slovo "${cleanGuess}" není v herním slovníku.`
   };
 }
 
@@ -223,5 +271,6 @@ module.exports = {
   calculateRank,
   normalizeWord,
   removeDiacritics,
-  getCzechDateStr
+  getCzechDateStr,
+  getDayNumber
 };

@@ -64,8 +64,8 @@ function setFeedback(text) {
 // ── Barva ranku ───────────────────────────────────────
 function rankClass(rank) {
   if (rank === 1)    return 'rank-1';
-  if (rank <= 10)    return 'rank-hot';
-  if (rank <= 50)    return 'rank-warm';
+  if (rank <= 300)   return 'rank-hot';
+  if (rank <= 1500)  return 'rank-warm';
   return 'rank-cool';
 }
 
@@ -206,7 +206,7 @@ function renderGameState(state) {
     btnRevealWord.disabled = locked;
 
     if (state.myStatus.solved) {
-      setFeedback('🏆 Dnešní slovo jsi úspěšně uhodl(a)! Gratuluji.');
+      setFeedback('Dnešní slovo jsi úspěšně uhodl(a)! Gratuluji.');
     } else if (state.myStatus.gaveUp) {
       setFeedback('Dnes ses vzdal(a) – hádání je uzamčeno.');
     }
@@ -224,8 +224,8 @@ function renderGameState(state) {
     li.className = cls;
 
     let statusText = `${p.guessCount} tipů`;
-    if (p.solved)  statusText = '🏆 Uhodl(a)!';
-    if (p.gaveUp)  statusText = '❌ Vzdal(a) se';
+    if (p.solved)  statusText = 'UHODL(A)';
+    if (p.gaveUp)  statusText = 'VZDÁNO';
 
     const clown = p.usedHint ? ' 🤡' : '';
     const isMeTag = isMe ? ' (ty)' : '';

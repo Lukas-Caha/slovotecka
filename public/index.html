@@ -4,118 +4,221 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
-  <title>Slovo dne – Český Contexto Multiplayer</title>
+  <title>SLOVO. – Český Contexto Multiplayer</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  
+  <!-- Google Fonts: Road Rage (grunge display) & JetBrains Mono (monospace body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Road+Rage&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
-  <header class="site-header">
-    <div class="header-inner">
-      <h1 class="logo">slovo<span class="logo-dot">.</span></h1>
-      <p class="tagline">Uhádni dnešní tajné slovo podle sémantické blízkosti</p>
-    </div>
-  </header>
+  <!-- Background noise texture overlay from template -->
+  <div class="noise-overlay" aria-hidden="true"></div>
 
-  <!-- Notifikace -->
-  <div id="toast-container" aria-live="polite"></div>
+  <!-- Page wrapper above the background & noise -->
+  <div class="site-wrapper">
 
-  <!-- LOBBY: Pouze zadání jména -->
-  <main id="lobby-section" class="container">
-    <div class="card lobby-card">
-      <h2 class="card-title">Dnešní společná výzva</h2>
-      <p class="lobby-desc">Zadej své jméno nebo přezdívku a pojď hádat se všemi, kdo jsou právě online.</p>
-      
-      <form id="join-form">
-        <label class="field-label" for="player-name">Tvoje přezdívka</label>
-        <input class="input input-name" type="text" id="player-name" placeholder="Např. Martin" maxlength="20" autocomplete="off" autofocus>
-        <button type="submit" class="btn btn-primary btn-full" id="btn-enter-game">Vstoupit do hry →</button>
-      </form>
-    </div>
-  </main>
-
-  <!-- HRA: Společná aréna pro všechny -->
-  <main id="game-section" class="container" style="display:none;">
-
-    <div class="game-header">
-      <div class="room-badge">
-        <span class="room-badge-label">Denní výzva</span>
-        <span class="room-badge-code" id="display-day-title">Slovo dne</span>
-      </div>
-      <div class="game-meta">
-        <span id="display-date" class="meta-chip"></span>
-        <span class="meta-chip">Mění se o půlnoci 🌙</span>
-      </div>
-    </div>
-
-    <!-- Skrytá nápověda s klaunem -->
-    <div id="hint-bar" class="hint-bar">
-      <div id="hint-locked" class="hint-locked">
-        <span class="hint-locked-text">🔒 Nápověda je skrytá</span>
-        <button class="btn btn-secondary btn-hint" id="btn-show-hint">💡 Odhalit nápovědu (dostaneš 🤡)</button>
-      </div>
-      <div id="hint-revealed" class="hint-revealed" style="display:none;">
-        💡 Nápověda: <strong id="display-hint"></strong> <span class="hint-clown-badge" title="Zobrazil jsi nápovědu">🤡</span>
-      </div>
-    </div>
-
-    <!-- Tajné slovo (viditelné jen po vyřešení / vzdání) -->
-    <div id="secret-word-box" class="secret-box" style="display:none;">
-      <span class="secret-label">Dnešní slovo:</span>
-      <span id="display-secret-word" class="secret-word"></span>
-    </div>
-
-    <!-- Hlavní herní plocha: 3 sloupce -->
-    <div class="game-grid">
-
-      <!-- Levý panel: online hráči -->
-      <aside class="side-panel">
-        <h3 class="panel-title">Hráči online</h3>
-        <ul class="players-list" id="players-list"></ul>
-      </aside>
-
-      <!-- Střední panel: hádání + tabulka -->
-      <section class="main-panel">
-        <div id="guess-controls" class="guess-bar">
-          <input class="input input-guess" type="text" id="guess-input" placeholder="Napiš slovo…" autocomplete="off" autocorrect="off" spellcheck="false">
-          <button class="btn btn-primary" id="btn-submit-guess">Hádat</button>
-          <button class="btn btn-ghost btn-give-up" id="btn-reveal-word">Vzdát se</button>
-        </div>
-        <p id="guess-feedback" class="guess-feedback"></p>
-
-        <div class="guesses-header">
-          <span class="guesses-title">Odhalená slova</span>
-          <span class="guesses-count" id="guesses-count">0 tipů</span>
+    <!-- Header v grunge brutalistickém stylu -->
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="header-brand">
+          <div class="brand-row">
+            <h1 class="logo">SLOVO<span class="logo-dot">.</span></h1>
+            <img src="/symbolWhite.svg" alt="" class="header-symbol" aria-hidden="true">
+          </div>
+          <p class="tagline">[ SÉMANTICKÁ SLOVNÍ VÝZVA &bull; MULTIPLAYER ARÉNA ]</p>
         </div>
 
-        <table class="guesses-table" id="guesses-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Slovo</th>
-              <th>Kdo</th>
-            </tr>
-          </thead>
-          <tbody id="guesses-list">
-            <tr class="empty-row">
-              <td colspan="3">Zatím žádné tipy. Začni hádat!</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <!-- Pravý panel: Chat -->
-      <aside class="chat-panel">
-        <h3 class="panel-title">Společný chat</h3>
-        <div class="chat-messages" id="chat-messages">
-          <div class="chat-empty">Zatím žádné zprávy. Napiš něco do chatu!</div>
+        <div class="header-decor">
+          <img src="/barcode.svg" alt="Barcode" class="header-barcode" aria-hidden="true">
         </div>
-        <form class="chat-form" id="chat-form">
-          <input class="input input-chat" type="text" id="chat-input" placeholder="Zpráva…" maxlength="200" autocomplete="off">
-          <button type="submit" class="btn btn-primary btn-chat">Poslat</button>
+      </div>
+    </header>
+
+    <!-- Notifikace (Toast) -->
+    <div id="toast-container" aria-live="polite"></div>
+
+    <!-- LOBBY: Vstup do arény -->
+    <main id="lobby-section" class="container">
+      <div class="card lobby-card">
+        <div class="card-header-bar">
+          <span class="card-tag">[ 01. REGISTRACE DO HRY ]</span>
+          <img src="/symbolWhite.svg" alt="" class="card-mini-symbol" aria-hidden="true">
+        </div>
+
+        <h2 class="card-title">DNEŠNÍ SPOLEČNÁ VÝZVA</h2>
+        <p class="lobby-desc">Zadej své jméno nebo přezdívku a zapoj se do společného hádání se všemi, kdo jsou právě v aréně.</p>
+        
+        <form id="join-form">
+          <label class="field-label" for="player-name">TVOJE PŘEZDÍVKA</label>
+          <input class="input input-name" type="text" id="player-name" placeholder="PŘEZDÍVKA" maxlength="20" autocomplete="off" autofocus>
+          <button type="submit" class="btn btn-primary btn-full" id="btn-enter-game">
+            VSTOUPIT DO ARÉNY
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
         </form>
-      </aside>
-    </div>
-  </main>
+
+        <div class="card-footer-decor">
+          <img src="/barcode.svg" alt="" class="card-barcode" aria-hidden="true">
+        </div>
+      </div>
+    </main>
+
+    <!-- HRA: Společná aréna pro všechny -->
+    <main id="game-section" class="container" style="display:none;">
+
+      <!-- Horní lišta herního stavu -->
+      <div class="game-header-card">
+        <div class="room-badge">
+          <span class="room-badge-label">[ DENNÍ VÝZVA ]</span>
+          <span class="room-badge-code" id="display-day-title">DEN #1</span>
+        </div>
+        <div class="game-meta">
+          <span id="display-date" class="meta-chip"></span>
+          <span class="meta-chip">
+            <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            RESET O PŮLNOCI
+          </span>
+        </div>
+      </div>
+
+      <!-- Skrytá nápověda s klaunem 🤡 -->
+      <div id="hint-bar" class="hint-bar">
+        <div id="hint-locked" class="hint-locked">
+          <span class="hint-locked-text">
+            <svg class="hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="1"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            NÁPOVĚDA JE SKRYTÁ
+          </span>
+          <button class="btn btn-hint" id="btn-show-hint">
+            <svg class="hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Odhalit nápovědu (dostaneš 🤡)
+          </button>
+        </div>
+        <div id="hint-revealed" class="hint-revealed" style="display:none;">
+          <span class="hint-text-wrap">
+            <svg class="hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            Nápověda: <strong id="display-hint"></strong>
+          </span>
+          <span class="hint-clown-badge" title="Zobrazil jsi nápovědu">🤡</span>
+        </div>
+      </div>
+
+      <!-- Tajné slovo (viditelné jen po vyřešení / vzdání) -->
+      <div id="secret-word-box" class="secret-box" style="display:none;">
+        <span class="secret-label">[ DNEŠNÍ TAJNÉ SLOVO ]</span>
+        <span id="display-secret-word" class="secret-word"></span>
+      </div>
+
+      <!-- Hlavní herní plocha: 3 sloupce -->
+      <div class="game-grid">
+
+        <!-- Levý panel: online hráči -->
+        <aside class="panel side-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">[ 01. HRÁČI ONLINE ]</h3>
+            <img src="/symbolWhite.svg" alt="" class="panel-symbol" aria-hidden="true">
+          </div>
+          <ul class="players-list" id="players-list"></ul>
+        </aside>
+
+        <!-- Střední panel: hádání + tabulka -->
+        <section class="panel main-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">[ 02. HÁDÁNÍ SLOVA ]</h3>
+            <img src="/barcode.svg" alt="" class="panel-barcode-mini" aria-hidden="true">
+          </div>
+
+          <div id="guess-controls" class="guess-bar">
+            <input class="input input-guess" type="text" id="guess-input" placeholder="ZADEJ SLOVO..." autocomplete="off" autocorrect="off" spellcheck="false">
+            <button class="btn btn-primary" id="btn-submit-guess">HÁDAT</button>
+            <button class="btn btn-ghost btn-give-up" id="btn-reveal-word">VZDÁT SE</button>
+          </div>
+          <p id="guess-feedback" class="guess-feedback"></p>
+
+          <div class="guesses-header">
+            <span class="guesses-title">[ ODHALENÁ SLOVA ]</span>
+            <span class="guesses-count" id="guesses-count">0 tipů</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="guesses-table" id="guesses-table">
+              <thead>
+                <tr>
+                  <th>POŘADÍ</th>
+                  <th>SLOVO</th>
+                  <th>HRÁČ</th>
+                </tr>
+              </thead>
+              <tbody id="guesses-list">
+                <tr class="empty-row">
+                  <td colspan="3">ZATÍM ŽÁDNÉ TIPY. ZAČNI HÁDAT DNEŠNÍ SLOVO!</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Pravý panel: Chat -->
+        <aside class="panel chat-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">[ 03. CHAT ]</h3>
+            <img src="/symbolWhite.svg" alt="" class="panel-symbol" aria-hidden="true">
+          </div>
+          <div class="chat-messages" id="chat-messages">
+            <div class="chat-empty">Zatím žádné zprávy. Napiš něco do chatu!</div>
+          </div>
+          <form class="chat-form" id="chat-form">
+            <input class="input input-chat" type="text" id="chat-input" placeholder="Napiš zprávu..." maxlength="200" autocomplete="off">
+            <button type="submit" class="btn btn-primary btn-chat" aria-label="Poslat zprávu">
+              <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </form>
+        </aside>
+      </div>
+
+      <!-- Spodní dekorativní pruh podle template -->
+      <div class="game-bottom-bar">
+        <img src="/symbolWhite.svg" alt="" class="bottom-symbol" aria-hidden="true">
+        <span class="bottom-tag">SLOVO // MULTIPLAYER CONTEXTO // ENGINE 1.0</span>
+        <img src="/barcode.svg" alt="" class="bottom-barcode" aria-hidden="true">
+      </div>
+    </main>
+
+    <!-- Footer ve stylu Grunge šablony -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-copy">
+          <span class="footer-brand font-grunge">SLOVO.</span> &copy; 2025 ALL RIGHTS RESERVED
+        </div>
+        <div class="footer-meta">
+          <span>SÉMANTICKÝ MODEL CS &bull; WORD EMBEDDINGS</span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/app.js"></script>

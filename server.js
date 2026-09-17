@@ -29,7 +29,7 @@ setInterval(() => {
   const roll = gameManager.checkMidnightRoll();
   if (roll.isNewDay) {
     io.emit('notification', {
-      message: `🌙 Odbila půlnoc! Začíná nové denní slovo pro ${roll.date}. Přejeme hodně štěstí!`
+      message: `Odbila půlnoc! Začíná nové denní slovo pro ${roll.date}. Přejeme hodně štěstí!`
     });
     broadcastGameState();
   }
@@ -60,10 +60,10 @@ io.on('connection', (socket) => {
 
     if (result.isWinner) {
       socket.broadcast.emit('notification', {
-        message: `🎉 ${result.player.name} právě uhodl(a) dnešní tajné slovo (#1) na ${result.player.guessCount}. pokus!`
+        message: `${result.player.name} právě uhodl(a) dnešní tajné slovo (#1) na ${result.player.guessCount}. pokus!`
       });
       socket.emit('notification', {
-        message: `🏆 Výborně! Uhodl(a) jsi tajné slovo: "${result.guess.word}" na ${result.player.guessCount}. pokus!`
+        message: `Výborně! Uhodl(a) jsi tajné slovo: "${result.guess.word}" na ${result.player.guessCount}. pokus!`
       });
     } else {
       socket.broadcast.emit('notification', {
@@ -107,7 +107,7 @@ io.on('connection', (socket) => {
       message: `🤡 ${result.player.name} si zobrazil(a) nápovědu a získal(a) klauna!`
     });
     socket.emit('notification', {
-      message: `💡 Nápověda odhalena! Získal(a) jsi 🤡 vedle svého jména.`
+      message: `Nápověda odhalena! Získal(a) jsi 🤡 vedle svého jména.`
     });
 
     broadcastGameState();

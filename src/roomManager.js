@@ -1,9 +1,9 @@
-const { getDailyWord, calculateRank, getCzechDateStr } = require('./wordService');
+const wordService = require('./wordService');
 
 class DailyGameManager {
   constructor() {
-    this.activeDate = getCzechDateStr();
-    this.targetWordObj = getDailyWord();
+    this.activeDate = wordService.getCzechDateStr();
+    this.targetWordObj = wordService.getDailyWord();
     this.players = {}; // socketId -> player object
     this.guesses = []; // array of guesses
     this.chatHistory = []; // array of last 50 chat messages
@@ -11,11 +11,11 @@ class DailyGameManager {
 
   // Kontrola přechodu přes půlnoc (automatický posun na nové slovo)
   checkMidnightRoll() {
-    const todayStr = getCzechDateStr();
+    const todayStr = wordService.getCzechDateStr();
     if (todayStr !== this.activeDate) {
       console.log(`[PŮLNOC] Půlnoční reset: ${this.activeDate} -> ${todayStr}`);
       this.activeDate = todayStr;
-      this.targetWordObj = getDailyWord();
+      this.targetWordObj = wordService.getDailyWord(todayStr);
       this.guesses = [];
 
       // Reset stavu všech připojených hráčů na nový den
@@ -81,7 +81,7 @@ class DailyGameManager {
       return { error: 'Gratulujeme, již jsi dnešní vítězné slovo uhodl(a)!' };
     }
 
-    const rankResult = calculateRank(this.targetWordObj, rawWord);
+    const rankResult = wordService.calculateRank(this.targetWordObj, rawWord);
     if (!rankResult.isValid) {
       return { error: rankResult.error || 'Neplatné slovo.' };
     }
