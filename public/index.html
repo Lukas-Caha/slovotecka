@@ -57,6 +57,11 @@
               <input type="range" min="0" max="100" value="20" id="music-volume-slider" class="music-volume-slider" title="Hlasitost hudby (výchozí 20%)" aria-label="Hlasitost hudby">
               <span class="music-volume-val" id="music-volume-val">20%</span>
             </div>
+            <!-- Tlačítko pro zobrazení fronty skladeb -->
+            <button type="button" class="music-btn btn-music-queue" id="btn-music-queue" title="Zobrazit frontu skladeb (!queue)" aria-label="Fronta skladeb">
+              <span class="music-queue-icon">📋</span>
+              <span class="music-queue-badge" id="music-queue-badge">0</span>
+            </button>
             <!-- Tlačítko pro přeskočení skladby hlasováním (!skip) -->
             <button type="button" class="music-btn btn-music-skip" id="btn-music-skip" title="Hlasovat pro přeskočení hudby (!skip)" aria-label="Hlasovat pro přeskočení">
               <span class="music-skip-icon">⏭</span>
@@ -65,6 +70,17 @@
             <button type="button" class="music-btn btn-music-stop" id="btn-music-stop" title="Zastavit hudbu pro tebe" aria-label="Zastavit hudbu pro tebe">
               <span>⏹</span>
             </button>
+          </div>
+        </div>
+
+        <!-- Rozbalovací popover s frontou skladeb -->
+        <div class="music-queue-popover" id="music-queue-popover" style="display: none;">
+          <div class="music-queue-header">
+            <span class="music-queue-title">[ FRONTA SKLADEB ]</span>
+            <button type="button" class="music-queue-close" id="btn-close-queue" aria-label="Zavřít frontu">&times;</button>
+          </div>
+          <div class="music-queue-body" id="music-queue-body">
+            <div class="queue-empty">Fronta je prázdná. Přidej skladbu příkazem <code>!play &lt;odkaz&gt;</code></div>
           </div>
         </div>
       </div>
@@ -309,7 +325,11 @@
             <div class="chat-commands-list" id="chat-commands-list">
               <button type="button" class="chat-command-item" data-command="!play ">
                 <span class="cmd-code">!play &lt;odkaz&gt;</span>
-                <span class="cmd-desc">Pustí YouTube hudbu pro celou arénu</span>
+                <span class="cmd-desc">Pustí hudbu / přidá do fronty</span>
+              </button>
+              <button type="button" class="chat-command-item" data-command="!queue">
+                <span class="cmd-code">!queue</span>
+                <span class="cmd-desc">Zobrazí aktuální frontu skladeb</span>
               </button>
               <button type="button" class="chat-command-item" data-command="!skip">
                 <span class="cmd-code">!skip</span>

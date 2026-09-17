@@ -103,6 +103,11 @@ const musicVolumeVal = document.getElementById('music-volume-val');
 const btnMusicStop = document.getElementById('btn-music-stop');
 const btnMusicSkip = document.getElementById('btn-music-skip');
 const musicSkipBadge = document.getElementById('music-skip-badge');
+const btnMusicQueue = document.getElementById('btn-music-queue');
+const musicQueueBadge = document.getElementById('music-queue-badge');
+const musicQueuePopover = document.getElementById('music-queue-popover');
+const musicQueueBody = document.getElementById('music-queue-body');
+const btnCloseQueue = document.getElementById('btn-close-queue');
 const btnMusicEnable = document.getElementById('btn-music-enable');
 const musicControlsActive = document.getElementById('music-controls-active');
 
@@ -739,6 +744,10 @@ function renderGameState(state) {
         state.currentMusic.requiredSkipVotes,
         state.currentMusic.hasVotedSkip
       );
+      updateMusicQueueUI(
+        state.currentMusic.queue,
+        state.currentMusic.queueLength
+      );
     }
   } else if (activeTrack) {
     stopMusicLocal();
@@ -753,6 +762,7 @@ let activeTrack = null;
 let musicTicker = null;
 let isLocalPaused = false;
 let isLocalMuted = false;
+let needSeekToZero = false; // Pojistka pro spuštění nově zařazené skladby vždy od 0:00
 let musicAllowed = false; // Každý uživatel si musí přehrávání hudby explicitně povolit / zapnout jak přijde
 try {
   musicAllowed = sessionStorage.getItem('slovotecka_music_allowed') === 'true';
@@ -809,15 +819,29 @@ function initYouTubePlayer() {
             isLocalPaused = false;
             if (musicToggleIcon) musicToggleIcon.textContent = '⏸';
             if (btnMusicToggle) btnMusicToggle.title = 'Pozastavit hudbu pro tebe';
+            if (needSeekToZero) {
+              needSeekToZero = false;
+              try {
+                ytPlayer.seekTo(0, true);
+              } catch (err) {}
+            }
           } else if (e.data === YT.PlayerState.PAUSED) {
             isLocalPaused = true;
             if (musicToggleIcon) musicToggleIcon.textContent = '▶';
             if (btnMusicToggle) btnMusicToggle.title = 'Spustit hudbu';
           } else if (e.data === YT.PlayerState.ENDED) {
+            if (activeTrack) {
+              socket.emit('track_ended', { videoId: activeTrack.videoId });
+            }
             stopMusicLocal();
           } else if (e.data === YT.PlayerState.CUED || e.data === YT.PlayerState.BUFFERING) {
             if (isLocalPaused && musicToggleIcon) {
               musicToggleIcon.textContent = '▶';
+            }
+            if (needSeekToZero) {
+              try {
+                ytPlayer.seekTo(0, true);
+              } catch (err) {}
             }
           }
         },
@@ -863,6 +887,37 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
+function updateMusicQueueUI(queue, queueLength) {
+  const len = queueLength !== undefined ? queueLength : (queue ? queue.length : 0);
+  if (musicQueueBadge) {
+    musicQueueBadge.textContent = len;
+    if (len > 0) {
+      musicQueueBadge.classList.add('has-items');
+    } else {
+      musicQueueBadge.classList.remove('has-items');
+    }
+  }
+
+  if (musicQueueBody) {
+    if (!queue || queue.length === 0) {
+      musicQueueBody.innerHTML = '<div class="queue-empty">Fronta je prázdná. Přidej skladbu příkazem <code>!play &lt;odkaz&gt;</code></div>';
+    } else {
+      musicQueueBody.innerHTML = queue.map((item, idx) => {
+        const pos = item.position || (idx + 1);
+        const safeTitle = escapeHtml(item.title || 'Neznámá skladba');
+        const safeReq = item.requestedBy ? `(od ${escapeHtml(item.requestedBy)})` : '';
+        return `
+          <div class="queue-item">
+            <span class="queue-num">#${pos}</span>
+            <span class="queue-item-title" title="${safeTitle}">${safeTitle}</span>
+            <span class="queue-item-req">${safeReq}</span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
 function updateMusicSkipUI(skipVotes, requiredSkipVotes, hasVotedSkip) {
   if (musicSkipBadge) {
     musicSkipBadge.textContent = `${skipVotes || 0}/${requiredSkipVotes || 1}`;
@@ -892,6 +947,7 @@ function playTrack(track) {
   }
 
   updateMusicSkipUI(track.skipVotes, track.requiredSkipVotes, track.hasVotedSkip);
+  updateMusicQueueUI(track.queue, track.queueLength);
 
   // Každý si musí hudbu explicitně zapnout ("jak přijde, musí si to každý zapnout")
   if (!musicAllowed) {
@@ -910,6 +966,7 @@ function playTrack(track) {
   if (musicControlsActive) musicControlsActive.style.display = 'flex';
 
   const elapsed = Math.max(0, Math.floor((Date.now() - (track.startedAt || Date.now())) / 1000));
+  needSeekToZero = (elapsed <= 2);
 
   if (!isYtReady || !ytPlayer || typeof ytPlayer.loadVideoById !== 'function') {
     pendingTrack = track;
@@ -923,6 +980,9 @@ function playTrack(track) {
       videoId: track.videoId,
       startSeconds: elapsed
     });
+    try {
+      ytPlayer.seekTo(elapsed, true);
+    } catch (e) {}
     ytPlayer.setVolume(currentVolume);
     if (isLocalMuted) {
       ytPlayer.mute();
@@ -992,6 +1052,8 @@ function stopMusicLocal() {
   if (musicProgressBar) musicProgressBar.style.width = '0%';
   if (musicTime) musicTime.textContent = '-:--';
   updateMusicSkipUI(0, 1, false);
+  updateMusicQueueUI([], 0);
+  if (musicQueuePopover) musicQueuePopover.style.display = 'none';
 }
 
 // Tlačítko pro explicitní zapnutí hudby
@@ -1078,6 +1140,30 @@ if (btnMusicMute) {
   });
 }
 
+// Tlačítko a popover pro zobrazení fronty skladeb
+if (btnMusicQueue) {
+  btnMusicQueue.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!musicQueuePopover) return;
+    const isHidden = musicQueuePopover.style.display === 'none';
+    musicQueuePopover.style.display = isHidden ? 'block' : 'none';
+  });
+}
+
+if (btnCloseQueue) {
+  btnCloseQueue.addEventListener('click', () => {
+    if (musicQueuePopover) musicQueuePopover.style.display = 'none';
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (musicQueuePopover && musicQueuePopover.style.display !== 'none') {
+    if (!musicQueuePopover.contains(e.target) && e.target !== btnMusicQueue) {
+      musicQueuePopover.style.display = 'none';
+    }
+  }
+});
+
 // Tlačítko pro hlasování o přeskočení hudby (!skip)
 if (btnMusicSkip) {
   btnMusicSkip.addEventListener('click', () => {
@@ -1099,6 +1185,14 @@ if (btnMusicStop) {
 // Socket události pro hudbu
 socket.on('music_play', (track) => {
   playTrack(track);
+});
+
+socket.on('music_queue_update', (data) => {
+  if (activeTrack) {
+    activeTrack.queue = data.queue;
+    activeTrack.queueLength = data.queueLength;
+  }
+  updateMusicQueueUI(data.queue, data.queueLength);
 });
 
 socket.on('music_skip_update', (data) => {

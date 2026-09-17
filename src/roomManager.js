@@ -8,7 +8,9 @@ class BaseGameRoom {
     this.guesses = []; // pole tipů
     this.chatHistory = []; // historie zpráv chatu
     this.currentMusic = null; // aktuálně přehrávaná YouTube hudba { videoId, title, requestedBy, startedAt }
+    this.musicQueue = []; // fronta následujících skladeb [{ videoId, title, requestedBy }]
     this.musicSkipVotes = new Set(); // socketIds hráčů, kteří hlasovali pro přeskočení skladby
+    this.lastTrackEndedAt = 0; // debounce pro konec skladby
   }
 
   // Výpočet potřebné většiny pro přeskočení hudby: Math.floor(počet / 2) + 1
@@ -18,15 +20,44 @@ class BaseGameRoom {
     return Math.floor(total / 2) + 1;
   }
 
-  // Správa přehrávané hudby
-  setMusicTrack(track) {
-    this.currentMusic = track;
+  // Správa přehrávané hudby a fronty (Queue)
+  enqueueMusicTrack(track) {
+    if (!this.currentMusic) {
+      track.startedAt = Date.now();
+      this.currentMusic = track;
+      this.musicSkipVotes.clear();
+      return {
+        playingNow: true,
+        track,
+        queueLength: this.musicQueue.length
+      };
+    } else {
+      this.musicQueue.push(track);
+      return {
+        playingNow: false,
+        track,
+        position: this.musicQueue.length,
+        queueLength: this.musicQueue.length
+      };
+    }
+  }
+
+  playNextTrack() {
     this.musicSkipVotes.clear();
-    return this.currentMusic;
+    if (this.musicQueue.length > 0) {
+      const nextTrack = this.musicQueue.shift();
+      nextTrack.startedAt = Date.now();
+      this.currentMusic = nextTrack;
+      return nextTrack;
+    } else {
+      this.currentMusic = null;
+      return null;
+    }
   }
 
   clearMusicTrack() {
     this.currentMusic = null;
+    this.musicQueue = [];
     this.musicSkipVotes.clear();
   }
 
@@ -51,11 +82,12 @@ class BaseGameRoom {
     // Pokud je splněna většina (> 50 % hráčů v aréně)
     if (votesCount >= requiredVotes && requiredVotes > 0) {
       const skippedTrack = this.currentMusic;
-      this.clearMusicTrack();
+      const nextTrack = this.playNextTrack();
       return {
         success: true,
         skipped: true,
         skippedTrack,
+        nextTrack,
         votesCount,
         requiredVotes,
         player
@@ -72,12 +104,19 @@ class BaseGameRoom {
     };
   }
 
-  // Získání stavu hlasování o přeskočení pro daného hráče
+  // Získání stavu hlasování o přeskočení a fronty pro daného hráče
   getSkipVoteStatus(socketId) {
     return {
       skipVotes: this.musicSkipVotes.size,
       requiredSkipVotes: this.getRequiredSkipVotes(),
-      hasVotedSkip: socketId ? this.musicSkipVotes.has(socketId) : false
+      hasVotedSkip: socketId ? this.musicSkipVotes.has(socketId) : false,
+      queue: this.musicQueue.map((t, idx) => ({
+        position: idx + 1,
+        videoId: t.videoId,
+        title: t.title,
+        requestedBy: t.requestedBy
+      })),
+      queueLength: this.musicQueue.length
     };
   }
 

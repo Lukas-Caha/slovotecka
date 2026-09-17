@@ -231,21 +231,70 @@ io.on('connection', (socket) => {
       const track = {
         videoId,
         title,
-        requestedBy: player.name,
-        startedAt: Date.now()
+        requestedBy: player.name
       };
 
-      room.setMusicTrack(track);
+      const result = room.enqueueMusicTrack(track);
 
       // Zápis zprávy do chatu
       const chatEntry = room.addChatMessage(player.name, cleanMsg);
       io.to(mode).emit('chat_message', chatEntry);
 
-      // Spuštění hudby a notifikace
-      io.to(mode).emit('music_play', track);
-      io.to(mode).emit('notification', {
-        message: `🎵 ${player.name} pustil(a) hudbu: ${title}`
-      });
+      if (result.playingNow) {
+        // Hudba začala hrát ihned od začátku
+        io.to(mode).emit('music_play', {
+          ...result.track,
+          skipVotes: 0,
+          requiredSkipVotes: room.getRequiredSkipVotes(),
+          hasVotedSkip: false,
+          queue: room.musicQueue.map((t, idx) => ({
+            position: idx + 1,
+            videoId: t.videoId,
+            title: t.title,
+            requestedBy: t.requestedBy
+          })),
+          queueLength: room.musicQueue.length
+        });
+        io.to(mode).emit('notification', {
+          message: `🎵 ${player.name} pustil(a) hudbu: ${title}`
+        });
+      } else {
+        // Skladba byla zařazena do fronty
+        io.to(mode).emit('music_queue_update', {
+          queue: room.musicQueue.map((t, idx) => ({
+            position: idx + 1,
+            videoId: t.videoId,
+            title: t.title,
+            requestedBy: t.requestedBy
+          })),
+          queueLength: room.musicQueue.length
+        });
+        io.to(mode).emit('notification', {
+          message: `📋 ${player.name} přidal(a) do fronty (#${result.position}): ${title}`
+        });
+      }
+      broadcastGameState(mode);
+      return;
+    }
+
+    // Příkaz pro zobrazení fronty skladeb: !queue, !fronta
+    if (['!queue', '!fronta'].includes(cleanMsg.toLowerCase())) {
+      if (!room.currentMusic) {
+        const qMsg = room.addChatMessage('📋 FRONTA', 'Právě nehraje žádná hudba a fronta je prázdná.');
+        socket.emit('chat_message', qMsg);
+        return;
+      }
+
+      let qText = `Právě hraje: "${room.currentMusic.title}" (od ${room.currentMusic.requestedBy || 'neznámý'})\n`;
+      if (room.musicQueue.length === 0) {
+        qText += 'Ve frontě nejsou žádné další skladby. Přidat můžeš přes !play <odkaz>';
+      } else {
+        qText += `Další ve frontě (${room.musicQueue.length}):\n` +
+          room.musicQueue.map((t, idx) => `#${idx + 1} "${t.title}" (od ${t.requestedBy || 'neznámý'})`).join('\n');
+      }
+
+      const qMsg = room.addChatMessage('📋 FRONTA', qText);
+      socket.emit('chat_message', qMsg);
       return;
     }
 
@@ -261,10 +310,29 @@ io.on('connection', (socket) => {
       io.to(mode).emit('chat_message', chatEntry);
 
       if (skipRes.skipped) {
-        io.to(mode).emit('music_stop', { stoppedBy: 'hlasování (skip)' });
-        io.to(mode).emit('notification', {
-          message: `⏭️ Hudba byla přeskočena na základě hlasování většiny hráčů (${skipRes.votesCount}/${skipRes.requiredVotes})!`
-        });
+        if (skipRes.nextTrack) {
+          io.to(mode).emit('music_play', {
+            ...skipRes.nextTrack,
+            skipVotes: 0,
+            requiredSkipVotes: room.getRequiredSkipVotes(),
+            hasVotedSkip: false,
+            queue: room.musicQueue.map((t, idx) => ({
+              position: idx + 1,
+              videoId: t.videoId,
+              title: t.title,
+              requestedBy: t.requestedBy
+            })),
+            queueLength: room.musicQueue.length
+          });
+          io.to(mode).emit('notification', {
+            message: `⏭️ Hudba přeskočena většinou hráčů! Nyní z fronty hraje: ${skipRes.nextTrack.title}`
+          });
+        } else {
+          io.to(mode).emit('music_stop', { stoppedBy: 'hlasování (skip)' });
+          io.to(mode).emit('notification', {
+            message: `⏭️ Hudba byla přeskočena většinou hráčů a fronta je prázdná.`
+          });
+        }
         broadcastGameState(mode);
       } else {
         const actionText = skipRes.hasVoted ? 'hlasoval(a) pro přeskočení hudby' : 'zrušil(a) svůj hlas pro přeskočení';
@@ -293,7 +361,7 @@ io.on('connection', (socket) => {
 
     // Nápověda příkazů: !, !help, !prikazy
     if (['!', '!help', '!prikazy', '!commands'].includes(cleanMsg.toLowerCase())) {
-      const helpMsg = room.addChatMessage('ℹ️ NÁPOVĚDA', 'Příkazy: !play [YouTube odkaz] (pustit hudbu), !skip (hlasovat pro přeskočení skladby), !stop (zastavení pro sebe)');
+      const helpMsg = room.addChatMessage('ℹ️ NÁPOVĚDA', 'Příkazy: !play [YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (zobrazit frontu), !skip (hlasovat pro přeskočení), !stop (zastavení pro sebe)');
       socket.emit('chat_message', helpMsg);
       return;
     }
@@ -316,10 +384,29 @@ io.on('connection', (socket) => {
     }
 
     if (skipRes.skipped) {
-      io.to(mode).emit('music_stop', { stoppedBy: 'hlasování (skip)' });
-      io.to(mode).emit('notification', {
-        message: `⏭️ Hudba byla přeskočena na základě hlasování většiny hráčů (${skipRes.votesCount}/${skipRes.requiredVotes})!`
-      });
+      if (skipRes.nextTrack) {
+        io.to(mode).emit('music_play', {
+          ...skipRes.nextTrack,
+          skipVotes: 0,
+          requiredSkipVotes: room.getRequiredSkipVotes(),
+          hasVotedSkip: false,
+          queue: room.musicQueue.map((t, idx) => ({
+            position: idx + 1,
+            videoId: t.videoId,
+            title: t.title,
+            requestedBy: t.requestedBy
+          })),
+          queueLength: room.musicQueue.length
+        });
+        io.to(mode).emit('notification', {
+          message: `⏭️ Hudba přeskočena většinou hráčů! Nyní z fronty hraje: ${skipRes.nextTrack.title}`
+        });
+      } else {
+        io.to(mode).emit('music_stop', { stoppedBy: 'hlasování (skip)' });
+        io.to(mode).emit('notification', {
+          message: `⏭️ Hudba byla přeskočena většinou hráčů a fronta je prázdná.`
+        });
+      }
       broadcastGameState(mode);
     } else {
       const actionText = skipRes.hasVoted ? 'hlasoval(a) pro přeskočení hudby' : 'zrušil(a) svůj hlas pro přeskočení';
@@ -339,6 +426,47 @@ io.on('connection', (socket) => {
     socket.emit('notification', {
       message: '⏹️ Hudba byla zastavena pro tebe.'
     });
+  });
+
+  // Konec skladby ohlášený klientem (automatický přechod na další skladbu ve frontě)
+  socket.on('track_ended', (data) => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    if (!room || !room.currentMusic) return;
+
+    if (data && data.videoId && room.currentMusic.videoId !== data.videoId) {
+      return;
+    }
+
+    const now = Date.now();
+    if (room.lastTrackEndedAt && now - room.lastTrackEndedAt < 2500) {
+      return;
+    }
+    room.lastTrackEndedAt = now;
+
+    const nextTrack = room.playNextTrack();
+    if (nextTrack) {
+      io.to(mode).emit('music_play', {
+        ...nextTrack,
+        skipVotes: 0,
+        requiredSkipVotes: room.getRequiredSkipVotes(),
+        hasVotedSkip: false,
+        queue: room.musicQueue.map((t, idx) => ({
+          position: idx + 1,
+          videoId: t.videoId,
+          title: t.title,
+          requestedBy: t.requestedBy
+        })),
+        queueLength: room.musicQueue.length
+      });
+      io.to(mode).emit('notification', {
+        message: `🎵 Z fronty nyní hraje: ${nextTrack.title}`
+      });
+      broadcastGameState(mode);
+    } else {
+      io.to(mode).emit('music_stop');
+      broadcastGameState(mode);
+    }
   });
 
   // 7. Odpojení hráče
