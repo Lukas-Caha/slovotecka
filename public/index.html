@@ -54,11 +54,34 @@
     <!-- Notifikace (Toast) -->
     <div id="toast-container" aria-live="polite"></div>
 
+    <!-- Popup: WHATS NEW (Vyskakovací okno na lobby) -->
+    <div id="whats-new-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <span class="modal-title">WHATS NEW:</span>
+          <button type="button" class="modal-close-btn" id="btn-close-whats-new" aria-label="Zavřít">&times;</button>
+        </div>
+        <div class="modal-body">
+          <ul class="whats-new-list">
+            <li>Kazdy vidi pouze slova ktera uhadl, ale vidi jake čísla trefili ostatní, když dva lidi trefí to samé, vidi odpověď stejně.</li>
+            <li>Posledni napsane slovo, a jeho # je nyni videt vzdy nahoře.</li>
+            <li>more cumming soon</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary btn-modal-ack" id="btn-ack-whats-new">ROZUMÍM</button>
+        </div>
+      </div>
+    </div>
+
     <!-- LOBBY: Vstup do arény -->
     <main id="lobby-section" class="container">
       <div class="card lobby-card">
         <div class="card-header-bar">
-          <span class="card-tag" id="lobby-tag">[ 01. REGISTRACE DO HRY ]</span>
+          <div class="lobby-header-left">
+            <span class="card-tag" id="lobby-tag">[ 01. REGISTRACE DO HRY ]</span>
+            <button type="button" class="btn-whats-new-badge" id="btn-open-whats-new" title="Zobrazit novinky">[ WHATS NEW ]</button>
+          </div>
           <img src="/symbolWhite.svg" alt="" class="card-mini-symbol" aria-hidden="true">
         </div>
 
@@ -180,6 +203,17 @@
             <button class="btn btn-ghost btn-give-up" id="btn-reveal-word">VZDÁT SE</button>
           </div>
           <p id="guess-feedback" class="guess-feedback"></p>
+
+          <!-- Poslední tip přímo pod zadávacím polem (Contexto styl) -->
+          <div id="last-guess-container" class="last-guess-container" style="display: none;">
+            <div class="last-guess-row">
+              <div class="last-guess-bar-bg" id="last-guess-fill"></div>
+              <div class="last-guess-content">
+                <span class="last-guess-word" id="last-guess-word"></span>
+                <span class="last-guess-rank" id="last-guess-rank"></span>
+              </div>
+            </div>
+          </div>
 
           <div class="guesses-header">
             <span class="guesses-title">[ ODHALENÁ SLOVA ]</span>

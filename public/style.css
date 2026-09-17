@@ -639,6 +639,65 @@ body {
   border-bottom: 1px solid rgba(250, 248, 245, 0.15);
 }
 
+/* ── CONTEXTO-STYLE LAST GUESS ROW (Přímo pod zadáváním) ──────────────────── */
+.last-guess-container {
+  padding: 12px 14px 10px 14px;
+  background: rgba(18, 16, 15, 0.5);
+  border-bottom: 2px solid var(--border-strong);
+}
+
+.last-guess-row {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid #ffffff;
+  background: rgba(14, 13, 12, 0.95);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), var(--shadow-brutal);
+  min-height: 48px;
+  padding: 0 16px;
+}
+
+.last-guess-bar-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: #f43f5e;
+  z-index: 1;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.35s ease;
+}
+
+.last-guess-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.last-guess-word {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.last-guess-rank {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
 .guesses-header {
   display: flex;
   justify-content: space-between;
@@ -730,6 +789,66 @@ tr.winner-row td {
 tr.winner-row .word-cell {
   color: #ffffff;
   font-weight: 900;
+}
+
+/* Vlastní tipy v tabulce - jemně zvýrazněné, ne agresivní */
+tr.my-guess-row {
+  background: rgba(250, 248, 245, 0.05);
+  box-shadow: inset 3px 0 0 rgba(250, 248, 245, 0.7);
+}
+
+tr.my-guess-row td {
+  border-bottom: 1px solid rgba(250, 248, 245, 0.2);
+}
+
+tr.my-guess-row:hover td {
+  background: rgba(250, 248, 245, 0.09);
+}
+
+/* Řádek v tabulce, který odpovídá poslednímu tipu (bílý obrys jako na screenshotu) */
+tr.is-last-guess {
+  outline: 2px solid #ffffff;
+  outline-offset: -2px;
+}
+
+.my-word {
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.badge-you {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-base-700);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-left: 3px;
+}
+
+/* Cizí tipy v tabulce */
+tr.other-guess-row {
+  background: transparent;
+  opacity: 0.82;
+}
+
+tr.other-guess-row td {
+  border-bottom: 1px solid rgba(250, 248, 245, 0.08);
+}
+
+tr.other-guess-row:hover {
+  opacity: 1;
+}
+
+tr.other-guess-row:hover td {
+  background: rgba(250, 248, 245, 0.03);
+}
+
+.masked-word {
+  color: var(--color-base-600);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  user-select: none;
 }
 
 .empty-row td {
@@ -1307,5 +1426,135 @@ tr.winner-row .word-cell {
   font-size: 0.9rem;
   margin-left: 4px;
   vertical-align: middle;
+}
+
+/* ── WHATS NEW POPUP MODAL (Lobby) ──────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 7, 6, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-card {
+  max-width: 540px;
+  width: 100%;
+  background: rgba(22, 20, 19, 0.98);
+  border: 2px solid var(--border-strong);
+  box-shadow: var(--shadow-brutal), 0 0 30px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 2px solid var(--border-strong);
+  background: rgba(38, 35, 33, 0.7);
+}
+
+.modal-title {
+  font-family: var(--font-grunge);
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+  color: var(--color-base-900);
+  line-height: 1;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--color-base-700);
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.15s;
+}
+
+.modal-close-btn:hover {
+  color: var(--color-base-900);
+}
+
+.modal-body {
+  padding: 24px 22px;
+}
+
+.whats-new-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+}
+
+.whats-new-list li {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--color-base-900);
+  position: relative;
+  padding-left: 20px;
+}
+
+.whats-new-list li::before {
+  content: '-';
+  position: absolute;
+  left: 0;
+  color: var(--color-accent);
+  font-weight: 800;
+}
+
+.modal-footer {
+  padding: 12px 22px 20px 22px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-modal-ack {
+  padding: 8px 24px;
+  font-size: 1.25rem;
+}
+
+.lobby-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-whats-new-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-amber);
+  border: 1px solid var(--color-amber);
+  background: rgba(245, 158, 11, 0.12);
+  padding: 2px 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.15s;
+}
+
+.btn-whats-new-badge:hover {
+  background: var(--color-amber);
+  color: var(--color-base-100);
+  box-shadow: 2px 2px 0px rgba(245, 158, 11, 0.4);
 }
 

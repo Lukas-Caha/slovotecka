@@ -33,6 +33,32 @@ if (isUnlimited) {
   if (lobbyDesc) lobbyDesc.textContent = 'Hrajte společně se slovy z předchozích dnů (1–16). Hráči v místnosti mohou společným hlasováním (např. 2 ze 3) kdykoliv vylosovat nové slovo!';
 }
 
+// DOM – Popup Whats New
+const whatsNewModal = document.getElementById('whats-new-modal');
+const btnCloseWhatsNew = document.getElementById('btn-close-whats-new');
+const btnAckWhatsNew = document.getElementById('btn-ack-whats-new');
+const btnOpenWhatsNew = document.getElementById('btn-open-whats-new');
+
+function showWhatsNew() {
+  if (whatsNewModal) whatsNewModal.style.display = 'flex';
+}
+
+function hideWhatsNew() {
+  if (whatsNewModal) whatsNewModal.style.display = 'none';
+}
+
+if (btnCloseWhatsNew) btnCloseWhatsNew.addEventListener('click', hideWhatsNew);
+if (btnAckWhatsNew) btnAckWhatsNew.addEventListener('click', hideWhatsNew);
+if (btnOpenWhatsNew) btnOpenWhatsNew.addEventListener('click', showWhatsNew);
+if (whatsNewModal) {
+  whatsNewModal.addEventListener('click', (e) => {
+    if (e.target === whatsNewModal) hideWhatsNew();
+  });
+}
+
+// Automatické zobrazení okna WHATS NEW na lobby
+showWhatsNew();
+
 // DOM – Hra
 const displayModeLabel = document.getElementById('display-mode-label');
 const displayDayTitle = document.getElementById('display-day-title');
@@ -61,6 +87,12 @@ const guessFeedback = document.getElementById('guess-feedback');
 const guessesList = document.getElementById('guesses-list');
 const guessesCount = document.getElementById('guesses-count');
 const toastContainer = document.getElementById('toast-container');
+
+// DOM – Poslední tip (Contexto styl)
+const lastGuessContainer = document.getElementById('last-guess-container');
+const lastGuessFill = document.getElementById('last-guess-fill');
+const lastGuessWord = document.getElementById('last-guess-word');
+const lastGuessRank = document.getElementById('last-guess-rank');
 
 // DOM – Chat
 const chatMessages = document.getElementById('chat-messages');
@@ -107,6 +139,22 @@ function rankClass(rank) {
   if (rank <= 300)   return 'rank-hot';
   if (rank <= 1500)  return 'rank-warm';
   return 'rank-cool';
+}
+
+// Výpočet šířky a barvy baru dle vzoru Contexto
+function getBarStyles(rank) {
+  if (rank === 1) {
+    return { width: '100%', bg: '#10b981' };
+  }
+  if (rank <= 300) {
+    const pct = Math.round(98 - ((rank - 2) / 298) * 38);
+    return { width: `${pct}%`, bg: '#10b981' };
+  }
+  if (rank <= 1500) {
+    const pct = Math.round(58 - ((rank - 301) / 1199) * 38);
+    return { width: `${pct}%`, bg: '#f97316' };
+  }
+  return { width: '8px', bg: '#f43f5e' };
 }
 
 // ── 1. Vstup do hry ───────────────────────────────────
@@ -308,9 +356,15 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && emotePicker && emotePicker.style.display !== 'none') {
-    closeEmotePicker();
-    chatInput.focus();
+  if (e.key === 'Escape') {
+    if (whatsNewModal && whatsNewModal.style.display !== 'none') {
+      hideWhatsNew();
+      return;
+    }
+    if (emotePicker && emotePicker.style.display !== 'none') {
+      closeEmotePicker();
+      chatInput.focus();
+    }
   }
 });
 
@@ -373,6 +427,7 @@ let chatLoaded = false;
 
 function renderGameState(state) {
   // Přepnutí do herní plochy
+  hideWhatsNew();
   lobbySection.style.display = 'none';
   gameSection.style.display = 'block';
 
@@ -445,7 +500,28 @@ function renderGameState(state) {
       setFeedback(state.mode === 'unlimited' ? 'Toto archivní slovo jsi úspěšně uhodl(a)! Můžeš hlasovat pro další slovo.' : 'Dnešní slovo jsi úspěšně uhodl(a)! Gratuluji.');
     } else if (state.myStatus.gaveUp) {
       setFeedback('Vzdal(a) ses v tomto kole – hádání je uzamčeno.');
+    } else {
+      setFeedback('');
     }
+  }
+
+  // Zpracování posledního tipu hráče (Contexto styl přímo pod polem)
+  const myGuesses = state.guesses.filter(
+    (g) => g.isMine || (myPlayerName && g.player.toLowerCase() === myPlayerName.toLowerCase())
+  );
+  myGuesses.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  const lastGuess = myGuesses[0] || null;
+
+  if (lastGuess && lastGuessContainer) {
+    lastGuessContainer.style.display = 'block';
+    lastGuessWord.textContent = lastGuess.word;
+    lastGuessRank.textContent = lastGuess.rank;
+
+    const { width, bg } = getBarStyles(lastGuess.rank);
+    lastGuessFill.style.width = width;
+    lastGuessFill.style.backgroundColor = bg;
+  } else if (lastGuessContainer) {
+    lastGuessContainer.style.display = 'none';
   }
 
   // Hráči online
@@ -476,7 +552,7 @@ function renderGameState(state) {
   });
 
   // Tipy seřazené od nejbližšího
-  const sorted = [...state.guesses].sort((a, b) => a.rank - b.rank);
+  const sorted = [...state.guesses].sort((a, b) => a.rank - b.rank || (a.timestamp || 0) - (b.timestamp || 0));
   const totalGuesses = state.guesses.length;
   guessesCount.textContent = `${totalGuesses} ${totalGuesses === 1 ? 'tip' : totalGuesses < 5 ? 'tipy' : 'tipů'}`;
 
@@ -491,11 +567,30 @@ function renderGameState(state) {
       const tr = document.createElement('tr');
       if (g.isWinner) tr.classList.add('winner-row');
 
+      const isMine = g.isMine || (myPlayerName && g.player.toLowerCase() === myPlayerName.toLowerCase());
+      if (isMine) {
+        tr.classList.add('my-guess-row');
+      } else {
+        tr.classList.add('other-guess-row');
+      }
+
+      if (lastGuess && g.id === lastGuess.id) {
+        tr.classList.add('is-last-guess');
+      }
+
       const rClass = rankClass(g.rank);
+      const wordHtml = isMine
+        ? `<span class="my-word">${escapeHtml(g.word)}</span>`
+        : `<span class="masked-word">${escapeHtml(g.word)}</span>`;
+
+      const whoHtml = isMine
+        ? `<span class="who-me">${escapeHtml(g.player)} <span class="badge-you">(ty)</span></span>`
+        : `<span class="who-other">${escapeHtml(g.player)}</span>`;
+
       tr.innerHTML = `
         <td class="rank-cell ${rClass}">${g.rank}</td>
-        <td class="word-cell">${escapeHtml(g.word)}</td>
-        <td class="who-cell">${escapeHtml(g.player)}</td>
+        <td class="word-cell">${wordHtml}</td>
+        <td class="who-cell">${whoHtml}</td>
       `;
       guessesList.appendChild(tr);
     });

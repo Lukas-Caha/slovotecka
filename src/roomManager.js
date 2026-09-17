@@ -11,7 +11,19 @@ class BaseGameRoom {
 
   // Připojení hráče do místnosti
   joinPlayer(socketId, playerName) {
-    const cleanName = (playerName || '').trim() || `Hráč_${Object.keys(this.players).length + 1}`;
+    let cleanName = (playerName || '').trim() || `Hráč_${Object.keys(this.players).length + 1}`;
+
+    const existingNames = Object.values(this.players)
+      .filter((p) => p.id !== socketId)
+      .map((p) => p.name.toLowerCase());
+
+    if (existingNames.includes(cleanName.toLowerCase())) {
+      let counter = 2;
+      while (existingNames.includes(`${cleanName} (${counter})`.toLowerCase())) {
+        counter++;
+      }
+      cleanName = `${cleanName} (${counter})`;
+    }
 
     const player = {
       id: socketId,
@@ -134,26 +146,51 @@ class BaseGameRoom {
     return entry;
   }
 
-  // Sanitizace tipů podle toho, zda hráč smí vidět tajné slovo (#1)
-  getSanitizedGuesses(canSeeSecret) {
-    return this.guesses.map((g) => {
-      if (g.rank === 1 && !canSeeSecret) {
-        return {
-          id: g.id,
-          player: g.player,
-          word: '??? (Uhodnuto)',
-          rank: 1,
-          isWinner: true,
-          timestamp: g.timestamp
-        };
+  // Sanitizace tipů:
+  // - Každý vidí pouze slova, která sám uhodl
+  // - Vidí čísla (pořadí), která trefili ostatní
+  // - Když dva lidé trefí to samé, vidí odpověď oba stejně
+  getSanitizedGuesses(forSocketId, canSeeSecret) {
+    const player = this.players[forSocketId];
+    const playerName = player ? player.name.toLowerCase() : null;
+
+    // Seznam slov a ranků, které tento hráč již sám uhodl/zadal
+    const myGuessedWords = new Set();
+    const myGuessedRanks = new Set();
+    for (const g of this.guesses) {
+      const isMyGuess = g.socketId === forSocketId || (playerName && g.player.toLowerCase() === playerName);
+      if (isMyGuess) {
+        if (g.word) myGuessedWords.add(g.word.toLowerCase());
+        if (g.rank) myGuessedRanks.add(g.rank);
       }
+    }
+
+    return this.guesses.map((g) => {
+      const isMine = g.socketId === forSocketId || (playerName && g.player.toLowerCase() === playerName);
+      let displayWord = g.word;
+
+      if (!isMine) {
+        if (g.rank === 1 && canSeeSecret) {
+          displayWord = g.word;
+        } else if (
+          (g.word && myGuessedWords.has(g.word.toLowerCase())) ||
+          (g.rank && myGuessedRanks.has(g.rank))
+        ) {
+          // Oba hráči trefili to samé -> vidí slovo oba
+          displayWord = g.word;
+        } else {
+          displayWord = '???';
+        }
+      }
+
       return {
         id: g.id,
         player: g.player,
-        word: g.word,
+        word: displayWord,
         rank: g.rank,
         isWinner: g.isWinner,
-        timestamp: g.timestamp
+        timestamp: g.timestamp,
+        isMine: isMine
       };
     });
   }
@@ -234,7 +271,7 @@ class DailyGameRoom extends BaseGameRoom {
         guessCount: p.guessCount,
         votedForNewWord: false
       })),
-      guesses: this.getSanitizedGuesses(canSeeSecret),
+      guesses: this.getSanitizedGuesses(socketId, canSeeSecret),
       chatHistory: this.chatHistory,
       voting: null
     };
@@ -392,7 +429,7 @@ class UnlimitedGameRoom extends BaseGameRoom {
         guessCount: p.guessCount,
         votedForNewWord: this.votes.has(p.id)
       })),
-      guesses: this.getSanitizedGuesses(canSeeSecret),
+      guesses: this.getSanitizedGuesses(socketId, canSeeSecret),
       chatHistory: this.chatHistory,
       voting: {
         votesCount: this.votes.size,
