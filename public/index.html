@@ -33,6 +33,18 @@
           <p class="tagline">[ SÉMANTICKÁ SLOVNÍ VÝZVA &bull; MULTIPLAYER ARÉNA ]</p>
         </div>
 
+        <!-- Přepínač režimů: Denní hra vs Unlimited -->
+        <nav class="header-mode-nav" aria-label="Výběr režimu hry">
+          <a href="/" class="mode-tab" id="tab-daily">
+            <span class="mode-tab-tag">[ MÓD ]</span>
+            <span class="mode-tab-title">DENNÍ VÝZVA</span>
+          </a>
+          <a href="/unlimited" class="mode-tab" id="tab-unlimited">
+            <span class="mode-tab-tag">[ ARCHIV ]</span>
+            <span class="mode-tab-title">UNLIMITED</span>
+          </a>
+        </nav>
+
         <div class="header-decor">
           <img src="/barcode.svg" alt="Barcode" class="header-barcode" aria-hidden="true">
         </div>
@@ -46,12 +58,12 @@
     <main id="lobby-section" class="container">
       <div class="card lobby-card">
         <div class="card-header-bar">
-          <span class="card-tag">[ 01. REGISTRACE DO HRY ]</span>
+          <span class="card-tag" id="lobby-tag">[ 01. REGISTRACE DO HRY ]</span>
           <img src="/symbolWhite.svg" alt="" class="card-mini-symbol" aria-hidden="true">
         </div>
 
-        <h2 class="card-title">DNEŠNÍ SPOLEČNÁ VÝZVA</h2>
-        <p class="lobby-desc">Zadej své jméno nebo přezdívku a zapoj se do společného hádání se všemi, kdo jsou právě v aréně.</p>
+        <h2 class="card-title" id="lobby-title">DNEŠNÍ SPOLEČNÁ VÝZVA</h2>
+        <p class="lobby-desc" id="lobby-desc">Zadej své jméno nebo přezdívku a zapoj se do společného hádání se všemi, kdo jsou právě v aréně.</p>
         
         <form id="join-form">
           <label class="field-label" for="player-name">TVOJE PŘEZDÍVKA</label>
@@ -77,19 +89,34 @@
       <!-- Horní lišta herního stavu -->
       <div class="game-header-card">
         <div class="room-badge">
-          <span class="room-badge-label">[ DENNÍ VÝZVA ]</span>
+          <span class="room-badge-label" id="display-mode-label">[ DENNÍ VÝZVA ]</span>
           <span class="room-badge-code" id="display-day-title">DEN #1</span>
         </div>
         <div class="game-meta">
           <span id="display-date" class="meta-chip"></span>
-          <span class="meta-chip">
+          <span id="display-meta-tag" class="meta-chip">
             <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
-            RESET O PŮLNOCI
+            <span id="display-meta-text">RESET O PŮLNOCI</span>
           </span>
         </div>
+      </div>
+
+      <!-- Hlasovací lišta pro Unlimited mód -->
+      <div id="vote-bar" class="vote-bar" style="display:none;">
+        <div class="vote-info">
+          <div class="vote-tag-row">
+            <span class="vote-tag">[ 🗳️ HLASOVÁNÍ O NOVÉ SLOVO ]</span>
+            <span id="vote-count-badge" class="vote-count-badge">0 / 1 HLASŮ</span>
+          </div>
+          <p class="vote-desc" id="vote-desc">Když se shodne nadpoloviční většina hráčů (např. 2 ze 3), vylosuje se nové slovo z fondu 1–16.</p>
+        </div>
+        <button type="button" class="btn btn-vote" id="btn-vote-new-word">
+          <span class="vote-icon">🗳️</span>
+          <span id="btn-vote-text">HLASOVAT PRO NOVÉ SLOVO</span>
+        </button>
       </div>
 
       <!-- Skrytá nápověda s klaunem 🤡 -->
@@ -124,7 +151,7 @@
 
       <!-- Tajné slovo (viditelné jen po vyřešení / vzdání) -->
       <div id="secret-word-box" class="secret-box" style="display:none;">
-        <span class="secret-label">[ DNEŠNÍ TAJNÉ SLOVO ]</span>
+        <span class="secret-label" id="secret-label">[ DNEŠNÍ TAJNÉ SLOVO ]</span>
         <span id="display-secret-word" class="secret-word"></span>
       </div>
 

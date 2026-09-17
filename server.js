@@ -13,45 +13,64 @@ const PORT = process.env.PORT || 3000;
 // Statické soubory z /public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Odeslání aktuálního stavu hry všem připojeným hráčům na míru
-function broadcastGameState() {
-  for (const socketId of Object.keys(gameManager.players)) {
-    const playerSocket = io.sockets.sockets.get(socketId);
-    if (playerSocket) {
-      const state = gameManager.getGameStateForPlayer(socketId);
-      playerSocket.emit('game_state', state);
+// Unlimited mód – servíruje stejnou webovou aplikaci
+app.get('/unlimited', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Odeslání aktuálního stavu hry hráčům v dané místnosti
+function broadcastGameState(mode) {
+  const modes = mode ? [mode] : ['daily', 'unlimited'];
+  for (const m of modes) {
+    const room = gameManager.getRoom(m);
+    if (!room) continue;
+    for (const socketId of Object.keys(room.players)) {
+      const playerSocket = io.sockets.sockets.get(socketId);
+      if (playerSocket) {
+        const state = room.getGameStateForPlayer(socketId);
+        playerSocket.emit('game_state', state);
+      }
     }
   }
 }
 
-// Kontrola půlnoci každých 30 sekund
+// Kontrola půlnoci každých 30 sekund (pro denní hru)
 setInterval(() => {
   const roll = gameManager.checkMidnightRoll();
   if (roll.isNewDay) {
-    io.emit('notification', {
+    io.to('daily').emit('notification', {
       message: `Odbila půlnoc! Začíná nové denní slovo pro ${roll.date}. Přejeme hodně štěstí!`
     });
-    broadcastGameState();
+    broadcastGameState('daily');
   }
 }, 30 * 1000);
 
 io.on('connection', (socket) => {
-  // 1. Vstup do společné denní hry
-  socket.on('join_game', ({ playerName }) => {
-    const player = gameManager.joinPlayer(socket.id, playerName);
+  // 1. Vstup do hry (denní nebo unlimited)
+  socket.on('join_game', ({ playerName, mode }) => {
+    const gameMode = mode === 'unlimited' ? 'unlimited' : 'daily';
 
-    // Oznámení pro ostatní
-    socket.broadcast.emit('notification', {
+    // Opuštění předchozích místností
+    socket.leave('daily');
+    socket.leave('unlimited');
+    socket.join(gameMode);
+
+    const { player } = gameManager.joinPlayer(socket.id, playerName, gameMode);
+
+    // Oznámení pro ostatní v téže místnosti
+    socket.to(gameMode).emit('notification', {
       message: `${player.name} se připojil(a) do hry!`
     });
 
-    // Odeslání stavu přihlášenému i ostatním
-    broadcastGameState();
+    // Odeslání stavu všem v dané místnosti
+    broadcastGameState(gameMode);
   });
 
   // 2. Odeslání tipu
   socket.on('submit_guess', ({ word }) => {
-    const result = gameManager.submitGuess(socket.id, word);
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    const result = room.submitGuess(socket.id, word);
 
     if (result.error) {
       socket.emit('error_message', { message: result.error });
@@ -59,24 +78,26 @@ io.on('connection', (socket) => {
     }
 
     if (result.isWinner) {
-      socket.broadcast.emit('notification', {
-        message: `${result.player.name} právě uhodl(a) dnešní tajné slovo (#1) na ${result.player.guessCount}. pokus!`
+      socket.to(mode).emit('notification', {
+        message: `${result.player.name} právě uhodl(a) tajné slovo (#1) na ${result.player.guessCount}. pokus!`
       });
       socket.emit('notification', {
         message: `Výborně! Uhodl(a) jsi tajné slovo: "${result.guess.word}" na ${result.player.guessCount}. pokus!`
       });
     } else {
-      socket.broadcast.emit('notification', {
+      socket.to(mode).emit('notification', {
         message: `${result.player.name} zkusil(a) "${result.guess.word}" -> pořadí ${result.guess.rank}`
       });
     }
 
-    broadcastGameState();
+    broadcastGameState(mode);
   });
 
   // 3. Vzdát se a odhalit tajné slovo
   socket.on('reveal_word', () => {
-    const result = gameManager.revealWord(socket.id);
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    const result = room.revealWord(socket.id);
 
     if (result.error) {
       socket.emit('error_message', { message: result.error });
@@ -84,55 +105,96 @@ io.on('connection', (socket) => {
     }
 
     socket.emit('notification', {
-      message: `Tajné slovo pro dnešek bylo: "${result.targetWord}". Nyní jsi v režimu diváka.`
+      message: `Tajné slovo bylo: "${result.targetWord}". Nyní jsi v režimu diváka.`
     });
 
-    socket.broadcast.emit('notification', {
+    socket.to(mode).emit('notification', {
       message: `${result.player.name} se vzdal(a) a odhalil(a) slovo.`
     });
 
-    broadcastGameState();
+    broadcastGameState(mode);
   });
 
   // 4. Odhalení nápovědy (získání 🤡)
   socket.on('use_hint', () => {
-    const result = gameManager.useHint(socket.id);
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    const result = room.useHint(socket.id);
 
     if (result.error) {
       socket.emit('error_message', { message: result.error });
       return;
     }
 
-    socket.broadcast.emit('notification', {
+    socket.to(mode).emit('notification', {
       message: `🤡 ${result.player.name} si zobrazil(a) nápovědu a získal(a) klauna!`
     });
     socket.emit('notification', {
       message: `Nápověda odhalena! Získal(a) jsi 🤡 vedle svého jména.`
     });
 
-    broadcastGameState();
+    broadcastGameState(mode);
   });
 
-  // 5. Zpráva do chatu
+  // 5. Hlasování o nové slovo (pouze v Unlimited módu)
+  socket.on('vote_new_word', () => {
+    const mode = gameManager.getModeForSocket(socket.id);
+    if (mode !== 'unlimited') {
+      socket.emit('error_message', { message: 'Hlasování o nové slovo je dostupné pouze v Unlimited módu.' });
+      return;
+    }
+
+    const room = gameManager.getRoom('unlimited');
+    const result = room.voteNewWord(socket.id);
+
+    if (result.error) {
+      socket.emit('error_message', { message: result.error });
+      return;
+    }
+
+    if (result.newWordTriggered) {
+      io.to('unlimited').emit('notification', {
+        message: `🗳️ Hlasování úspěšné! Předchozí slovo bylo: "${result.oldWord}". Vylosováno nové archivní slovo!`
+      });
+    } else {
+      const actionText = result.hasVoted ? 'hlasoval(a) pro nové slovo' : 'zrušil(a) svůj hlas pro nové slovo';
+      io.to('unlimited').emit('notification', {
+        message: `🗳️ ${result.player.name} ${actionText} (${result.votesCount}/${result.requiredVotes}).`
+      });
+    }
+
+    broadcastGameState('unlimited');
+  });
+
+  // 6. Zpráva do chatu
   socket.on('send_chat', ({ message }) => {
     const cleanMsg = (message || '').trim();
     if (!cleanMsg) return;
 
-    const player = gameManager.players[socket.id];
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    const player = room.players[socket.id];
     if (!player) return;
 
-    const chatEntry = gameManager.addChatMessage(player.name, cleanMsg);
-    io.emit('chat_message', chatEntry);
+    const chatEntry = room.addChatMessage(player.name, cleanMsg);
+    io.to(mode).emit('chat_message', chatEntry);
   });
 
-  // 6. Odpojení hráče
+  // 7. Odpojení hráče
   socket.on('disconnect', () => {
-    const player = gameManager.removePlayer(socket.id);
-    if (player) {
-      io.emit('notification', {
-        message: `${player.name} opustil(a) hru.`
+    const removal = gameManager.removePlayer(socket.id);
+    if (removal && removal.player) {
+      io.to(removal.mode).emit('notification', {
+        message: `${removal.player.name} opustil(a) hru.`
       });
-      broadcastGameState();
+
+      if (removal.newWordTriggered) {
+        io.to('unlimited').emit('notification', {
+          message: `🗳️ Po odpojení hráče byla splněna většina hlasů! Předchozí slovo bylo: "${removal.oldWord}". Vylosováno nové slovo!`
+        });
+      }
+
+      broadcastGameState(removal.mode);
     }
   });
 });

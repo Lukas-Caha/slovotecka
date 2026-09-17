@@ -202,6 +202,38 @@ function getRandomWord() {
   };
 }
 
+// Získání fondu archivních slov (dny předcházející dnešnímu dni)
+function getPastWordsPool(maxDay) {
+  const currentDay = maxDay || getDayNumber();
+  const past = schedule.filter((s) => s.day < currentDay);
+  return past.length > 0 ? past : schedule.slice(0, 1);
+}
+
+// Získání slova pro Unlimited mód z fondu archivních slov
+function getUnlimitedWord(excludeWords = []) {
+  const pool = getPastWordsPool();
+  let available = pool.filter((p) => !excludeWords.includes(p.word));
+  if (available.length === 0) {
+    available = pool;
+  }
+  const entry = available[Math.floor(Math.random() * available.length)];
+  const dayData = loadDayData(entry.day, entry.word);
+  let hint = wordsData.targets?.[entry.word]?.hint;
+  if (!hint) {
+    hint = `Slovo má ${entry.word.length} písmen a začíná na písmeno "${entry.word[0].toUpperCase()}".`;
+  }
+
+  return {
+    key: entry.word,
+    date: `Archiv (Den #${entry.day})`,
+    dayNumber: entry.day,
+    word: entry.word,
+    hint: hint,
+    category: wordsData.targets?.[entry.word]?.category || 'obecné',
+    dayData: dayData
+  };
+}
+
 // Výpočet sémantické blízkosti podle vygenerovaných embedding dat
 function calculateRank(targetWordObj, userGuess) {
   const cleanGuess = normalizeWord(userGuess);
@@ -268,6 +300,8 @@ function calculateRank(targetWordObj, userGuess) {
 module.exports = {
   getDailyWord,
   getRandomWord,
+  getPastWordsPool,
+  getUnlimitedWord,
   calculateRank,
   normalizeWord,
   removeDiacritics,

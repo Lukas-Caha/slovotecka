@@ -1,23 +1,57 @@
 const socket = io();
 
+// Detekce režimu podle URL adresy
+const isUnlimited = window.location.pathname.startsWith('/unlimited');
+const currentMode = isUnlimited ? 'unlimited' : 'daily';
+
 // Globální stav
 let myPlayerName = localStorage.getItem('slovotecka_nickname') || '';
+
+// DOM – Navigace
+const tabDaily = document.getElementById('tab-daily');
+const tabUnlimited = document.getElementById('tab-unlimited');
+if (isUnlimited) {
+  if (tabUnlimited) tabUnlimited.classList.add('active');
+  if (tabDaily) tabDaily.classList.remove('active');
+} else {
+  if (tabDaily) tabDaily.classList.add('active');
+  if (tabUnlimited) tabUnlimited.classList.remove('active');
+}
 
 // DOM – Lobby
 const lobbySection = document.getElementById('lobby-section');
 const gameSection = document.getElementById('game-section');
 const joinForm = document.getElementById('join-form');
 const playerNameInput = document.getElementById('player-name');
+const lobbyTag = document.getElementById('lobby-tag');
+const lobbyTitle = document.getElementById('lobby-title');
+const lobbyDesc = document.getElementById('lobby-desc');
+
+if (isUnlimited) {
+  if (lobbyTag) lobbyTag.textContent = '[ 01. UNLIMITED ARÉNA ]';
+  if (lobbyTitle) lobbyTitle.textContent = 'NEOMEZENÁ ARCHIVNÍ ARÉNA';
+  if (lobbyDesc) lobbyDesc.textContent = 'Hrajte společně se slovy z předchozích dnů (1–16). Hráči v místnosti mohou společným hlasováním (např. 2 ze 3) kdykoliv vylosovat nové slovo!';
+}
 
 // DOM – Hra
+const displayModeLabel = document.getElementById('display-mode-label');
 const displayDayTitle = document.getElementById('display-day-title');
 const displayDate = document.getElementById('display-date');
+const displayMetaText = document.getElementById('display-meta-text');
 const displayHint = document.getElementById('display-hint');
 const hintLocked = document.getElementById('hint-locked');
 const hintRevealed = document.getElementById('hint-revealed');
 const btnShowHint = document.getElementById('btn-show-hint');
 const secretWordBox = document.getElementById('secret-word-box');
 const displaySecretWord = document.getElementById('display-secret-word');
+const secretLabel = document.getElementById('secret-label');
+
+// DOM – Hlasování pro Unlimited mód
+const voteBar = document.getElementById('vote-bar');
+const voteCountBadge = document.getElementById('vote-count-badge');
+const voteDesc = document.getElementById('vote-desc');
+const btnVoteNewWord = document.getElementById('btn-vote-new-word');
+const btnVoteText = document.getElementById('btn-vote-text');
 
 const playersList = document.getElementById('players-list');
 const guessInput = document.getElementById('guess-input');
@@ -78,13 +112,13 @@ joinForm.addEventListener('submit', (e) => {
   myPlayerName = name;
   localStorage.setItem('slovotecka_nickname', name);
 
-  socket.emit('join_game', { playerName: name });
+  socket.emit('join_game', { playerName: name, mode: currentMode });
 });
 
 // Automatické znovupřipojení při výpadku spojení
 socket.on('connect', () => {
   if (myPlayerName && gameSection.style.display !== 'none') {
-    socket.emit('join_game', { playerName: myPlayerName });
+    socket.emit('join_game', { playerName: myPlayerName, mode: currentMode });
   }
 });
 
@@ -108,7 +142,7 @@ guessInput.addEventListener('keydown', (e) => {
 
 // ── 3. Vzdát se a odhalit dnešní slovo ────────────────
 btnRevealWord.addEventListener('click', () => {
-  const ok = confirm('Opravdu se chceš vzdát?\nUvidíš dnešní tajné slovo, ale ztratíš možnost dále dnes hádat.');
+  const ok = confirm('Opravdu se chceš vzdát?\nUvidíš tajné slovo, ale ztratíš možnost dále v tomto kole hádat.');
   if (ok) socket.emit('reveal_word');
 });
 
@@ -118,7 +152,14 @@ btnShowHint.addEventListener('click', () => {
   if (ok) socket.emit('use_hint');
 });
 
-// ── 5. Odeslání zprávy do chatu ───────────────────────
+// ── 5. Hlasování o nové slovo (pouze Unlimited) ───────
+if (btnVoteNewWord) {
+  btnVoteNewWord.addEventListener('click', () => {
+    socket.emit('vote_new_word');
+  });
+}
+
+// ── 6. Odeslání zprávy do chatu ───────────────────────
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = chatInput.value.trim();
@@ -175,8 +216,43 @@ function renderGameState(state) {
   lobbySection.style.display = 'none';
   gameSection.style.display = 'block';
 
-  // Hlavička
-  displayDayTitle.textContent = `Den #${state.dayNumber || '1'}`;
+  // Přizpůsobení podle režimu (denní vs unlimited)
+  if (state.mode === 'unlimited') {
+    if (displayModeLabel) displayModeLabel.textContent = '[ UNLIMITED REŽIM ]';
+    displayDayTitle.textContent = `ARCHIV #${state.dayNumber || '?'}`;
+    if (displayMetaText) displayMetaText.textContent = 'ARCHIVNÍ SADA (1–16)';
+    if (secretLabel) secretLabel.textContent = '[ ARCHIVNÍ TAJNÉ SLOVO ]';
+
+    if (voteBar) {
+      voteBar.style.display = 'flex';
+      if (state.voting) {
+        const { votesCount, requiredVotes, hasVoted, totalPlayers } = state.voting;
+        if (voteCountBadge) {
+          voteCountBadge.textContent = `${votesCount} / ${requiredVotes} HLASŮ`;
+        }
+        if (btnVoteNewWord && btnVoteText) {
+          if (hasVoted) {
+            btnVoteNewWord.classList.add('voted');
+            btnVoteText.textContent = 'ZRUŠIT HLAS PRO NOVÉ SLOVO';
+          } else {
+            btnVoteNewWord.classList.remove('voted');
+            btnVoteText.textContent = 'HLASOVAT PRO NOVÉ SLOVO';
+          }
+        }
+        if (voteDesc) {
+          voteDesc.textContent = `Když zahlasuje alespoň ${requiredVotes} ${requiredVotes === 1 ? 'hráč' : requiredVotes < 5 ? 'hráči' : 'hráčů'} z ${totalPlayers} online, vylosuje se nové slovo.`;
+        }
+      }
+    }
+  } else {
+    if (displayModeLabel) displayModeLabel.textContent = '[ DENNÍ VÝZVA ]';
+    displayDayTitle.textContent = `Den #${state.dayNumber || '1'}`;
+    if (displayMetaText) displayMetaText.textContent = 'RESET O PŮLNOCI';
+    if (secretLabel) secretLabel.textContent = '[ DNEŠNÍ TAJNÉ SLOVO ]';
+    if (voteBar) voteBar.style.display = 'none';
+  }
+
+  // Datum / info
   displayDate.textContent = state.date;
 
   // Nápověda (skrytá / odemčená s klaunem)
@@ -206,9 +282,9 @@ function renderGameState(state) {
     btnRevealWord.disabled = locked;
 
     if (state.myStatus.solved) {
-      setFeedback('Dnešní slovo jsi úspěšně uhodl(a)! Gratuluji.');
+      setFeedback(state.mode === 'unlimited' ? 'Toto archivní slovo jsi úspěšně uhodl(a)! Můžeš hlasovat pro další slovo.' : 'Dnešní slovo jsi úspěšně uhodl(a)! Gratuluji.');
     } else if (state.myStatus.gaveUp) {
-      setFeedback('Dnes ses vzdal(a) – hádání je uzamčeno.');
+      setFeedback('Vzdal(a) ses v tomto kole – hádání je uzamčeno.');
     }
   }
 
@@ -228,8 +304,9 @@ function renderGameState(state) {
     if (p.gaveUp)  statusText = 'VZDÁNO';
 
     const clown = p.usedHint ? ' 🤡' : '';
+    const votedBadge = p.votedForNewWord ? ' <span class="badge-voted" title="Hlasuje pro nové slovo">🗳️</span>' : '';
     const isMeTag = isMe ? ' (ty)' : '';
-    const nameLabel = `${escapeHtml(p.name)}${clown}${isMeTag}`;
+    const nameLabel = `${escapeHtml(p.name)}${clown}${votedBadge}${isMeTag}`;
 
     li.innerHTML = `
       <span class="player-name">${nameLabel}</span>

@@ -1019,3 +1019,150 @@ tr.winner-row .word-cell {
     text-align: center;
   }
 }
+
+/* ── Header Mode Navigation (Denní vs Unlimited) ─────────────────────────── */
+.header-mode-nav {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.mode-tab {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 14px;
+  border: 2px solid var(--border);
+  background: rgba(20, 19, 18, 0.6);
+  text-decoration: none;
+  color: var(--color-base-700);
+  transition: all 0.15s ease-in-out;
+}
+
+.mode-tab:hover {
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+  background: rgba(40, 38, 36, 0.8);
+}
+
+.mode-tab.active {
+  border-color: var(--color-accent);
+  background: rgba(255, 59, 48, 0.15);
+  color: var(--color-base-900);
+  box-shadow: 2px 2px 0px rgba(255, 59, 48, 0.4);
+}
+
+.mode-tab-tag {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.mode-tab.active .mode-tab-tag {
+  color: var(--color-accent);
+}
+
+.mode-tab-title {
+  font-family: var(--font-grunge);
+  font-size: 1.15rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+/* ── Unlimited Mode Voting Bar ───────────────────────────────────────────── */
+.vote-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 2px solid var(--border-strong);
+  background: rgba(24, 22, 21, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 14px 20px;
+  margin-bottom: 18px;
+  gap: 16px;
+  box-shadow: var(--shadow-brutal);
+  flex-wrap: wrap;
+}
+
+.vote-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 250px;
+}
+
+.vote-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vote-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-amber);
+}
+
+.vote-count-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border: 1px solid var(--color-amber);
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-amber);
+  letter-spacing: 0.08em;
+}
+
+.vote-desc {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--color-base-700);
+}
+
+.btn-vote {
+  font-family: var(--font-grunge);
+  font-size: 1.25rem;
+  padding: 10px 18px;
+  border: 2px solid var(--color-amber);
+  color: var(--color-amber);
+  background: rgba(245, 158, 11, 0.1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-vote:hover {
+  background: var(--color-amber);
+  color: var(--color-base-100);
+  box-shadow: 2px 2px 0px rgba(245, 158, 11, 0.5);
+}
+
+.btn-vote.voted {
+  border-color: var(--color-green);
+  color: var(--color-green);
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.btn-vote.voted:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(255, 59, 48, 0.15);
+}
+
+.badge-voted {
+  font-size: 0.9rem;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
