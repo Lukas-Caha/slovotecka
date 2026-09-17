@@ -22,6 +22,41 @@
   <!-- Page wrapper above the background & noise -->
   <div class="site-wrapper">
 
+    <!-- Hudební lišta (YouTube sync přehrávač) -->
+    <aside id="music-bar" class="music-bar" style="display: none;" aria-label="Společný hudební přehrávač">
+      <div class="music-bar-inner">
+        <div class="music-bar-left">
+          <span class="music-icon-pulse" aria-hidden="true">🎵</span>
+          <span class="music-tag">[ HRAJE ]</span>
+          <span class="music-title" id="music-title" title="">--</span>
+          <span class="music-requester" id="music-requester"></span>
+        </div>
+
+        <div class="music-bar-center">
+          <span class="music-time-badge" id="music-time" title="Zbývající čas skladby">-:--</span>
+          <div class="music-progress-wrap" title="Průběh přehrávání">
+            <div class="music-progress-bar" id="music-progress-bar"></div>
+          </div>
+        </div>
+
+        <div class="music-bar-right">
+          <button type="button" class="music-btn" id="btn-music-toggle" title="Pozastavit / Přehrát pro mě" aria-label="Pozastavit nebo přehrát hudbu">
+            <span id="music-toggle-icon">⏸</span>
+          </button>
+          <div class="music-volume-wrap">
+            <button type="button" class="music-btn btn-vol-mute" id="btn-music-mute" title="Ztlumit / Nahlas" aria-label="Ztlumit nebo zesílit">
+              <span id="music-mute-icon">🔈</span>
+            </button>
+            <input type="range" min="0" max="100" value="20" id="music-volume-slider" class="music-volume-slider" title="Hlasitost hudby (výchozí 20%)" aria-label="Hlasitost hudby">
+            <span class="music-volume-val" id="music-volume-val">20%</span>
+          </div>
+          <button type="button" class="music-btn btn-music-stop" id="btn-music-stop" title="Zastavit hudbu pro celou arénu" aria-label="Zastavit hudbu pro celou arénu">
+            <span>⏹</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
     <!-- Header v grunge brutalistickém stylu -->
     <header class="site-header">
       <div class="header-inner">
@@ -65,6 +100,7 @@
           <ul class="whats-new-list">
             <li>Kazdy vidi pouze svoje slova a ty spolecne (zadne otazniky ani jak blizko jsou ostatni). Kdyz dva lidi trefi to same, vidi odpoved stejne.</li>
             <li>Posledni napsane slovo a jeho # je nyni videt vzdy nahoře. Barevny bar je u vsech odpovedi.</li>
+            <li>Pozor: V chatu lze přes !play [YouTube odkaz] pustit společnou hudbu (výchozí hlasitost je nastavena potichu a nahoře je k dispozici slider).</li>
             <li>more cumming soon</li>
           </ul>
         </div>
@@ -291,6 +327,12 @@
 
   </div>
 
+  <!-- Skrytý kontejner pro YouTube audio přehrávač -->
+  <div id="yt-player-container" class="yt-player-hidden" aria-hidden="true">
+    <div id="yt-player"></div>
+  </div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/app.js"></script>
 </body>

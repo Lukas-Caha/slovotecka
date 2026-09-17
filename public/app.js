@@ -88,6 +88,20 @@ const guessesList = document.getElementById('guesses-list');
 const guessesCount = document.getElementById('guesses-count');
 const toastContainer = document.getElementById('toast-container');
 
+// DOM – YouTube Hudební přehrávač
+const musicBar = document.getElementById('music-bar');
+const musicTitle = document.getElementById('music-title');
+const musicRequester = document.getElementById('music-requester');
+const musicTime = document.getElementById('music-time');
+const musicProgressBar = document.getElementById('music-progress-bar');
+const btnMusicToggle = document.getElementById('btn-music-toggle');
+const musicToggleIcon = document.getElementById('music-toggle-icon');
+const btnMusicMute = document.getElementById('btn-music-mute');
+const musicMuteIcon = document.getElementById('music-mute-icon');
+const musicVolumeSlider = document.getElementById('music-volume-slider');
+const musicVolumeVal = document.getElementById('music-volume-val');
+const btnMusicStop = document.getElementById('btn-music-stop');
+
 // DOM – Poslední tip (Contexto styl)
 const lastGuessContainer = document.getElementById('last-guess-container');
 const lastGuessFill = document.getElementById('last-guess-fill');
@@ -601,4 +615,254 @@ function renderGameState(state) {
     state.chatHistory.forEach(msg => appendChatMessage(msg));
     chatLoaded = true;
   }
+
+  // Synchronizace hudby s herním stavem
+  if (state.currentMusic) {
+    if (!activeTrack || activeTrack.videoId !== state.currentMusic.videoId) {
+      playTrack(state.currentMusic);
+    }
+  } else if (activeTrack) {
+    stopMusicLocal();
+  }
 }
+
+// ── YouTube Hudební přehrávač (Sync) ──────────────────
+let ytPlayer = null;
+let isYtReady = false;
+let pendingTrack = null;
+let activeTrack = null;
+let musicTicker = null;
+let isLocalPaused = false;
+let isLocalMuted = false;
+
+// Výchozí hlasitost 20% ("aby to nebylo nahlas prvně") s uložením do localStorage
+let currentVolume = 20;
+const savedVol = localStorage.getItem('slovotecka_music_volume');
+if (savedVol !== null) {
+  const parsed = parseInt(savedVol, 10);
+  if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+    currentVolume = parsed;
+  }
+}
+if (musicVolumeSlider) musicVolumeSlider.value = currentVolume;
+if (musicVolumeVal) musicVolumeVal.textContent = `${currentVolume}%`;
+
+// Inicializace YouTube Iframe API
+window.onYouTubeIframeAPIReady = function() {
+  ytPlayer = new YT.Player('yt-player', {
+    height: '200',
+    width: '200',
+    playerVars: {
+      autoplay: 1,
+      controls: 0,
+      disablekb: 1,
+      fs: 0,
+      modestbranding: 1,
+      playsinline: 1,
+      rel: 0
+    },
+    events: {
+      onReady: (e) => {
+        isYtReady = true;
+        e.target.setVolume(currentVolume);
+        if (pendingTrack) {
+          playTrack(pendingTrack);
+          pendingTrack = null;
+        }
+      },
+      onStateChange: (e) => {
+        if (e.data === YT.PlayerState.PLAYING) {
+          isLocalPaused = false;
+          if (musicToggleIcon) musicToggleIcon.textContent = '⏸';
+        } else if (e.data === YT.PlayerState.PAUSED) {
+          isLocalPaused = true;
+          if (musicToggleIcon) musicToggleIcon.textContent = '▶';
+        } else if (e.data === YT.PlayerState.ENDED) {
+          stopMusicLocal();
+        }
+      },
+      onError: (e) => {
+        console.warn('Chyba YouTube přehrávače:', e.data);
+        showToast('Skladbu nelze přehrát (autorská práva nebo omezení vloženého videa).', true);
+        stopMusicLocal();
+      }
+    }
+  });
+};
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function playTrack(track) {
+  if (!track || !track.videoId) return;
+
+  activeTrack = track;
+  if (musicBar) musicBar.style.display = 'block';
+  if (musicTitle) {
+    musicTitle.textContent = track.title || `YouTube video (${track.videoId})`;
+    musicTitle.title = track.title || '';
+  }
+  if (musicRequester) {
+    musicRequester.textContent = track.requestedBy ? `(od ${track.requestedBy})` : '';
+  }
+
+  const elapsed = Math.max(0, Math.floor((Date.now() - (track.startedAt || Date.now())) / 1000));
+
+  if (!isYtReady || !ytPlayer || typeof ytPlayer.loadVideoById !== 'function') {
+    pendingTrack = track;
+    return;
+  }
+
+  try {
+    ytPlayer.loadVideoById({
+      videoId: track.videoId,
+      startSeconds: elapsed
+    });
+    ytPlayer.setVolume(currentVolume);
+    if (isLocalMuted) {
+      ytPlayer.mute();
+    } else {
+      ytPlayer.unMute();
+    }
+    ytPlayer.playVideo();
+    isLocalPaused = false;
+    if (musicToggleIcon) musicToggleIcon.textContent = '⏸';
+  } catch (err) {
+    console.error('Chyba při přehrávání videa:', err);
+  }
+
+  if (musicTicker) clearInterval(musicTicker);
+  tickMusic();
+  musicTicker = setInterval(tickMusic, 500);
+}
+
+function tickMusic() {
+  if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
+  try {
+    const cur = ytPlayer.getCurrentTime() || 0;
+    const dur = ytPlayer.getDuration() || 0;
+
+    if (dur > 0) {
+      const remaining = Math.max(0, dur - cur);
+      const remM = Math.floor(remaining / 60);
+      const remS = Math.floor(remaining % 60).toString().padStart(2, '0');
+
+      if (musicTime) {
+        musicTime.textContent = `-${remM}:${remS}`;
+        musicTime.title = `${formatTime(cur)} / ${formatTime(dur)} (zbývá ${remM}:${remS})`;
+      }
+
+      if (musicProgressBar) {
+        const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
+        musicProgressBar.style.width = `${pct}%`;
+      }
+
+      if (cur >= dur - 0.5) {
+        stopMusicLocal();
+      }
+    } else {
+      if (musicTime) musicTime.textContent = `--:--`;
+      if (musicProgressBar) musicProgressBar.style.width = `0%`;
+    }
+  } catch (err) {
+    // Tiché zachycení chyb během načítání
+  }
+}
+
+function stopMusicLocal() {
+  activeTrack = null;
+  pendingTrack = null;
+  if (musicTicker) {
+    clearInterval(musicTicker);
+    musicTicker = null;
+  }
+  if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+    try {
+      ytPlayer.stopVideo();
+    } catch (e) {}
+  }
+  if (musicBar) musicBar.style.display = 'none';
+  if (musicProgressBar) musicProgressBar.style.width = '0%';
+  if (musicTime) musicTime.textContent = '-:--';
+}
+
+// Ovládání přehrávače
+if (btnMusicToggle) {
+  btnMusicToggle.addEventListener('click', () => {
+    if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
+    const state = ytPlayer.getPlayerState();
+    if (state === YT.PlayerState.PLAYING) {
+      ytPlayer.pauseVideo();
+      isLocalPaused = true;
+      if (musicToggleIcon) musicToggleIcon.textContent = '▶';
+    } else {
+      ytPlayer.playVideo();
+      isLocalPaused = false;
+      if (musicToggleIcon) musicToggleIcon.textContent = '⏸';
+    }
+  });
+}
+
+if (musicVolumeSlider) {
+  musicVolumeSlider.addEventListener('input', (e) => {
+    currentVolume = parseInt(e.target.value, 10);
+    if (musicVolumeVal) musicVolumeVal.textContent = `${currentVolume}%`;
+    localStorage.setItem('slovotecka_music_volume', currentVolume.toString());
+    if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
+      ytPlayer.setVolume(currentVolume);
+      if (currentVolume > 0 && isLocalMuted) {
+        isLocalMuted = false;
+        ytPlayer.unMute();
+        if (musicMuteIcon) musicMuteIcon.textContent = '🔈';
+      }
+    }
+  });
+}
+
+if (btnMusicMute) {
+  btnMusicMute.addEventListener('click', () => {
+    if (!ytPlayer || typeof ytPlayer.isMuted !== 'function') return;
+    isLocalMuted = !isLocalMuted;
+    if (isLocalMuted) {
+      ytPlayer.mute();
+      if (musicMuteIcon) musicMuteIcon.textContent = '🔇';
+    } else {
+      ytPlayer.unMute();
+      ytPlayer.setVolume(currentVolume);
+      if (musicMuteIcon) musicMuteIcon.textContent = '🔈';
+    }
+  });
+}
+
+if (btnMusicStop) {
+  btnMusicStop.addEventListener('click', () => {
+    const ok = confirm('Opravdu chceš zastavit hudbu pro celou arénu?');
+    if (ok) {
+      socket.emit('stop_music');
+    }
+  });
+}
+
+// Socket události pro hudbu
+socket.on('music_play', (track) => {
+  playTrack(track);
+});
+
+socket.on('music_stop', () => {
+  stopMusicLocal();
+});
+
+// Podpora pro browser autoplay politiku (spustí zvuk po prvním kliknutí uživatele)
+document.addEventListener('click', () => {
+  if (activeTrack && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+    const state = ytPlayer.getPlayerState();
+    if (state !== YT.PlayerState.PLAYING && !isLocalPaused) {
+      try {
+        ytPlayer.playVideo();
+      } catch (e) {}
+    }
+  }
+}, { once: true });

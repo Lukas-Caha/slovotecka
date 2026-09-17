@@ -54,6 +54,37 @@ setInterval(() => {
   }
 }, 30 * 1000);
 
+// Pomocné funkce pro YouTube přehrávač
+function extractYouTubeId(urlOrText) {
+  if (!urlOrText) return null;
+  let str = urlOrText.trim();
+  // Odstranění případných závorek kolem odkazu: [odkaz], <odkaz>, (odkaz)
+  str = str.replace(/^[\[<(\s]+/, '').replace(/[\]>)\s]+$/, '');
+  if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
+    return str;
+  }
+  const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/i);
+  return match ? match[1] : null;
+}
+
+async function fetchYouTubeTitle(videoId) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.title) return data.title;
+    }
+  } catch (err) {
+    // Timeout nebo selhání oEmbed dotazu
+  }
+  return `YouTube video (${videoId})`;
+}
+
 io.on('connection', (socket) => {
   // 1. Vstup do hry (denní nebo unlimited)
   socket.on('join_game', ({ playerName, mode }) => {
@@ -175,8 +206,8 @@ io.on('connection', (socket) => {
     broadcastGameState('unlimited');
   });
 
-  // 6. Zpráva do chatu
-  socket.on('send_chat', ({ message }) => {
+  // 6. Zpráva do chatu a příkazy (!play, !stop)
+  socket.on('send_chat', async ({ message }) => {
     const cleanMsg = (message || '').trim();
     if (!cleanMsg) return;
 
@@ -185,8 +216,74 @@ io.on('connection', (socket) => {
     const player = room.players[socket.id];
     if (!player) return;
 
+    // Příkaz pro přehrávání hudby: !play [youtube odkaz]
+    if (cleanMsg.toLowerCase().startsWith('!play')) {
+      const urlPart = cleanMsg.slice(5).trim();
+      const videoId = extractYouTubeId(urlPart);
+      if (!videoId) {
+        socket.emit('error_message', {
+          message: 'Neplatný YouTube odkaz. Použij např.: !play https://www.youtube.com/watch?v=...'
+        });
+        return;
+      }
+
+      const title = await fetchYouTubeTitle(videoId);
+      const track = {
+        videoId,
+        title,
+        requestedBy: player.name,
+        startedAt: Date.now()
+      };
+
+      room.setMusicTrack(track);
+
+      // Zápis zprávy do chatu
+      const chatEntry = room.addChatMessage(player.name, cleanMsg);
+      io.to(mode).emit('chat_message', chatEntry);
+
+      // Spuštění hudby a notifikace
+      io.to(mode).emit('music_play', track);
+      io.to(mode).emit('notification', {
+        message: `🎵 ${player.name} pustil(a) hudbu: ${title}`
+      });
+      return;
+    }
+
+    // Příkaz pro zastavení hudby: !stop
+    if (cleanMsg.toLowerCase() === '!stop') {
+      if (!room.currentMusic) {
+        socket.emit('error_message', { message: 'Právě nehraje žádná hudba.' });
+        return;
+      }
+
+      room.clearMusicTrack();
+
+      const chatEntry = room.addChatMessage(player.name, cleanMsg);
+      io.to(mode).emit('chat_message', chatEntry);
+
+      io.to(mode).emit('music_stop', { stoppedBy: player.name });
+      io.to(mode).emit('notification', {
+        message: `⏹️ ${player.name} zastavil(a) přehrávání hudby.`
+      });
+      return;
+    }
+
     const chatEntry = room.addChatMessage(player.name, cleanMsg);
     io.to(mode).emit('chat_message', chatEntry);
+  });
+
+  // Zastavení hudby tlačítkem z horního baru
+  socket.on('stop_music', () => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    const player = room.players[socket.id];
+    if (!player || !room.currentMusic) return;
+
+    room.clearMusicTrack();
+    io.to(mode).emit('music_stop', { stoppedBy: player.name });
+    io.to(mode).emit('notification', {
+      message: `⏹️ ${player.name} zastavil(a) přehrávání hudby.`
+    });
   });
 
   // 7. Odpojení hráče

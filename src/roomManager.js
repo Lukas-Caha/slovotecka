@@ -7,6 +7,17 @@ class BaseGameRoom {
     this.players = {}; // socketId -> player object
     this.guesses = []; // pole tipů
     this.chatHistory = []; // historie zpráv chatu
+    this.currentMusic = null; // aktuálně přehrávaná YouTube hudba { videoId, title, requestedBy, startedAt }
+  }
+
+  // Správa přehrávané hudby
+  setMusicTrack(track) {
+    this.currentMusic = track;
+    return this.currentMusic;
+  }
+
+  clearMusicTrack() {
+    this.currentMusic = null;
   }
 
   // Připojení hráče do místnosti
@@ -266,7 +277,8 @@ class DailyGameRoom extends BaseGameRoom {
       })),
       guesses: this.getSanitizedGuesses(socketId, canSeeSecret),
       chatHistory: this.chatHistory,
-      voting: null
+      voting: null,
+      currentMusic: this.currentMusic
     };
   }
 }
@@ -429,7 +441,8 @@ class UnlimitedGameRoom extends BaseGameRoom {
         requiredVotes: requiredVotes,
         hasVoted: this.votes.has(socketId),
         totalPlayers: Object.keys(this.players).length
-      }
+      },
+      currentMusic: this.currentMusic
     };
   }
 }
