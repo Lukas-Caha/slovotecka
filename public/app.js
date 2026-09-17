@@ -557,42 +557,42 @@ function renderGameState(state) {
   guessesCount.textContent = `${totalGuesses} ${totalGuesses === 1 ? 'tip' : totalGuesses < 5 ? 'tipy' : 'tipů'}`;
 
   if (sorted.length === 0) {
-    guessesList.innerHTML = `
-      <tr class="empty-row">
-        <td colspan="3">Zatím žádné tipy. Začni hádat dnešní slovo!</td>
-      </tr>`;
+    guessesList.innerHTML = `<div class="empty-guesses">ZATÍM ŽÁDNÉ TIPY. ZAČNI HÁDAT DNEŠNÍ SLOVO!</div>`;
   } else {
     guessesList.innerHTML = '';
     sorted.forEach((g) => {
-      const tr = document.createElement('tr');
-      if (g.isWinner) tr.classList.add('winner-row');
-
+      const card = document.createElement('div');
       const isMine = g.isMine || (myPlayerName && g.player.toLowerCase() === myPlayerName.toLowerCase());
-      if (isMine) {
-        tr.classList.add('my-guess-row');
-      } else {
-        tr.classList.add('other-guess-row');
-      }
+      const isLast = lastGuess && g.id === lastGuess.id;
 
-      if (lastGuess && g.id === lastGuess.id) {
-        tr.classList.add('is-last-guess');
-      }
+      let cls = 'guess-card';
+      if (isMine) cls += ' is-me';
+      else cls += ' is-other';
+      if (isLast) cls += ' is-last-guess';
+      if (g.isWinner) cls += ' is-winner';
+      card.className = cls;
 
+      const { width, bg } = getBarStyles(g.rank);
       const rClass = rankClass(g.rank);
-      const wordHtml = isMine
-        ? `<span class="my-word">${escapeHtml(g.word)}</span>`
-        : `<span class="masked-word">${escapeHtml(g.word)}</span>`;
+
+      const wordText = escapeHtml(g.word);
+      const isMasked = !isMine && g.word === '???';
 
       const whoHtml = isMine
-        ? `<span class="who-me">${escapeHtml(g.player)} <span class="badge-you">(ty)</span></span>`
+        ? `<span class="badge-you">(ty)</span>`
         : `<span class="who-other">${escapeHtml(g.player)}</span>`;
 
-      tr.innerHTML = `
-        <td class="rank-cell ${rClass}">${g.rank}</td>
-        <td class="word-cell">${wordHtml}</td>
-        <td class="who-cell">${whoHtml}</td>
+      card.innerHTML = `
+        <div class="guess-card-bar-bg" style="width: ${width}; background-color: ${bg};"></div>
+        <div class="guess-card-content">
+          <div class="guess-card-left">
+            <span class="guess-card-word ${isMasked ? 'masked-word' : 'my-word'}">${wordText}</span>
+            <span class="guess-card-who">${whoHtml}</span>
+          </div>
+          <span class="guess-card-rank ${rClass}">${g.rank}</span>
+        </div>
       `;
-      guessesList.appendChild(tr);
+      guessesList.appendChild(card);
     });
   }
 

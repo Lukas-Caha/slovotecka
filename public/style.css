@@ -722,142 +722,127 @@ body {
   font-weight: 600;
 }
 
-.table-wrap {
+/* ── CONTEXTO GUESSES LIST (Seznam všech tipů s barevným barem) ───────────── */
+.guesses-wrap {
   max-height: 480px;
   overflow-y: auto;
+  padding: 10px 14px 16px 14px;
 }
 
-.guesses-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--font-mono);
+.guesses-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.guesses-table th {
-  padding: 10px 16px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--color-base-700);
-  text-transform: uppercase;
-  text-align: left;
-  border-bottom: 2px solid var(--border-strong);
-  background: rgba(14, 13, 12, 0.85);
-  position: sticky;
+.guess-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(250, 248, 245, 0.18);
+  background: rgba(18, 16, 15, 0.95);
+  min-height: 44px;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+
+.guess-card:hover {
+  background: rgba(28, 26, 24, 0.95);
+}
+
+.guess-card.is-me {
+  box-shadow: inset 3px 0 0 rgba(250, 248, 245, 0.7), 2px 2px 0px rgba(0, 0, 0, 0.5);
+}
+
+.guess-card.is-last-guess {
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.25), var(--shadow-brutal);
+}
+
+.guess-card.is-winner {
+  border: 2px solid #10b981;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+.guess-card-bar-bg {
+  position: absolute;
+  left: 0;
   top: 0;
+  bottom: 0;
+  z-index: 1;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.35s ease;
+}
+
+.guess-card-content {
+  position: relative;
   z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 14px;
 }
 
-.guesses-table td {
-  padding: 10px 16px;
-  font-size: 0.95rem;
-  border-bottom: 1px solid rgba(250, 248, 245, 0.15);
-  vertical-align: middle;
+.guess-card-left {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
 }
 
-.guesses-table tr:hover td {
-  background: rgba(250, 248, 245, 0.05);
-}
-
-.rank-cell {
-  width: 100px;
+.guess-card-word {
+  font-family: var(--font-mono);
   font-weight: 800;
-  font-size: 1rem;
-}
-
-.rank-1    { color: var(--rank-1); font-weight: 900; text-shadow: 0 0 10px rgba(255, 59, 48, 0.4); }
-.rank-hot  { color: var(--rank-hot); }
-.rank-warm { color: var(--rank-warm); }
-.rank-cool { color: var(--rank-cool); }
-
-.word-cell {
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-}
-
-.who-cell {
-  color: var(--color-base-700);
-  font-size: 0.82rem;
-}
-
-tr.winner-row td {
-  background: rgba(255, 59, 48, 0.18);
-  border-bottom-color: rgba(255, 59, 48, 0.5);
-}
-
-tr.winner-row .word-cell {
   color: #ffffff;
-  font-weight: 900;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Vlastní tipy v tabulce - jemně zvýrazněné, ne agresivní */
-tr.my-guess-row {
-  background: rgba(250, 248, 245, 0.05);
-  box-shadow: inset 3px 0 0 rgba(250, 248, 245, 0.7);
-}
-
-tr.my-guess-row td {
-  border-bottom: 1px solid rgba(250, 248, 245, 0.2);
-}
-
-tr.my-guess-row:hover td {
-  background: rgba(250, 248, 245, 0.09);
-}
-
-/* Řádek v tabulce, který odpovídá poslednímu tipu (bílý obrys jako na screenshotu) */
-tr.is-last-guess {
-  outline: 2px solid #ffffff;
-  outline-offset: -2px;
-}
-
-.my-word {
-  color: #ffffff;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-}
-
-.badge-you {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--color-base-700);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-left: 3px;
-}
-
-/* Cizí tipy v tabulce */
-tr.other-guess-row {
-  background: transparent;
-  opacity: 0.82;
-}
-
-tr.other-guess-row td {
-  border-bottom: 1px solid rgba(250, 248, 245, 0.08);
-}
-
-tr.other-guess-row:hover {
-  opacity: 1;
-}
-
-tr.other-guess-row:hover td {
-  background: rgba(250, 248, 245, 0.03);
-}
-
-.masked-word {
-  color: var(--color-base-600);
-  font-weight: 700;
+.guess-card-word.masked-word {
+  color: rgba(250, 248, 245, 0.65);
   letter-spacing: 0.22em;
-  user-select: none;
+  font-weight: 700;
 }
 
-.empty-row td {
+.guess-card-who {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: rgba(250, 248, 245, 0.65);
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.guess-card-who .badge-you {
+  color: #ffffff;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.guess-card-rank {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.empty-guesses {
   text-align: center;
   padding: 36px 16px;
   color: var(--color-base-600);
   font-style: italic;
   font-size: 0.85rem;
   letter-spacing: 0.05em;
+  font-family: var(--font-mono);
 }
 
 /* ── CHAT PANEL ─────────────────────────────────────────────────────────── */
