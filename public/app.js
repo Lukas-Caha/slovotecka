@@ -66,6 +66,12 @@ const toastContainer = document.getElementById('toast-container');
 const chatMessages = document.getElementById('chat-messages');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
+const btnToggleEmotes = document.getElementById('btn-toggle-emotes');
+const emotePicker = document.getElementById('emote-picker');
+const emoteSearch = document.getElementById('emote-search');
+const emotePickerGrid = document.getElementById('emote-picker-grid');
+const emotePickerCount = document.getElementById('emote-picker-count');
+const chatEmoteCountBadge = document.getElementById('chat-emote-count');
 
 // Předvyplnění přezdívky pokud již hráč hrál dříve
 if (myPlayerName) {
@@ -159,6 +165,157 @@ if (btnVoteNewWord) {
   });
 }
 
+// ── 7TV Emoty & Picker ────────────────────────────────
+let emotesList = [];
+const emoteMap = new Map();
+
+async function initEmotes() {
+  try {
+    const res = await fetch('/api/emotes');
+    if (res.ok) {
+      emotesList = await res.json();
+      emoteMap.clear();
+      for (const emote of emotesList) {
+        emoteMap.set(emote.name, emote);
+      }
+      if (chatEmoteCountBadge) {
+        chatEmoteCountBadge.textContent = `${emotesList.length} 7TV EMOTES`;
+      }
+      renderEmotePicker('');
+
+      // Po načtení emotů převedeme případné již zobrazené zprávy v chatu
+      const textNodes = chatMessages.querySelectorAll('.chat-msg-text');
+      textNodes.forEach(node => {
+        const raw = node.getAttribute('data-raw');
+        if (raw) {
+          node.innerHTML = renderMessageWithEmotes(raw);
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Nepodařilo se načíst 7TV emoty ze serveru:', err);
+  }
+}
+
+function renderMessageWithEmotes(text) {
+  if (!text) return '';
+  const parts = text.split(/(\s+)/);
+  return parts.map(part => {
+    if (!part || /^\s+$/.test(part)) return part;
+
+    let emoteName = part;
+    if (part.startsWith(':') && part.endsWith(':') && part.length > 2) {
+      emoteName = part.slice(1, -1);
+    }
+
+    const emote = emoteMap.get(emoteName) || emoteMap.get(part);
+    if (emote) {
+      const safeName = escapeHtml(emote.name);
+      const safeUrl = escapeHtml(emote.url);
+      return `<img class="chat-emote" src="${safeUrl}" alt="${safeName}" title="${safeName}" loading="lazy">`;
+    }
+
+    return escapeHtml(part);
+  }).join('');
+}
+
+function renderEmotePicker(query) {
+  if (!emotePickerGrid) return;
+  emotePickerGrid.innerHTML = '';
+
+  const q = (query || '').toLowerCase().trim();
+  const filtered = q
+    ? emotesList.filter(e => e.name.toLowerCase().includes(q))
+    : emotesList;
+
+  if (emotePickerCount) {
+    emotePickerCount.textContent = `${filtered.length} / ${emotesList.length}`;
+  }
+
+  const displayList = filtered.slice(0, 300);
+
+  const fragment = document.createDocumentFragment();
+  for (const emote of displayList) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'emote-picker-item';
+    btn.title = emote.name;
+    btn.innerHTML = `<img src="${emote.url1x || emote.url}" alt="${escapeHtml(emote.name)}" loading="lazy">`;
+    btn.addEventListener('click', () => {
+      insertEmoteToChat(emote.name);
+    });
+    fragment.appendChild(btn);
+  }
+  emotePickerGrid.appendChild(fragment);
+}
+
+function insertEmoteToChat(emoteName) {
+  const currentVal = chatInput.value;
+  const cursorPos = chatInput.selectionStart ?? currentVal.length;
+  const before = currentVal.substring(0, cursorPos);
+  const after = currentVal.substring(cursorPos);
+
+  const needsSpaceBefore = before.length > 0 && !before.endsWith(' ');
+  const insertText = (needsSpaceBefore ? ' ' : '') + emoteName + ' ';
+
+  chatInput.value = before + insertText + after;
+  const newPos = cursorPos + insertText.length;
+  chatInput.setSelectionRange(newPos, newPos);
+  chatInput.focus();
+}
+
+function toggleEmotePicker() {
+  if (!emotePicker) return;
+  const isHidden = emotePicker.style.display === 'none' || !emotePicker.style.display;
+  if (isHidden) {
+    emotePicker.style.display = 'flex';
+    btnToggleEmotes?.classList.add('is-active');
+    if (emoteSearch) {
+      emoteSearch.value = '';
+      renderEmotePicker('');
+      setTimeout(() => emoteSearch.focus(), 50);
+    }
+  } else {
+    closeEmotePicker();
+  }
+}
+
+function closeEmotePicker() {
+  if (!emotePicker) return;
+  emotePicker.style.display = 'none';
+  btnToggleEmotes?.classList.remove('is-active');
+}
+
+if (btnToggleEmotes) {
+  btnToggleEmotes.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleEmotePicker();
+  });
+}
+
+if (emoteSearch) {
+  emoteSearch.addEventListener('input', () => {
+    renderEmotePicker(emoteSearch.value);
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (emotePicker && emotePicker.style.display !== 'none') {
+    if (!emotePicker.contains(e.target) && !btnToggleEmotes?.contains(e.target)) {
+      closeEmotePicker();
+    }
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && emotePicker && emotePicker.style.display !== 'none') {
+    closeEmotePicker();
+    chatInput.focus();
+  }
+});
+
+initEmotes();
+
 // ── 6. Odeslání zprávy do chatu ───────────────────────
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -166,6 +323,7 @@ chatForm.addEventListener('submit', (e) => {
   if (!text) return;
   socket.emit('send_chat', { message: text });
   chatInput.value = '';
+  closeEmotePicker();
   chatInput.focus();
 });
 
@@ -192,12 +350,14 @@ function appendChatMessage(data) {
   const div = document.createElement('div');
   div.className = 'chat-msg' + (isMe ? ' is-me' : '');
 
+  const parsedHtml = renderMessageWithEmotes(data.message);
+
   div.innerHTML = `
     <div class="chat-msg-header">
       <span class="chat-msg-author">${escapeHtml(data.player)}${isMe ? ' (ty)' : ''}</span>
       <span class="chat-msg-time">${data.time || ''}</span>
     </div>
-    <div class="chat-msg-text">${escapeHtml(data.message)}</div>
+    <div class="chat-msg-text" data-raw="${escapeHtml(data.message)}">${parsedHtml}</div>
   `;
 
   chatMessages.appendChild(div);

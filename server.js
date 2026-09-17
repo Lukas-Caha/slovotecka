@@ -3,6 +3,7 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 const gameManager = require('./src/roomManager');
+const emoteService = require('./src/emoteService');
 
 const app = express();
 const server = http.createServer(app);
@@ -10,8 +11,16 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 
+// Inicializace 7TV emotů (Vernaton999 Kick & 7TV + Globální)
+emoteService.init();
+
 // Statické soubory z /public
 app.use(express.static(path.join(__dirname, 'public')));
+
+// 7TV Emotes API pro herní chat
+app.get('/api/emotes', (req, res) => {
+  res.json(emoteService.getEmotes());
+});
 
 // Unlimited mód – servíruje stejnou webovou aplikaci
 app.get('/unlimited', (req, res) => {

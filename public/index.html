@@ -208,13 +208,34 @@
         <aside class="panel chat-panel">
           <div class="panel-header">
             <h3 class="panel-title">[ 03. CHAT ]</h3>
+            <span class="chat-emote-tag" id="chat-emote-count" title="Dostupné 7TV emoty (Vernaton999 & Globální)">7TV EMOTES</span>
             <img src="/symbolWhite.svg" alt="" class="panel-symbol" aria-hidden="true">
           </div>
           <div class="chat-messages" id="chat-messages">
             <div class="chat-empty">Zatím žádné zprávy. Napiš něco do chatu!</div>
           </div>
+
+          <!-- Emote picker popover -->
+          <div class="emote-picker" id="emote-picker" style="display: none;">
+            <div class="emote-picker-header">
+              <input type="text" id="emote-search" class="emote-search-input" placeholder="Hledat 7TV emote..." autocomplete="off">
+              <span class="emote-picker-count" id="emote-picker-count">0</span>
+            </div>
+            <div class="emote-picker-grid" id="emote-picker-grid">
+              <!-- Dynamicky generované emoty -->
+            </div>
+          </div>
+
           <form class="chat-form" id="chat-form">
-            <input class="input input-chat" type="text" id="chat-input" placeholder="Napiš zprávu..." maxlength="200" autocomplete="off">
+            <button type="button" class="btn btn-emote-toggle" id="btn-toggle-emotes" title="Otevřít 7TV emoty" aria-label="Otevřít 7TV emoty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="emote-icon">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                <line x1="9" y1="9" x2="9.01" y2="9" stroke-width="3" stroke-linecap="round"></line>
+                <line x1="15" y1="9" x2="15.01" y2="9" stroke-width="3" stroke-linecap="round"></line>
+              </svg>
+            </button>
+            <input class="input input-chat" type="text" id="chat-input" placeholder="Napiš zprávu... (např. xdd)" maxlength="200" autocomplete="off">
             <button type="submit" class="btn btn-primary btn-chat" aria-label="Poslat zprávu">
               <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="22" y1="2" x2="11" y2="13"></line>

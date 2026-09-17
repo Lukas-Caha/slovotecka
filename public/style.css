@@ -155,7 +155,7 @@ body {
 
 /* ── Container ──────────────────────────────────────────────────────────── */
 .container {
-  max-width: 1200px;
+  max-width: 1420px;
   width: 100%;
   margin: 32px auto;
   padding: 0 20px;
@@ -534,7 +534,7 @@ body {
 /* ── GAME GRID ──────────────────────────────────────────────────────────── */
 .game-grid {
   display: grid;
-  grid-template-columns: 240px 1fr 310px;
+  grid-template-columns: 240px 1fr 400px;
   gap: 18px;
   align-items: start;
 }
@@ -745,7 +745,21 @@ tr.winner-row .word-cell {
 .chat-panel {
   display: flex;
   flex-direction: column;
-  height: 560px;
+  height: 600px;
+  position: relative;
+}
+
+.chat-emote-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border: 1px solid #34d399;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+  margin-left: auto;
+  margin-right: 8px;
 }
 
 .chat-messages {
@@ -768,11 +782,11 @@ tr.winner-row .word-cell {
 .chat-msg {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   padding: 8px 10px;
   border: 1px solid rgba(250, 248, 245, 0.15);
   background: rgba(14, 13, 12, 0.7);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   word-break: break-word;
 }
 
@@ -803,13 +817,58 @@ tr.winner-row .word-cell {
 
 .chat-msg-text {
   color: var(--color-base-800);
-  line-height: 1.35;
+  line-height: 1.5;
+  font-size: 0.88rem;
+  word-break: break-word;
+}
+
+/* 7TV Emoty v chatu */
+.chat-emote {
+  display: inline-block;
+  vertical-align: middle;
+  height: 28px;
+  width: auto;
+  max-width: 68px;
+  margin: -3px 3px 0 3px;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.chat-emote:hover {
+  transform: scale(1.35);
+  position: relative;
+  z-index: 10;
 }
 
 .chat-form {
   display: flex;
   border-top: 2px solid var(--border-strong);
   background: rgba(14, 13, 12, 0.8);
+  position: relative;
+}
+
+.btn-emote-toggle {
+  border: none;
+  border-right: 2px solid var(--border-strong);
+  background: transparent;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-base-700);
+  transition: color 0.15s, background 0.15s;
+}
+
+.btn-emote-toggle:hover, .btn-emote-toggle.is-active {
+  color: #34d399;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.emote-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .input-chat {
@@ -835,6 +894,90 @@ tr.winner-row .word-cell {
 .send-icon {
   width: 16px;
   height: 16px;
+}
+
+/* ── EMOTE PICKER POPOVER ───────────────────────────────────────────────── */
+.emote-picker {
+  position: absolute;
+  bottom: 48px;
+  left: 0;
+  right: 0;
+  background: rgba(20, 18, 17, 0.98);
+  border: 2px solid var(--border-strong);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.7);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  max-height: 330px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.emote-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-strong);
+  background: rgba(30, 27, 25, 0.95);
+}
+
+.emote-search-input {
+  flex: 1;
+  background: rgba(10, 9, 8, 0.9);
+  border: 1px solid var(--border-strong);
+  color: var(--color-base-900);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  outline: none;
+}
+
+.emote-search-input:focus {
+  border-color: #34d399;
+}
+
+.emote-picker-count {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-base-600);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.emote-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 6px;
+  padding: 10px;
+  overflow-y: auto;
+  max-height: 250px;
+}
+
+.emote-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  background: rgba(30, 27, 25, 0.6);
+  border: 1px solid rgba(250, 248, 245, 0.1);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 0;
+  transition: transform 0.1s, background 0.1s, border-color 0.1s;
+}
+
+.emote-picker-item:hover {
+  background: rgba(50, 45, 42, 0.95);
+  border-color: #34d399;
+  transform: scale(1.18);
+  z-index: 2;
+}
+
+.emote-picker-item img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 /* ── GAME BOTTOM BAR ────────────────────────────────────────────────────── */
