@@ -567,7 +567,7 @@ function renderGameState(state) {
 
       let cls = 'guess-card';
       if (isMine) cls += ' is-me';
-      else cls += ' is-other';
+      else cls += ' is-shared';
       if (isLast) cls += ' is-last-guess';
       if (g.isWinner) cls += ' is-winner';
       card.className = cls;
@@ -576,17 +576,16 @@ function renderGameState(state) {
       const rClass = rankClass(g.rank);
 
       const wordText = escapeHtml(g.word);
-      const isMasked = !isMine && g.word === '???';
 
       const whoHtml = isMine
         ? `<span class="badge-you">(ty)</span>`
-        : `<span class="who-other">${escapeHtml(g.player)}</span>`;
+        : `<span class="who-other">${escapeHtml(g.player)}</span> <span class="badge-shared">[společné]</span>`;
 
       card.innerHTML = `
         <div class="guess-card-bar-bg" style="width: ${width}; background-color: ${bg};"></div>
         <div class="guess-card-content">
           <div class="guess-card-left">
-            <span class="guess-card-word ${isMasked ? 'masked-word' : 'my-word'}">${wordText}</span>
+            <span class="guess-card-word my-word">${wordText}</span>
             <span class="guess-card-who">${whoHtml}</span>
           </div>
           <span class="guess-card-rank ${rClass}">${g.rank}</span>

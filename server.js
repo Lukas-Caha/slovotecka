@@ -95,7 +95,7 @@ io.on('connection', (socket) => {
       });
     } else {
       socket.to(mode).emit('notification', {
-        message: `${result.player.name} zkusil(a) slovo s pořadím #${result.guess.rank}`
+        message: `${result.player.name} poslal(a) nový tip.`
       });
     }
 

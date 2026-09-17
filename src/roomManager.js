@@ -147,9 +147,9 @@ class BaseGameRoom {
   }
 
   // Sanitizace tipů:
-  // - Každý vidí pouze slova, která sám uhodl
-  // - Vidí čísla (pořadí), která trefili ostatní
-  // - Když dva lidé trefí to samé, vidí odpověď oba stejně
+  // - Každý vidí pouze svoje tipy a společné tipy
+  // - Žádné otazníky ani jak blízko jsou ostatní
+  // - Ostatní neodhadnuté tipy se pro hráče vůbec neposílají
   getSanitizedGuesses(forSocketId, canSeeSecret) {
     const player = this.players[forSocketId];
     const playerName = player ? player.name.toLowerCase() : null;
@@ -165,34 +165,27 @@ class BaseGameRoom {
       }
     }
 
-    return this.guesses.map((g) => {
+    const visibleGuesses = [];
+    for (const g of this.guesses) {
       const isMine = g.socketId === forSocketId || (playerName && g.player.toLowerCase() === playerName);
-      let displayWord = g.word;
+      const isShared = (g.word && myGuessedWords.has(g.word.toLowerCase())) || (g.rank && myGuessedRanks.has(g.rank));
 
-      if (!isMine) {
-        if (g.rank === 1 && canSeeSecret) {
-          displayWord = g.word;
-        } else if (
-          (g.word && myGuessedWords.has(g.word.toLowerCase())) ||
-          (g.rank && myGuessedRanks.has(g.rank))
-        ) {
-          // Oba hráči trefili to samé -> vidí slovo oba
-          displayWord = g.word;
-        } else {
-          displayWord = '???';
-        }
+      // Hráč vidí pouze svoje tipy nebo společné (které sám také trefil)
+      if (isMine || isShared || (g.rank === 1 && canSeeSecret)) {
+        visibleGuesses.push({
+          id: g.id,
+          player: g.player,
+          word: g.word,
+          rank: g.rank,
+          isWinner: g.isWinner,
+          timestamp: g.timestamp,
+          isMine: isMine,
+          isShared: !isMine && isShared
+        });
       }
+    }
 
-      return {
-        id: g.id,
-        player: g.player,
-        word: displayWord,
-        rank: g.rank,
-        isWinner: g.isWinner,
-        timestamp: g.timestamp,
-        isMine: isMine
-      };
-    });
+    return visibleGuesses;
   }
 }
 

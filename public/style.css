@@ -755,6 +755,10 @@ body {
   box-shadow: inset 3px 0 0 rgba(250, 248, 245, 0.7), 2px 2px 0px rgba(0, 0, 0, 0.5);
 }
 
+.guess-card.is-shared {
+  border-left: 3px solid #34d399;
+}
+
 .guess-card.is-last-guess {
   border: 2px solid #ffffff;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.25), var(--shadow-brutal);
@@ -822,6 +826,15 @@ body {
   color: #ffffff;
   font-weight: 700;
   opacity: 0.9;
+}
+
+.guess-card-who .badge-shared {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #34d399;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-left: 4px;
 }
 
 .guess-card-rank {
