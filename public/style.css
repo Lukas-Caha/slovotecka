@@ -1674,6 +1674,47 @@ body {
   flex: 0 0 auto;
 }
 
+.btn-music-enable {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--color-amber);
+  color: var(--color-base-100);
+  border: 1px solid var(--color-amber);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.15s;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.6);
+  animation: enableMusicGlow 2s infinite ease-in-out;
+}
+
+@keyframes enableMusicGlow {
+  0%, 100% { box-shadow: 0 0 2px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.85); }
+}
+
+.btn-music-enable:hover {
+  background: var(--color-base-900);
+  color: var(--color-base-100);
+  border-color: var(--color-base-900);
+}
+
+.music-enable-icon {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.music-controls-active {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .music-btn {
   background: rgba(250, 248, 245, 0.06);
   border: 1px solid var(--border);

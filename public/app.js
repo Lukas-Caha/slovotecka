@@ -101,6 +101,8 @@ const musicMuteIcon = document.getElementById('music-mute-icon');
 const musicVolumeSlider = document.getElementById('music-volume-slider');
 const musicVolumeVal = document.getElementById('music-volume-val');
 const btnMusicStop = document.getElementById('btn-music-stop');
+const btnMusicEnable = document.getElementById('btn-music-enable');
+const musicControlsActive = document.getElementById('music-controls-active');
 
 // DOM – Poslední tip (Contexto styl)
 const lastGuessContainer = document.getElementById('last-guess-container');
@@ -253,6 +255,12 @@ async function initEmotes() {
           node.innerHTML = renderMessageWithEmotes(raw);
         }
       });
+
+      // Převedeme emoty i v okně WHATS NEW (např. Okayge)
+      const whatsNewItems = document.querySelectorAll('.whats-new-list li');
+      whatsNewItems.forEach(li => {
+        li.innerHTML = renderMessageWithEmotes(li.textContent);
+      });
     }
   } catch (err) {
     console.warn('Nepodařilo se načíst 7TV emoty ze serveru:', err);
@@ -389,6 +397,9 @@ chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = chatInput.value.trim();
   if (!text) return;
+  if (text.toLowerCase().startsWith('!play')) {
+    musicAllowed = true;
+  }
   socket.emit('send_chat', { message: text });
   chatInput.value = '';
   closeEmotePicker();
@@ -634,6 +645,7 @@ let activeTrack = null;
 let musicTicker = null;
 let isLocalPaused = false;
 let isLocalMuted = false;
+let musicAllowed = false; // Každý uživatel si musí přehrávání hudby explicitně povolit / zapnout jak přijde
 
 // Výchozí hlasitost 20% ("aby to nebylo nahlas prvně") s uložením do localStorage
 let currentVolume = 20;
@@ -665,7 +677,7 @@ window.onYouTubeIframeAPIReady = function() {
       onReady: (e) => {
         isYtReady = true;
         e.target.setVolume(currentVolume);
-        if (pendingTrack) {
+        if (pendingTrack && musicAllowed) {
           playTrack(pendingTrack);
           pendingTrack = null;
         }
@@ -708,6 +720,22 @@ function playTrack(track) {
   if (musicRequester) {
     musicRequester.textContent = track.requestedBy ? `(od ${track.requestedBy})` : '';
   }
+
+  // Každý si musí hudbu explicitně zapnout ("jak přijde, musí si to každý zapnout")
+  if (!musicAllowed) {
+    if (btnMusicEnable) btnMusicEnable.style.display = 'inline-flex';
+    if (musicControlsActive) musicControlsActive.style.display = 'none';
+    if (musicTime) {
+      musicTime.textContent = 'VYPNUTO';
+      musicTime.title = 'Hudba je pro tebe ztlumená. Klikni na ZAPNOUT HUDBU.';
+    }
+    if (musicProgressBar) musicProgressBar.style.width = '0%';
+    return;
+  }
+
+  // Uživatel si hudbu zapnul
+  if (btnMusicEnable) btnMusicEnable.style.display = 'none';
+  if (musicControlsActive) musicControlsActive.style.display = 'flex';
 
   const elapsed = Math.max(0, Math.floor((Date.now() - (track.startedAt || Date.now())) / 1000));
 
@@ -785,8 +813,21 @@ function stopMusicLocal() {
     } catch (e) {}
   }
   if (musicBar) musicBar.style.display = 'none';
+  if (btnMusicEnable) btnMusicEnable.style.display = 'inline-flex';
+  if (musicControlsActive) musicControlsActive.style.display = 'none';
   if (musicProgressBar) musicProgressBar.style.width = '0%';
   if (musicTime) musicTime.textContent = '-:--';
+}
+
+// Tlačítko pro explicitní zapnutí hudby
+if (btnMusicEnable) {
+  btnMusicEnable.addEventListener('click', () => {
+    musicAllowed = true;
+    showToast('🎵 Hudba zapnuta (výchozí hlasitost 20%).');
+    if (activeTrack) {
+      playTrack(activeTrack);
+    }
+  });
 }
 
 // Ovládání přehrávače
@@ -855,9 +896,9 @@ socket.on('music_stop', () => {
   stopMusicLocal();
 });
 
-// Podpora pro browser autoplay politiku (spustí zvuk po prvním kliknutí uživatele)
+// Podpora pro browser autoplay politiku (spustí zvuk po prvním kliknutí uživatele, pouze pokud má hudbu povolenou)
 document.addEventListener('click', () => {
-  if (activeTrack && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+  if (musicAllowed && activeTrack && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
     const state = ytPlayer.getPlayerState();
     if (state !== YT.PlayerState.PLAYING && !isLocalPaused) {
       try {

@@ -40,19 +40,27 @@
         </div>
 
         <div class="music-bar-right">
-          <button type="button" class="music-btn" id="btn-music-toggle" title="Pozastavit / Přehrát pro mě" aria-label="Pozastavit nebo přehrát hudbu">
-            <span id="music-toggle-icon">⏸</span>
+          <!-- Tlačítko pro explicitní povolení / zapnutí hudby každým uživatelem -->
+          <button type="button" class="btn-music-enable" id="btn-music-enable" title="Povolit a zapnout zvuk pro mě">
+            <span class="music-enable-icon">▶</span>
+            <span>ZAPNOUT HUDBU</span>
           </button>
-          <div class="music-volume-wrap">
-            <button type="button" class="music-btn btn-vol-mute" id="btn-music-mute" title="Ztlumit / Nahlas" aria-label="Ztlumit nebo zesílit">
-              <span id="music-mute-icon">🔈</span>
+
+          <div class="music-controls-active" id="music-controls-active" style="display: none;">
+            <button type="button" class="music-btn" id="btn-music-toggle" title="Pozastavit / Přehrát pro mě" aria-label="Pozastavit nebo přehrát hudbu">
+              <span id="music-toggle-icon">⏸</span>
             </button>
-            <input type="range" min="0" max="100" value="20" id="music-volume-slider" class="music-volume-slider" title="Hlasitost hudby (výchozí 20%)" aria-label="Hlasitost hudby">
-            <span class="music-volume-val" id="music-volume-val">20%</span>
+            <div class="music-volume-wrap">
+              <button type="button" class="music-btn btn-vol-mute" id="btn-music-mute" title="Ztlumit / Nahlas" aria-label="Ztlumit nebo zesílit">
+                <span id="music-mute-icon">🔈</span>
+              </button>
+              <input type="range" min="0" max="100" value="20" id="music-volume-slider" class="music-volume-slider" title="Hlasitost hudby (výchozí 20%)" aria-label="Hlasitost hudby">
+              <span class="music-volume-val" id="music-volume-val">20%</span>
+            </div>
+            <button type="button" class="music-btn btn-music-stop" id="btn-music-stop" title="Zastavit hudbu pro celou arénu" aria-label="Zastavit hudbu pro celou arénu">
+              <span>⏹</span>
+            </button>
           </div>
-          <button type="button" class="music-btn btn-music-stop" id="btn-music-stop" title="Zastavit hudbu pro celou arénu" aria-label="Zastavit hudbu pro celou arénu">
-            <span>⏹</span>
-          </button>
         </div>
       </div>
     </aside>
@@ -100,7 +108,7 @@
           <ul class="whats-new-list">
             <li>Kazdy vidi pouze svoje slova a ty spolecne (zadne otazniky ani jak blizko jsou ostatni). Kdyz dva lidi trefi to same, vidi odpoved stejne.</li>
             <li>Posledni napsane slovo a jeho # je nyni videt vzdy nahoře. Barevny bar je u vsech odpovedi.</li>
-            <li>Pozor: V chatu lze přes !play [YouTube odkaz] pustit společnou hudbu (výchozí hlasitost je nastavena potichu a nahoře je k dispozici slider).</li>
+            <li>Pozor: V chatu jde poustet hudba, hlasitost je potichu, a musi si to kazdy zapnout jak prijde. ale bacha Okayge</li>
             <li>more cumming soon</li>
           </ul>
         </div>
