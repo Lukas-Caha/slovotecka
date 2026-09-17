@@ -1174,7 +1174,7 @@ body {
 #toast-container {
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  left: 24px;
   display: flex;
   flex-direction: column-reverse;
   gap: 10px;
@@ -1203,11 +1203,11 @@ body {
 
 @keyframes toastSlide {
   from {
-    transform: translateY(12px);
+    transform: translateX(-16px);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateX(0);
     opacity: 1;
   }
 }
@@ -1242,6 +1242,12 @@ body {
 }
 
 @media (max-width: 768px) {
+  #toast-container {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    max-width: none;
+  }
   .game-grid {
     grid-template-columns: 1fr;
   }
