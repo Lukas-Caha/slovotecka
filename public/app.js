@@ -493,6 +493,13 @@ chatForm.addEventListener('submit', (e) => {
         ytPlayer.setVolume(currentVolume);
       } catch (err) {}
     }
+  } else if (text.toLowerCase() === '!stop') {
+    musicAllowed = false;
+    try {
+      sessionStorage.removeItem('slovotecka_music_allowed');
+    } catch (err) {}
+    stopMusicLocal();
+    showToast('⏹️ Hudba zastavena pro tebe.');
   }
   socket.emit('send_chat', { message: text });
   chatInput.value = '';
@@ -1080,10 +1087,12 @@ if (btnMusicSkip) {
 
 if (btnMusicStop) {
   btnMusicStop.addEventListener('click', () => {
-    const ok = confirm('Opravdu chceš zastavit hudbu pro celou arénu?');
-    if (ok) {
-      socket.emit('stop_music');
-    }
+    musicAllowed = false;
+    try {
+      sessionStorage.removeItem('slovotecka_music_allowed');
+    } catch (err) {}
+    stopMusicLocal();
+    showToast('⏹️ Hudba zastavena pro tebe.');
   });
 }
 

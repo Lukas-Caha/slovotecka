@@ -279,28 +279,21 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Příkaz pro zastavení hudby: !stop
+    // Příkaz pro zastavení hudby: !stop (pouze pro odesílatele)
     if (cleanMsg.toLowerCase() === '!stop') {
-      if (!room.currentMusic) {
-        socket.emit('error_message', { message: 'Právě nehraje žádná hudba.' });
-        return;
-      }
-
-      room.clearMusicTrack();
-
       const chatEntry = room.addChatMessage(player.name, cleanMsg);
       io.to(mode).emit('chat_message', chatEntry);
 
-      io.to(mode).emit('music_stop', { stoppedBy: player.name });
-      io.to(mode).emit('notification', {
-        message: `⏹️ ${player.name} zastavil(a) přehrávání hudby.`
+      socket.emit('music_stop');
+      socket.emit('notification', {
+        message: '⏹️ Hudba byla zastavena pro tebe.'
       });
       return;
     }
 
     // Nápověda příkazů: !, !help, !prikazy
     if (['!', '!help', '!prikazy', '!commands'].includes(cleanMsg.toLowerCase())) {
-      const helpMsg = room.addChatMessage('ℹ️ NÁPOVĚDA', 'Příkazy: !play [YouTube odkaz] (pustit hudbu), !skip (hlasovat pro přeskočení skladby), !stop (zastavení)');
+      const helpMsg = room.addChatMessage('ℹ️ NÁPOVĚDA', 'Příkazy: !play [YouTube odkaz] (pustit hudbu), !skip (hlasovat pro přeskočení skladby), !stop (zastavení pro sebe)');
       socket.emit('chat_message', helpMsg);
       return;
     }
@@ -340,17 +333,11 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Zastavení hudby tlačítkem z horního baru
+  // Zastavení hudby tlačítkem z horního baru (pouze pro odesílatele)
   socket.on('stop_music', () => {
-    const room = gameManager.getRoomForSocket(socket.id);
-    const mode = gameManager.getModeForSocket(socket.id);
-    const player = room.players[socket.id];
-    if (!player || !room.currentMusic) return;
-
-    room.clearMusicTrack();
-    io.to(mode).emit('music_stop', { stoppedBy: player.name });
-    io.to(mode).emit('notification', {
-      message: `⏹️ ${player.name} zastavil(a) přehrávání hudby.`
+    socket.emit('music_stop');
+    socket.emit('notification', {
+      message: '⏹️ Hudba byla zastavena pro tebe.'
     });
   });
 
