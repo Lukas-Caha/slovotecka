@@ -123,8 +123,45 @@ const gramophoneToggleIcon = document.getElementById('gramophone-toggle-icon');
 const btnGramophoneSkip = document.getElementById('btn-gramophone-skip');
 const btnGramophoneMinimize = document.getElementById('btn-gramophone-minimize');
 
-if (floatingGramophone && localStorage.getItem('slovotecka_gramophone_minimized') === 'true') {
+if (floatingGramophone) {
   floatingGramophone.classList.add('is-minimized');
+}
+
+function updateGramophoneTooltips() {
+  if (!floatingGramophone) return;
+  const isMin = floatingGramophone.classList.contains('is-minimized');
+  const trackObj = (typeof activeTrack !== 'undefined' && activeTrack) ? activeTrack : null;
+  const currentTitle = trackObj ? (trackObj.title || 'Skladba') : '';
+
+  if (isMin) {
+    const tip = currentTitle ? `Hraje: ${currentTitle} (kliknutím rozbalíš podrobnosti)` : 'Kliknutím zobrazíš podrobnosti skladby';
+    if (vinylRecordWrap) vinylRecordWrap.title = tip;
+    floatingGramophone.title = tip;
+  } else {
+    if (vinylRecordWrap) vinylRecordWrap.title = 'Kliknutím sbalíš na samotný vinyl';
+    floatingGramophone.title = '';
+  }
+}
+
+function toggleGramophoneDetails(forceState) {
+  if (!floatingGramophone) return;
+  const willBeMin = typeof forceState === 'boolean' ? forceState : !floatingGramophone.classList.contains('is-minimized');
+  if (willBeMin) {
+    floatingGramophone.classList.add('is-minimized');
+  } else {
+    floatingGramophone.classList.remove('is-minimized');
+    if (!musicAllowed) {
+      musicAllowed = true;
+      try {
+        sessionStorage.setItem('slovotecka_music_allowed', 'true');
+      } catch (err) {}
+      showToast('🎵 Hudba zapnuta (výchozí hlasitost 20%).');
+      if (activeTrack) {
+        playTrack(activeTrack);
+      }
+    }
+  }
+  updateGramophoneTooltips();
 }
 
 function updateVinylState(isPlaying, isPaused, videoId) {
@@ -139,9 +176,6 @@ function updateVinylState(isPlaying, isPaused, videoId) {
   const currentTitle = trackObj ? (trackObj.title || `YouTube video (${videoId || trackObj.videoId})`) : '';
 
   if (vinylRecordWrap) {
-    if (currentTitle) {
-      vinylRecordWrap.title = `Hraje: ${currentTitle} (kliknutím pozastavíš/spustíš)`;
-    }
     if (isPlaying) {
       vinylRecordWrap.classList.add('is-playing');
       vinylRecordWrap.classList.remove('is-paused');
@@ -174,16 +208,22 @@ function updateVinylState(isPlaying, isPaused, videoId) {
   if (btnGramophoneToggle) {
     btnGramophoneToggle.title = isPlaying ? 'Pozastavit hudbu pro tebe' : 'Spustit hudbu';
   }
+
+  updateGramophoneTooltips();
+}
+
+if (floatingGramophone) {
+  floatingGramophone.addEventListener('click', () => {
+    if (floatingGramophone.classList.contains('is-minimized')) {
+      toggleGramophoneDetails(false);
+    }
+  });
 }
 
 if (vinylRecordWrap) {
   vinylRecordWrap.addEventListener('click', (e) => {
-    if (floatingGramophone && floatingGramophone.classList.contains('is-minimized')) {
-      floatingGramophone.classList.remove('is-minimized');
-      localStorage.setItem('slovotecka_gramophone_minimized', 'false');
-      return;
-    }
-    if (typeof toggleMusic === 'function') toggleMusic();
+    e.stopPropagation();
+    toggleGramophoneDetails();
   });
 }
 
@@ -204,11 +244,7 @@ if (btnGramophoneSkip) {
 if (btnGramophoneMinimize) {
   btnGramophoneMinimize.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (floatingGramophone) {
-      floatingGramophone.classList.toggle('is-minimized');
-      const isMin = floatingGramophone.classList.contains('is-minimized');
-      localStorage.setItem('slovotecka_gramophone_minimized', isMin ? 'true' : 'false');
-    }
+    toggleGramophoneDetails(true);
   });
 }
 
@@ -1651,7 +1687,10 @@ function stopMusicLocal() {
     } catch (e) {}
   }
   if (musicBar) musicBar.style.display = 'none';
-  if (floatingGramophone) floatingGramophone.style.display = 'none';
+  if (floatingGramophone) {
+    floatingGramophone.style.display = 'none';
+    floatingGramophone.classList.add('is-minimized');
+  }
   if (gramophoneTitle) gramophoneTitle.textContent = '--';
   if (gramophoneRequester) gramophoneRequester.textContent = '';
   if (gramophoneTime) gramophoneTime.textContent = '-:--';
