@@ -110,35 +110,105 @@ const musicQueueBody = document.getElementById('music-queue-body');
 const btnCloseQueue = document.getElementById('btn-close-queue');
 const btnMusicEnable = document.getElementById('btn-music-enable');
 const musicControlsActive = document.getElementById('music-controls-active');
+// DOM – Plovoucí gramofon v rohu (Větší vinyl 84px)
+const floatingGramophone = document.getElementById('floating-gramophone');
 const vinylRecordWrap = document.getElementById('vinyl-record-wrap');
 const vinylDisc = document.getElementById('vinyl-disc');
 const vinylThumb = document.getElementById('vinyl-thumb');
+const gramophoneTitle = document.getElementById('gramophone-title');
+const gramophoneRequester = document.getElementById('gramophone-requester');
+const gramophoneTime = document.getElementById('gramophone-time');
+const btnGramophoneToggle = document.getElementById('btn-gramophone-toggle');
+const gramophoneToggleIcon = document.getElementById('gramophone-toggle-icon');
+const btnGramophoneSkip = document.getElementById('btn-gramophone-skip');
+const btnGramophoneMinimize = document.getElementById('btn-gramophone-minimize');
+
+if (floatingGramophone && localStorage.getItem('slovotecka_gramophone_minimized') === 'true') {
+  floatingGramophone.classList.add('is-minimized');
+}
 
 function updateVinylState(isPlaying, isPaused, videoId) {
-  if (!vinylRecordWrap) return;
   if (videoId && vinylThumb) {
     const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     if (vinylThumb.src !== thumbUrl) {
       vinylThumb.src = thumbUrl;
     }
-    if (typeof activeTrack !== 'undefined' && activeTrack && activeTrack.title) {
-      vinylRecordWrap.title = `Hraje: ${activeTrack.title} (kliknutím pozastavíš/spustíš)`;
+  }
+
+  const trackObj = (typeof activeTrack !== 'undefined' && activeTrack) ? activeTrack : null;
+  const currentTitle = trackObj ? (trackObj.title || `YouTube video (${videoId || trackObj.videoId})`) : '';
+
+  if (vinylRecordWrap) {
+    if (currentTitle) {
+      vinylRecordWrap.title = `Hraje: ${currentTitle} (kliknutím pozastavíš/spustíš)`;
+    }
+    if (isPlaying) {
+      vinylRecordWrap.classList.add('is-playing');
+      vinylRecordWrap.classList.remove('is-paused');
+    } else if (isPaused) {
+      vinylRecordWrap.classList.remove('is-playing');
+      vinylRecordWrap.classList.add('is-paused');
+    } else {
+      vinylRecordWrap.classList.remove('is-playing', 'is-paused');
     }
   }
-  if (isPlaying) {
-    vinylRecordWrap.classList.add('is-playing');
-    vinylRecordWrap.classList.remove('is-paused');
-  } else if (isPaused) {
-    vinylRecordWrap.classList.remove('is-playing');
-    vinylRecordWrap.classList.add('is-paused');
-  } else {
-    vinylRecordWrap.classList.remove('is-playing', 'is-paused');
+
+  if (floatingGramophone) {
+    if (isPlaying || isPaused || trackObj || videoId) {
+      floatingGramophone.style.display = 'flex';
+    } else {
+      floatingGramophone.style.display = 'none';
+    }
+  }
+
+  if (gramophoneTitle && currentTitle) {
+    gramophoneTitle.textContent = currentTitle;
+    gramophoneTitle.title = currentTitle;
+  }
+  if (gramophoneRequester && trackObj) {
+    gramophoneRequester.textContent = trackObj.requestedBy ? `(od ${trackObj.requestedBy})` : '';
+  }
+  if (gramophoneToggleIcon) {
+    gramophoneToggleIcon.textContent = isPlaying ? '⏸' : '▶';
+  }
+  if (btnGramophoneToggle) {
+    btnGramophoneToggle.title = isPlaying ? 'Pozastavit hudbu pro tebe' : 'Spustit hudbu';
   }
 }
 
 if (vinylRecordWrap) {
-  vinylRecordWrap.addEventListener('click', () => {
+  vinylRecordWrap.addEventListener('click', (e) => {
+    if (floatingGramophone && floatingGramophone.classList.contains('is-minimized')) {
+      floatingGramophone.classList.remove('is-minimized');
+      localStorage.setItem('slovotecka_gramophone_minimized', 'false');
+      return;
+    }
     if (typeof toggleMusic === 'function') toggleMusic();
+  });
+}
+
+if (btnGramophoneToggle) {
+  btnGramophoneToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (typeof toggleMusic === 'function') toggleMusic();
+  });
+}
+
+if (btnGramophoneSkip) {
+  btnGramophoneSkip.addEventListener('click', (e) => {
+    e.stopPropagation();
+    socket.emit('vote_skip_music');
+  });
+}
+
+if (btnGramophoneMinimize) {
+  btnGramophoneMinimize.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (floatingGramophone) {
+      floatingGramophone.classList.toggle('is-minimized');
+      const isMin = floatingGramophone.classList.contains('is-minimized');
+      localStorage.setItem('slovotecka_gramophone_minimized', isMin ? 'true' : 'false');
+    }
   });
 }
 
@@ -1395,6 +1465,15 @@ function updateMusicSkipUI(skipVotes, requiredSkipVotes, hasVotedSkip) {
       btnMusicSkip.title = `Hlasovat pro přeskočení skladby (!skip, aktuálně ${skipVotes || 0}/${requiredSkipVotes || 1})`;
     }
   }
+  if (btnGramophoneSkip) {
+    if (hasVotedSkip) {
+      btnGramophoneSkip.classList.add('has-voted');
+      btnGramophoneSkip.title = `Hlasoval(a) jsi pro přeskočení (${skipVotes || 0}/${requiredSkipVotes || 1}).`;
+    } else {
+      btnGramophoneSkip.classList.remove('has-voted');
+      btnGramophoneSkip.title = `Hlasovat pro přeskočení (!skip, ${skipVotes || 0}/${requiredSkipVotes || 1})`;
+    }
+  }
 }
 
 function playTrack(track) {
@@ -1406,12 +1485,20 @@ function playTrack(track) {
 
   activeTrack = track;
   if (musicBar) musicBar.style.display = 'block';
+  if (floatingGramophone) floatingGramophone.style.display = 'flex';
   if (musicTitle) {
     musicTitle.textContent = track.title || `YouTube video (${track.videoId})`;
     musicTitle.title = track.title || '';
   }
+  if (gramophoneTitle) {
+    gramophoneTitle.textContent = track.title || `YouTube video (${track.videoId})`;
+    gramophoneTitle.title = track.title || '';
+  }
   if (musicRequester) {
     musicRequester.textContent = track.requestedBy ? `(od ${track.requestedBy})` : '';
+  }
+  if (gramophoneRequester) {
+    gramophoneRequester.textContent = track.requestedBy ? `(od ${track.requestedBy})` : '';
   }
 
   updateMusicSkipUI(track.skipVotes, track.requiredSkipVotes, track.hasVotedSkip);
@@ -1524,6 +1611,9 @@ function tickMusic() {
         musicTime.textContent = `-${remM}:${remS}`;
         musicTime.title = `${formatTime(cur)} / ${formatTime(dur)} (zbývá ${remM}:${remS})`;
       }
+      if (gramophoneTime) {
+        gramophoneTime.textContent = `-${remM}:${remS}`;
+      }
 
       if (musicProgressBar) {
         const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
@@ -1537,7 +1627,9 @@ function tickMusic() {
         stopMusicLocal();
       }
     } else {
-      if (musicTime) musicTime.textContent = cur > 0 ? formatTime(cur) : '0:00';
+      const formatted = cur > 0 ? formatTime(cur) : '0:00';
+      if (musicTime) musicTime.textContent = formatted;
+      if (gramophoneTime) gramophoneTime.textContent = formatted;
       if (musicProgressBar) musicProgressBar.style.width = `0%`;
     }
   } catch (err) {
@@ -1559,6 +1651,10 @@ function stopMusicLocal() {
     } catch (e) {}
   }
   if (musicBar) musicBar.style.display = 'none';
+  if (floatingGramophone) floatingGramophone.style.display = 'none';
+  if (gramophoneTitle) gramophoneTitle.textContent = '--';
+  if (gramophoneRequester) gramophoneRequester.textContent = '';
+  if (gramophoneTime) gramophoneTime.textContent = '-:--';
   if (btnMusicEnable) btnMusicEnable.style.display = 'inline-flex';
   if (musicControlsActive) musicControlsActive.style.display = 'none';
   if (musicProgressBar) musicProgressBar.style.width = '0%';
@@ -1584,6 +1680,18 @@ if (btnMusicEnable) {
 
 // Ovládání přehrávače
 function toggleMusic() {
+  if (!musicAllowed) {
+    musicAllowed = true;
+    try {
+      sessionStorage.setItem('slovotecka_music_allowed', 'true');
+    } catch (err) {}
+    showToast('🎵 Hudba zapnuta (výchozí hlasitost 20%).');
+    if (activeTrack) {
+      playTrack(activeTrack);
+    }
+    return;
+  }
+
   if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') {
     if (activeTrack) {
       playTrack(activeTrack);

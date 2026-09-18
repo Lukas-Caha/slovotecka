@@ -26,16 +26,6 @@
     <aside id="music-bar" class="music-bar" style="display: none;" aria-label="Společný hudební přehrávač">
       <div class="music-bar-inner">
         <div class="music-bar-left">
-          <div class="vinyl-record-wrap" id="vinyl-record-wrap" title="Přehrávání hudby">
-            <div class="vinyl-disc" id="vinyl-disc">
-              <div class="vinyl-grooves"></div>
-              <div class="vinyl-center-label" id="vinyl-center-label">
-                <img id="vinyl-thumb" class="vinyl-thumb" alt="" src="">
-                <div class="vinyl-spindle-hole"></div>
-              </div>
-            </div>
-            <div class="vinyl-tonearm"></div>
-          </div>
           <span class="music-icon-pulse" aria-hidden="true">🎵</span>
           <span class="music-tag">[ HRAJE ]</span>
           <span class="music-title" id="music-title" title="">--</span>
@@ -407,6 +397,40 @@
     </footer>
 
   </div>
+
+  <!-- Plovoucí gramofon v rohu obrazovky (Větší točící se vinyl 84px) -->
+  <aside id="floating-gramophone" class="floating-gramophone" style="display: none;" aria-label="Gramofon přehrávač">
+    <div class="gramophone-turntable">
+      <div class="vinyl-record-wrap" id="vinyl-record-wrap" title="Kliknutím pozastavíš / spustíš hudbu">
+        <div class="vinyl-disc" id="vinyl-disc">
+          <div class="vinyl-grooves"></div>
+          <div class="vinyl-center-label" id="vinyl-center-label">
+            <img id="vinyl-thumb" class="vinyl-thumb" alt="Thumbnail" src="">
+            <div class="vinyl-spindle-hole"></div>
+          </div>
+        </div>
+        <div class="vinyl-tonearm"></div>
+      </div>
+    </div>
+    <div class="gramophone-body">
+      <div class="gramophone-tag-row">
+        <span class="gramophone-pulse-dot" aria-hidden="true"></span>
+        <span class="gramophone-tag">[ HRAJE GRAMOFON ]</span>
+        <button type="button" class="gramophone-btn-minimize" id="btn-gramophone-minimize" title="Minimalizovat na samotný vinyl" aria-label="Minimalizovat">−</button>
+      </div>
+      <div class="gramophone-title" id="gramophone-title" title="">--</div>
+      <div class="gramophone-requester" id="gramophone-requester"></div>
+      <div class="gramophone-mini-controls">
+        <button type="button" class="gramophone-btn" id="btn-gramophone-toggle" title="Pozastavit / Spustit hudbu">
+          <span id="gramophone-toggle-icon">⏸</span>
+        </button>
+        <button type="button" class="gramophone-btn" id="btn-gramophone-skip" title="Hlasovat pro přeskočení (!skip)">
+          <span>⏭</span>
+        </button>
+        <span class="gramophone-time" id="gramophone-time">-:--</span>
+      </div>
+    </div>
+  </aside>
 
   <!-- Skrytý kontejner pro YouTube audio přehrávač -->
   <div id="yt-player-container" class="yt-player-hidden" aria-hidden="true">
