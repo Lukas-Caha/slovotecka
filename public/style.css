@@ -1540,15 +1540,16 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(8, 7, 6, 0.82);
+  background: rgba(8, 7, 6, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
   animation: modalFadeIn 0.2s ease-out;
+  overflow-y: auto;
 }
 
 @keyframes modalFadeIn {
@@ -1557,27 +1558,30 @@ body {
 }
 
 .modal-card {
-  max-width: 540px;
+  max-width: 520px;
   width: 100%;
+  max-height: min(85vh, 580px);
   background: rgba(22, 20, 19, 0.98);
   border: 2px solid var(--border-strong);
   box-shadow: var(--shadow-brutal), 0 0 30px rgba(0, 0, 0, 0.9);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 18px;
+  padding: 12px 18px;
   border-bottom: 2px solid var(--border-strong);
   background: rgba(38, 35, 33, 0.7);
+  flex-shrink: 0;
 }
 
 .modal-title {
   font-family: var(--font-grunge);
-  font-size: 2rem;
+  font-size: 1.6rem;
   letter-spacing: 0.05em;
   color: var(--color-base-900);
   line-height: 1;
@@ -1587,7 +1591,7 @@ body {
   background: none;
   border: none;
   color: var(--color-base-700);
-  font-size: 2rem;
+  font-size: 1.8rem;
   line-height: 1;
   cursor: pointer;
   padding: 0 4px;
@@ -1599,25 +1603,48 @@ body {
 }
 
 .modal-body {
-  padding: 24px 22px;
+  padding: 18px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1 1 auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-base-500) rgba(14, 13, 12, 0.6);
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(14, 13, 12, 0.6);
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--color-base-500);
+  border-radius: 0;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--color-base-700);
 }
 
 .whats-new-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   padding: 0;
   margin: 0;
 }
 
 .whats-new-list li {
   font-family: var(--font-mono);
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: 0.86rem;
+  line-height: 1.5;
   color: var(--color-base-900);
   position: relative;
-  padding-left: 20px;
+  padding-left: 18px;
 }
 
 .whats-new-list li::before {
@@ -1629,14 +1656,29 @@ body {
 }
 
 .modal-footer {
-  padding: 12px 22px 20px 22px;
+  padding: 10px 18px;
   display: flex;
   justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  background: rgba(28, 26, 25, 0.85);
+  flex-shrink: 0;
 }
 
 .btn-modal-ack {
-  padding: 8px 24px;
-  font-size: 1.25rem;
+  padding: 6px 20px;
+  font-size: 1.1rem;
+}
+
+@media (max-height: 600px) {
+  .modal-card {
+    max-height: calc(100vh - 20px);
+  }
+  .modal-body {
+    padding: 12px 16px;
+  }
+  .whats-new-list {
+    gap: 10px;
+  }
 }
 
 .lobby-header-left {
