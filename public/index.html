@@ -342,6 +342,17 @@
             </div>
           </div>
 
+          <!-- Autocomplete popover pro emoty (:xyz) a zmínky (@hráč) -->
+          <div class="chat-autocomplete-popover" id="chat-autocomplete-popover" style="display: none;">
+            <div class="chat-autocomplete-header">
+              <span class="chat-autocomplete-tag" id="chat-autocomplete-tag">[ NÁPOVĚDA ]</span>
+              <span class="chat-autocomplete-hint">↑↓ výběr, Tab/Enter vložit, Esc zavřít</span>
+            </div>
+            <div class="chat-autocomplete-list" id="chat-autocomplete-list">
+              <!-- Dynamicky generované položky emotů / hráčů -->
+            </div>
+          </div>
+
           <form class="chat-form" id="chat-form">
             <button type="button" class="btn btn-emote-toggle" id="btn-toggle-emotes" title="Otevřít 7TV emoty" aria-label="Otevřít 7TV emoty">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="emote-icon">

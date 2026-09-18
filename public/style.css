@@ -2089,4 +2089,173 @@ body {
   color: var(--color-base-900);
 }
 
+/* ── Chat Autocomplete Popover (:emotes & @mentions) ─────────────────────── */
+.chat-autocomplete-popover {
+  background: rgba(20, 18, 17, 0.98);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.65);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  animation: popoverFadeIn 0.15s ease-out;
+  max-height: 230px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-autocomplete-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 5px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(250, 248, 245, 0.12);
+  flex-shrink: 0;
+}
+
+.chat-autocomplete-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #10b981;
+  letter-spacing: 0.08em;
+}
+
+.chat-autocomplete-hint {
+  font-size: 0.63rem;
+  color: var(--color-base-600);
+}
+
+.chat-autocomplete-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  max-height: 180px;
+  scrollbar-width: thin;
+}
+
+.chat-autocomplete-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(250, 248, 245, 0.03);
+  border: 1px solid transparent;
+  padding: 5px 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.1s ease;
+  font-family: var(--font-mono);
+  width: 100%;
+  border-radius: 3px;
+}
+
+.chat-autocomplete-item:hover,
+.chat-autocomplete-item.is-selected {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.chat-autocomplete-item.is-emote:hover,
+.chat-autocomplete-item.is-emote.is-selected {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.chat-autocomplete-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.chat-autocomplete-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.chat-autocomplete-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-base-900);
+  letter-spacing: 0.03em;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-autocomplete-item.is-selected .chat-autocomplete-name {
+  color: #fff;
+}
+
+.chat-autocomplete-meta {
+  font-size: 0.65rem;
+  color: var(--color-base-600);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* ── Zelený Mention hráče (@jméno) ──────────────────────────────────────── */
+.chat-mention {
+  display: inline-block;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 3px;
+  padding: 0 5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 0.9em;
+  transition: all 0.12s ease;
+  user-select: all;
+}
+
+.chat-mention:hover {
+  background: rgba(16, 185, 129, 0.26);
+  border-color: rgba(16, 185, 129, 0.7);
+}
+
+.chat-mention.is-me {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+  font-weight: 800;
+}
+
+.chat-msg.has-mention {
+  border-left: 3px solid #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+/* ── Admin Badge ────────────────────────────────────────────────────────── */
+.badge-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  color: #f59e0b;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+.badge-admin-crown {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+
 

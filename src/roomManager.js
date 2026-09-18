@@ -1,6 +1,7 @@
 const wordService = require('./wordService');
 
-// Základní společná třída pro herní místnost
+// Tajný token pro získání administrátorských práv v přezdívce (např. Lukas /admin-perms-456)
+const ADMIN_SECRET = process.env.ADMIN_SECRET || '/admin-perms-456';
 class BaseGameRoom {
   constructor(mode) {
     this.mode = mode;
@@ -122,7 +123,17 @@ class BaseGameRoom {
 
   // Připojení hráče do místnosti
   joinPlayer(socketId, playerName) {
-    let cleanName = (playerName || '').trim() || `Hráč_${Object.keys(this.players).length + 1}`;
+    let raw = (playerName || '').trim();
+    let isAdmin = false;
+
+    // Kontrola tajného administrátorského klíče v přezdívce (např. Lukas /admin-perms-456)
+    if (raw.toLowerCase().includes(ADMIN_SECRET.toLowerCase())) {
+      isAdmin = true;
+      const regex = new RegExp(ADMIN_SECRET.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
+      raw = raw.replace(regex, '').trim();
+    }
+
+    let cleanName = raw || (isAdmin ? 'Admin' : `Hráč_${Object.keys(this.players).length + 1}`);
 
     const existingNames = Object.values(this.players)
       .filter((p) => p.id !== socketId)
@@ -139,6 +150,7 @@ class BaseGameRoom {
     const player = {
       id: socketId,
       name: cleanName,
+      isAdmin: !!isAdmin,
       solved: false,
       gaveUp: false,
       usedHint: false,
@@ -237,7 +249,7 @@ class BaseGameRoom {
   }
 
   // Uložení zprávy do chatu
-  addChatMessage(player, message) {
+  addChatMessage(player, message, isAdmin = false) {
     const time = new Date().toLocaleTimeString('cs-CZ', {
       timeZone: 'Europe/Prague',
       hour: '2-digit',
@@ -246,6 +258,7 @@ class BaseGameRoom {
 
     const entry = {
       player,
+      isAdmin: !!isAdmin,
       message: message.slice(0, 250),
       time
     };
@@ -256,6 +269,10 @@ class BaseGameRoom {
     }
 
     return entry;
+  }
+
+  clearChat() {
+    this.chatHistory = [];
   }
 
   // Sanitizace tipů:
@@ -360,6 +377,7 @@ class DailyGameRoom extends BaseGameRoom {
       myStatus: player
         ? {
             name: player.name,
+            isAdmin: !!player.isAdmin,
             solved: player.solved,
             gaveUp: player.gaveUp,
             usedHint: !!player.usedHint,
@@ -370,6 +388,7 @@ class DailyGameRoom extends BaseGameRoom {
       players: Object.values(this.players).map((p) => ({
         id: p.id,
         name: p.name,
+        isAdmin: !!p.isAdmin,
         solved: p.solved,
         gaveUp: p.gaveUp,
         usedHint: !!p.usedHint,
@@ -381,7 +400,8 @@ class DailyGameRoom extends BaseGameRoom {
       voting: null,
       currentMusic: this.currentMusic ? {
         ...this.currentMusic,
-        ...this.getSkipVoteStatus(socketId)
+        ...this.getSkipVoteStatus(socketId),
+        serverTime: Date.now()
       } : null
     };
   }
@@ -521,6 +541,7 @@ class UnlimitedGameRoom extends BaseGameRoom {
       myStatus: player
         ? {
             name: player.name,
+            isAdmin: !!player.isAdmin,
             solved: player.solved,
             gaveUp: player.gaveUp,
             usedHint: !!player.usedHint,
@@ -532,6 +553,7 @@ class UnlimitedGameRoom extends BaseGameRoom {
       players: Object.values(this.players).map((p) => ({
         id: p.id,
         name: p.name,
+        isAdmin: !!p.isAdmin,
         solved: p.solved,
         gaveUp: p.gaveUp,
         usedHint: !!p.usedHint,
@@ -548,7 +570,8 @@ class UnlimitedGameRoom extends BaseGameRoom {
       },
       currentMusic: this.currentMusic ? {
         ...this.currentMusic,
-        ...this.getSkipVoteStatus(socketId)
+        ...this.getSkipVoteStatus(socketId),
+        serverTime: Date.now()
       } : null
     };
   }

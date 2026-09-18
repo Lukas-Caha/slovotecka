@@ -237,7 +237,7 @@ io.on('connection', (socket) => {
       const result = room.enqueueMusicTrack(track);
 
       // Zápis zprávy do chatu
-      const chatEntry = room.addChatMessage(player.name, cleanMsg);
+      const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
       io.to(mode).emit('chat_message', chatEntry);
 
       if (result.playingNow) {
@@ -247,6 +247,7 @@ io.on('connection', (socket) => {
           skipVotes: 0,
           requiredSkipVotes: room.getRequiredSkipVotes(),
           hasVotedSkip: false,
+          serverTime: Date.now(),
           queue: room.musicQueue.map((t, idx) => ({
             position: idx + 1,
             videoId: t.videoId,
@@ -306,7 +307,7 @@ io.on('connection', (socket) => {
         return;
       }
 
-      const chatEntry = room.addChatMessage(player.name, cleanMsg);
+      const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
       io.to(mode).emit('chat_message', chatEntry);
 
       if (skipRes.skipped) {
@@ -316,6 +317,7 @@ io.on('connection', (socket) => {
             skipVotes: 0,
             requiredSkipVotes: room.getRequiredSkipVotes(),
             hasVotedSkip: false,
+            serverTime: Date.now(),
             queue: room.musicQueue.map((t, idx) => ({
               position: idx + 1,
               videoId: t.videoId,
@@ -349,7 +351,7 @@ io.on('connection', (socket) => {
 
     // Příkaz pro zastavení hudby: !stop (pouze pro odesílatele)
     if (cleanMsg.toLowerCase() === '!stop') {
-      const chatEntry = room.addChatMessage(player.name, cleanMsg);
+      const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
       io.to(mode).emit('chat_message', chatEntry);
 
       socket.emit('music_stop');
@@ -359,14 +361,164 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // ── ADMINISTRÁTORSKÉ PŘÍKAZY ─────────────────────────
+    // Admin příkaz pro promazání chatu: !clear, !clearchat
+    if (['!clear', '!clearchat'].includes(cleanMsg.toLowerCase())) {
+      if (!player.isAdmin) {
+        socket.emit('error_message', { message: 'Nemáš administrátorská oprávnění.' });
+        return;
+      }
+      room.clearChat();
+      io.to(mode).emit('chat_cleared');
+      io.to(mode).emit('notification', {
+        message: `🧹 Administrátor ${player.name} promazal historii chatu.`
+      });
+      return;
+    }
+
+    // Admin příkaz pro globální oznámení: !announce <text>, !oznameni <text>
+    if (cleanMsg.toLowerCase().startsWith('!announce ') || cleanMsg.toLowerCase().startsWith('!oznameni ')) {
+      if (!player.isAdmin) {
+        socket.emit('error_message', { message: 'Nemáš administrátorská oprávnění.' });
+        return;
+      }
+      const text = cleanMsg.replace(/^!(announce|oznameni)\s+/i, '').trim();
+      if (!text) {
+        socket.emit('error_message', { message: 'Použití: !announce <text oznámení>' });
+        return;
+      }
+      io.to(mode).emit('notification', {
+        message: `📢 [OZNÁMENÍ]: ${text}`
+      });
+      const annMsg = room.addChatMessage('📢 OZNÁMENÍ', text, true);
+      io.to(mode).emit('chat_message', annMsg);
+      return;
+    }
+
+    // Admin příkaz pro vyhození hráče: !kick <hráč>
+    if (cleanMsg.toLowerCase().startsWith('!kick ')) {
+      if (!player.isAdmin) {
+        socket.emit('error_message', { message: 'Nemáš administrátorská oprávnění.' });
+        return;
+      }
+      const targetName = cleanMsg.slice(6).trim().toLowerCase();
+      const targetSocketId = Object.keys(room.players).find(
+        (id) => room.players[id].name.toLowerCase() === targetName
+      );
+      if (!targetSocketId) {
+        socket.emit('error_message', { message: `Hráč "${cleanMsg.slice(6).trim()}" nebyl v aréně nalezen.` });
+        return;
+      }
+      const kickedPlayer = room.players[targetSocketId];
+      const targetSocket = io.sockets.sockets.get(targetSocketId);
+      if (targetSocket) {
+        targetSocket.emit('kicked', { message: 'Byl(a) jsi vyhozen(a) administrátorem.' });
+        targetSocket.disconnect(true);
+      }
+      io.to(mode).emit('notification', {
+        message: `👢 Hráč ${kickedPlayer.name} byl vyhozen administrátorem.`
+      });
+      broadcastGameState(mode);
+      return;
+    }
+
+    // Admin příkaz pro okamžité přeskočení hudby: !forceskip
+    if (cleanMsg.toLowerCase() === '!forceskip') {
+      if (!player.isAdmin) {
+        socket.emit('error_message', { message: 'Nemáš administrátorská oprávnění.' });
+        return;
+      }
+      if (!room.currentMusic) {
+        socket.emit('error_message', { message: 'Právě nehraje žádná hudba.' });
+        return;
+      }
+      const nextTrack = room.playNextTrack();
+      if (nextTrack) {
+        io.to(mode).emit('music_play', {
+          ...nextTrack,
+          skipVotes: 0,
+          requiredSkipVotes: room.getRequiredSkipVotes(),
+          hasVotedSkip: false,
+          serverTime: Date.now(),
+          queue: room.musicQueue.map((t, idx) => ({
+            position: idx + 1,
+            videoId: t.videoId,
+            title: t.title,
+            requestedBy: t.requestedBy
+          })),
+          queueLength: room.musicQueue.length
+        });
+        io.to(mode).emit('notification', {
+          message: `⏭️ Administrátor přeskočil hudbu! Nyní hraje: ${nextTrack.title}`
+        });
+      } else {
+        io.to(mode).emit('music_stop', { stoppedBy: 'administrátor' });
+        io.to(mode).emit('notification', {
+          message: '⏭️ Administrátor přeskočil hudbu. Fronta je prázdná.'
+        });
+      }
+      broadcastGameState(mode);
+      return;
+    }
+
+    // Admin příkaz pro zastavení hudby pro celou místnost: !forcestop
+    if (cleanMsg.toLowerCase() === '!forcestop') {
+      if (!player.isAdmin) {
+        socket.emit('error_message', { message: 'Nemáš administrátorská oprávnění.' });
+        return;
+      }
+      room.clearMusicTrack();
+      io.to(mode).emit('music_stop');
+      io.to(mode).emit('notification', {
+        message: '⏹️ Administrátor zastavil přehrávání hudby pro celou arénu.'
+      });
+      broadcastGameState(mode);
+      return;
+    }
+
+    // Admin příkaz pro okamžité vylosování nového slova: !forceword, !nove
+    if (['!forceword', '!nove'].includes(cleanMsg.toLowerCase())) {
+      if (!player.isAdmin) {
+        socket.emit('error_message', { message: 'Nemáš administrátorská oprávnění.' });
+        return;
+      }
+      if (mode === 'unlimited') {
+        const resetInfo = room.resetWithNewWord();
+        io.to('unlimited').emit('notification', {
+          message: `🎲 Administrátor vylosoval nové slovo! Předchozí slovo bylo: "${resetInfo.oldWord}".`
+        });
+        broadcastGameState('unlimited');
+      } else {
+        socket.emit('error_message', { message: 'Okamžité losování nového slova je dostupné v Unlimited režimu.' });
+      }
+      return;
+    }
+
+    // Admin příkaz pro privátní zobrazení tajného slova administrátorovi: !reveal
+    if (cleanMsg.toLowerCase() === '!reveal') {
+      if (!player.isAdmin) {
+        socket.emit('error_message', { message: 'Nemáš administrátorská oprávnění.' });
+        return;
+      }
+      const secret = room.targetWordObj ? room.targetWordObj.word : 'Neznámé';
+      const hint = room.targetWordObj ? room.targetWordObj.hint : '';
+      const privMsg = room.addChatMessage('🔑 ADMIN NÁPOVĚDA', `Tajné slovo (#1) je: "${secret}" (nápověda: ${hint})`, true);
+      socket.emit('chat_message', privMsg);
+      return;
+    }
+
     // Nápověda příkazů: !, !help, !prikazy
     if (['!', '!help', '!prikazy', '!commands'].includes(cleanMsg.toLowerCase())) {
-      const helpMsg = room.addChatMessage('ℹ️ NÁPOVĚDA', 'Příkazy: !play [YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (zobrazit frontu), !skip (hlasovat pro přeskočení), !stop (zastavení pro sebe)');
+      let helpText = 'Příkazy: !play [YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (fronta), !skip (hlasovat pro skip), !stop (zastavení pro sebe)';
+      if (player.isAdmin) {
+        helpText += '\n👑 Admin příkazy: !kick <hráč>, !clear, !announce <text>, !forceskip, !forcestop, !forceword, !reveal';
+      }
+      const helpMsg = room.addChatMessage('ℹ️ NÁPOVĚDA', helpText, player.isAdmin);
       socket.emit('chat_message', helpMsg);
       return;
     }
 
-    const chatEntry = room.addChatMessage(player.name, cleanMsg);
+    const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
     io.to(mode).emit('chat_message', chatEntry);
   });
 
@@ -390,6 +542,7 @@ io.on('connection', (socket) => {
           skipVotes: 0,
           requiredSkipVotes: room.getRequiredSkipVotes(),
           hasVotedSkip: false,
+          serverTime: Date.now(),
           queue: room.musicQueue.map((t, idx) => ({
             position: idx + 1,
             videoId: t.videoId,
@@ -451,6 +604,7 @@ io.on('connection', (socket) => {
         skipVotes: 0,
         requiredSkipVotes: room.getRequiredSkipVotes(),
         hasVotedSkip: false,
+        serverTime: Date.now(),
         queue: room.musicQueue.map((t, idx) => ({
           position: idx + 1,
           videoId: t.videoId,
