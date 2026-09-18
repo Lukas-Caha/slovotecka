@@ -1368,6 +1368,12 @@ function renderGameState(state) {
     if (state.currentMusic.serverTime) {
       syncServerTime(state.currentMusic.serverTime);
     }
+    const trackKey = `${state.currentMusic.videoId}_${state.currentMusic.startedAt || 0}`;
+    if (failedTrackKeys.has(trackKey)) {
+      // Tato skladba již selhala – nepokoušíme se ji znovu načítat ani nehlásíme chybu
+      return;
+    }
+
     const isDifferentTrack = !activeTrack ||
       activeTrack.videoId !== state.currentMusic.videoId ||
       activeTrack.startedAt !== state.currentMusic.startedAt;
@@ -1403,6 +1409,7 @@ let isLocalMuted = false;
 let needSeekToZero = false; // Pojistka pro spuštění nově zařazené skladby vždy od 0:00
 let pendingSyncTarget = null; // Cílový čas v sekundách pro doskočení při spuštění v průběhu
 let serverClockOffset = 0; // Rozdíl mezi lokálním časem a serverem (ms)
+const failedTrackKeys = new Set(); // Množina skladeb, které selhaly na YouTube (prevence opakovaného spouštění při každém guessu)
 
 function syncServerTime(serverTime) {
   if (typeof serverTime === 'number' && !isNaN(serverTime)) {
@@ -1523,7 +1530,25 @@ function initYouTubePlayer() {
         },
         onError: (e) => {
           console.warn('Chyba YouTube přehrávače:', e.data);
+          const currentVid = (activeTrack && activeTrack.videoId) || (pendingTrack && pendingTrack.videoId) || null;
+          const currentStartedAt = (activeTrack && activeTrack.startedAt) || (pendingTrack && pendingTrack.startedAt) || 0;
+          const trackKey = currentVid ? `${currentVid}_${currentStartedAt}` : null;
+
+          if (trackKey) {
+            if (failedTrackKeys.has(trackKey)) {
+              return;
+            }
+            failedTrackKeys.add(trackKey);
+            if (failedTrackKeys.size > 100) {
+              const first = failedTrackKeys.values().next().value;
+              failedTrackKeys.delete(first);
+            }
+          }
+
           showToast('Skladbu nelze přehrát (autorská práva nebo omezení vloženého videa).', true);
+          if (currentVid) {
+            socket.emit('track_failed', { videoId: currentVid, error: e.data });
+          }
           stopMusicLocal();
         }
       }
@@ -1620,6 +1645,11 @@ function updateMusicSkipUI(skipVotes, requiredSkipVotes, hasVotedSkip) {
 
 function playTrack(track) {
   if (!track || !track.videoId) return;
+
+  const trackKey = `${track.videoId}_${track.startedAt || 0}`;
+  if (failedTrackKeys.has(trackKey)) {
+    return;
+  }
 
   if (track.serverTime) {
     syncServerTime(track.serverTime);

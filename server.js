@@ -70,7 +70,7 @@ function extractYouTubeId(urlOrText) {
   return match ? match[1] : null;
 }
 
-async function fetchYouTubeTitle(videoId) {
+async function checkYouTubeVideo(videoId) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
@@ -78,14 +78,25 @@ async function fetchYouTubeTitle(videoId) {
       signal: controller.signal
     });
     clearTimeout(timeoutId);
+    if (res.status === 401) {
+      return { playable: false, reason: 'embedding_disabled', title: null };
+    }
+    if (res.status === 404) {
+      return { playable: false, reason: 'not_found', title: null };
+    }
     if (res.ok) {
       const data = await res.json();
-      if (data && data.title) return data.title;
+      return { playable: true, title: data.title || `YouTube video (${videoId})` };
     }
   } catch (err) {
-    // Timeout nebo selhání oEmbed dotazu
+    // Timeout nebo síťová chyba
   }
-  return `YouTube video (${videoId})`;
+  return { playable: true, title: `YouTube video (${videoId})` };
+}
+
+async function fetchYouTubeTitle(videoId) {
+  const check = await checkYouTubeVideo(videoId);
+  return check.title || `YouTube video (${videoId})`;
 }
 
 async function searchYouTube(query) {
@@ -113,6 +124,7 @@ async function searchYouTube(query) {
       try {
         const data = JSON.parse(jsonMatch[1]);
         const sections = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
+        const candidates = [];
         for (const sec of sections) {
           const items = sec.itemSectionRenderer?.contents || [];
           for (const item of items) {
@@ -120,22 +132,47 @@ async function searchYouTube(query) {
               const vr = item.videoRenderer;
               const videoId = vr.videoId;
               const title = vr.title?.runs?.map(r => r.text).join('') || vr.title?.simpleText;
-              if (videoId && title) {
-                return { videoId, title };
+              if (videoId && title && videoId !== 'dQw4w9WgXcQ') {
+                candidates.push({ videoId, title });
+                if (candidates.length >= 5) break;
               }
             }
           }
+          if (candidates.length >= 5) break;
+        }
+
+        // Zkontrolujeme kandidáty na povolení přehrávání přes iframe embed
+        for (const cand of candidates) {
+          const check = await checkYouTubeVideo(cand.videoId);
+          if (check.playable) {
+            return { videoId: cand.videoId, title: check.title || cand.title };
+          }
+        }
+        if (candidates.length > 0) {
+          return candidates[0];
         }
       } catch (e) {}
     }
 
     const videoMatches = html.matchAll(/\/watch\?v=([a-zA-Z0-9_-]{11})/g);
+    const fallbackCandidates = [];
     for (const m of videoMatches) {
       const vid = m[1];
-      if (vid && vid !== 'dQw4w9WgXcQ') {
-        const title = await fetchYouTubeTitle(vid);
-        return { videoId: vid, title };
+      if (vid && vid !== 'dQw4w9WgXcQ' && !fallbackCandidates.includes(vid)) {
+        fallbackCandidates.push(vid);
+        if (fallbackCandidates.length >= 4) break;
       }
+    }
+    for (const vid of fallbackCandidates) {
+      const check = await checkYouTubeVideo(vid);
+      if (check.playable) {
+        return { videoId: vid, title: check.title || `YouTube video (${vid})` };
+      }
+    }
+    if (fallbackCandidates.length > 0) {
+      const vid = fallbackCandidates[0];
+      const title = await fetchYouTubeTitle(vid);
+      return { videoId: vid, title };
     }
   } catch (err) {
     console.warn('Chyba při vyhledávání na YouTube:', err.message);
@@ -361,10 +398,23 @@ io.on('connection', (socket) => {
       // 1. Zkontrolujeme, zda jde o přímý YouTube odkaz nebo ID -> rovnou pustit bez potvrzení
       const directVideoId = extractYouTubeId(queryPart);
       if (directVideoId) {
-        const title = await fetchYouTubeTitle(directVideoId);
+        const check = await checkYouTubeVideo(directVideoId);
+        if (!check.playable) {
+          if (check.reason === 'embedding_disabled') {
+            socket.emit('error_message', {
+              message: 'Tuto skladbu nelze přehrát – autor videa zakázal vkládání na externí weby (autorská práva). Zkus jinou verzi nebo skladbu.'
+            });
+          } else {
+            socket.emit('error_message', {
+              message: 'Zadané YouTube video nebylo nalezeno nebo je soukromé.'
+            });
+          }
+          return;
+        }
+
         const track = {
           videoId: directVideoId,
-          title,
+          title: check.title,
           requestedBy: player.name
         };
         handlePlayTrackSuccess(room, mode, player, track, cleanMsg);
@@ -761,6 +811,54 @@ io.on('connection', (socket) => {
     room.lastTrackEndedAt = now;
 
     const nextTrack = room.playNextTrack();
+    if (nextTrack) {
+      io.to(mode).emit('music_play', {
+        ...nextTrack,
+        skipVotes: 0,
+        requiredSkipVotes: room.getRequiredSkipVotes(),
+        hasVotedSkip: false,
+        serverTime: Date.now(),
+        queue: room.musicQueue.map((t, idx) => ({
+          position: idx + 1,
+          videoId: t.videoId,
+          title: t.title,
+          requestedBy: t.requestedBy
+        })),
+        queueLength: room.musicQueue.length
+      });
+      io.to(mode).emit('notification', {
+        message: `🎵 Z fronty nyní hraje: ${nextTrack.title}`
+      });
+      broadcastGameState(mode);
+    } else {
+      io.to(mode).emit('music_stop');
+      broadcastGameState(mode);
+    }
+  });
+
+  // Hlášení klienta, že skladbu nelze přehrát (autorská práva, zablokované vkládání apod.)
+  socket.on('track_failed', (data) => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    if (!room || !room.currentMusic) return;
+
+    if (data && data.videoId && room.currentMusic.videoId !== data.videoId) {
+      return;
+    }
+
+    const now = Date.now();
+    if (room.lastTrackFailedAt && now - room.lastTrackFailedAt < 3000) {
+      return;
+    }
+    room.lastTrackFailedAt = now;
+
+    const failedTitle = room.currentMusic.title || 'Skladba';
+    const nextTrack = room.playNextTrack();
+
+    io.to(mode).emit('notification', {
+      message: `⚠️ Skladbu "${failedTitle}" nelze přehrát (autorská práva nebo omezení vloženého videa na YouTube). Přeskakuji...`
+    });
+
     if (nextTrack) {
       io.to(mode).emit('music_play', {
         ...nextTrack,
