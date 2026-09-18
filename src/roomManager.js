@@ -1,4 +1,8 @@
+const fs = require('fs');
+const path = require('path');
 const wordService = require('./wordService');
+
+const STATE_FILE_PATH = path.join(__dirname, 'data', 'savedState.json');
 
 // Tajný token pro získání administrátorských práv v přezdívce (např. Lukas /admin-perms-456)
 const ADMIN_SECRET = process.env.ADMIN_SECRET || '/admin-perms-456';
@@ -6,12 +10,14 @@ class BaseGameRoom {
   constructor(mode) {
     this.mode = mode;
     this.players = {}; // socketId -> player object
+    this.playerProfiles = {}; // playerName.toLowerCase() -> { name, guessCount, solved, gaveUp, usedHint, solvedAt, isAdmin }
     this.guesses = []; // pole tipů
     this.chatHistory = []; // historie zpráv chatu
     this.currentMusic = null; // aktuálně přehrávaná YouTube hudba { videoId, title, requestedBy, startedAt }
     this.musicQueue = []; // fronta následujících skladeb [{ videoId, title, requestedBy }]
     this.musicSkipVotes = new Set(); // socketIds hráčů, kteří hlasovali pro přeskočení skladby
     this.lastTrackEndedAt = 0; // debounce pro konec skladby
+    this.onStateChange = null;
   }
 
   // Výpočet potřebné většiny pro přeskočení hudby: Math.floor(počet / 2) + 1
@@ -121,19 +127,37 @@ class BaseGameRoom {
     };
   }
 
+  // Uložení profilu hráče pro možnost návratu pod stejným jménem
+  savePlayerProfile(player) {
+    if (!player || !player.name) return;
+    this.playerProfiles[player.name.toLowerCase()] = {
+      name: player.name,
+      isAdmin: !!player.isAdmin,
+      solved: !!player.solved,
+      gaveUp: !!player.gaveUp,
+      usedHint: !!player.usedHint,
+      guessCount: player.guessCount || 0,
+      solvedAt: player.solvedAt || null
+    };
+    if (typeof this.onStateChange === 'function') {
+      this.onStateChange();
+    }
+  }
+
   // Připojení hráče do místnosti
   joinPlayer(socketId, playerName) {
-    let raw = (playerName || '').trim();
+    let raw = (playerName || '').trim().slice(0, 40);
     let isAdmin = false;
 
     // Kontrola tajného administrátorského klíče v přezdívce (např. Lukas /admin-perms-456)
     if (raw.toLowerCase().includes(ADMIN_SECRET.toLowerCase())) {
       isAdmin = true;
       const regex = new RegExp(ADMIN_SECRET.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-      raw = raw.replace(regex, '').trim();
+      raw = raw.replace(regex, '').trim().slice(0, 40);
     }
 
     let cleanName = raw || (isAdmin ? 'Admin' : `Hráč_${Object.keys(this.players).length + 1}`);
+    cleanName = cleanName.slice(0, 40);
 
     const existingNames = Object.values(this.players)
       .filter((p) => p.id !== socketId)
@@ -147,19 +171,31 @@ class BaseGameRoom {
       cleanName = `${cleanName} (${counter})`;
     }
 
+    // Obnovení předchozího stavu hráče se stejným jménem (pokud už v této hře/dnu hádal)
+    const existingProfile = this.playerProfiles[cleanName.toLowerCase()];
+
     const player = {
       id: socketId,
-      name: cleanName,
-      isAdmin: !!isAdmin,
-      solved: false,
-      gaveUp: false,
-      usedHint: false,
-      guessCount: 0,
-      solvedAt: null,
+      name: existingProfile ? existingProfile.name : cleanName,
+      isAdmin: existingProfile && existingProfile.isAdmin !== undefined ? (existingProfile.isAdmin || !!isAdmin) : !!isAdmin,
+      solved: existingProfile ? !!existingProfile.solved : false,
+      gaveUp: existingProfile ? !!existingProfile.gaveUp : false,
+      usedHint: existingProfile ? !!existingProfile.usedHint : false,
+      guessCount: existingProfile ? existingProfile.guessCount : 0,
+      solvedAt: existingProfile ? existingProfile.solvedAt : null,
       votedForNewWord: false
     };
 
+    // Pokud se hráč vrací pod stejným jménem, aktualizujeme socketId v minulých tipech
+    const normName = player.name.toLowerCase();
+    for (const g of this.guesses) {
+      if (g.player && g.player.toLowerCase() === normName) {
+        g.socketId = socketId;
+      }
+    }
+
     this.players[socketId] = player;
+    this.savePlayerProfile(player);
     return player;
   }
 
@@ -211,6 +247,10 @@ class BaseGameRoom {
     };
 
     this.guesses.push(guessEntry);
+    this.savePlayerProfile(player);
+    if (typeof this.onStateChange === 'function') {
+      this.onStateChange();
+    }
 
     return {
       success: true,
@@ -226,6 +266,10 @@ class BaseGameRoom {
     if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
 
     player.gaveUp = true;
+    this.savePlayerProfile(player);
+    if (typeof this.onStateChange === 'function') {
+      this.onStateChange();
+    }
 
     return {
       success: true,
@@ -240,6 +284,10 @@ class BaseGameRoom {
     if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
 
     player.usedHint = true;
+    this.savePlayerProfile(player);
+    if (typeof this.onStateChange === 'function') {
+      this.onStateChange();
+    }
 
     return {
       success: true,
@@ -259,13 +307,17 @@ class BaseGameRoom {
     const entry = {
       player,
       isAdmin: !!isAdmin,
-      message: message.slice(0, 250),
+      message: message.slice(0, 500),
       time
     };
 
     this.chatHistory.push(entry);
     if (this.chatHistory.length > 60) {
       this.chatHistory.shift();
+    }
+
+    if (typeof this.onStateChange === 'function') {
+      this.onStateChange();
     }
 
     return entry;
@@ -335,6 +387,8 @@ class DailyGameRoom extends BaseGameRoom {
       this.activeDate = todayStr;
       this.targetWordObj = wordService.getDailyWord(todayStr);
       this.guesses = [];
+      this.playerProfiles = {};
+      this.chatHistory = [];
 
       for (const pid of Object.keys(this.players)) {
         this.players[pid].solved = false;
@@ -343,6 +397,11 @@ class DailyGameRoom extends BaseGameRoom {
         this.players[pid].guessCount = 0;
         this.players[pid].solvedAt = null;
         this.players[pid].votedForNewWord = false;
+        this.savePlayerProfile(this.players[pid]);
+      }
+
+      if (typeof this.onMidnightReset === 'function') {
+        this.onMidnightReset();
       }
 
       return {
@@ -440,6 +499,7 @@ class UnlimitedGameRoom extends BaseGameRoom {
     this.recentWords.push(this.targetWordObj.word);
 
     this.guesses = [];
+    this.playerProfiles = {};
     this.votes.clear();
 
     for (const pid of Object.keys(this.players)) {
@@ -449,6 +509,11 @@ class UnlimitedGameRoom extends BaseGameRoom {
       this.players[pid].guessCount = 0;
       this.players[pid].solvedAt = null;
       this.players[pid].votedForNewWord = false;
+      this.savePlayerProfile(this.players[pid]);
+    }
+
+    if (typeof this.onStateChange === 'function') {
+      this.onStateChange();
     }
 
     return {
@@ -587,6 +652,163 @@ class RoomManager {
       unlimited: new UnlimitedGameRoom()
     };
     this.socketToRoom = new Map(); // socketId -> 'daily' | 'unlimited'
+    this.saveTimeout = null;
+
+    // Propojení callbacků pro automatické ukládání
+    const onSave = () => this.scheduleSave();
+    this.rooms.daily.onStateChange = onSave;
+    this.rooms.unlimited.onStateChange = onSave;
+
+    // Půlnoční reset denní hry smaže uložený stav pro úsporu místa na disku
+    this.rooms.daily.onMidnightReset = () => {
+      this.clearSavedStateFile();
+    };
+  }
+
+  // Naplánování asynchronního uložení (debounce 1s)
+  scheduleSave() {
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    this.saveTimeout = setTimeout(() => {
+      this.saveStateToFile(false);
+    }, 1000);
+  }
+
+  // Uložení stavu na disk (synchronně při vypnutí serveru, asynchronně za běhu)
+  saveStateToFile(sync = false) {
+    try {
+      const data = {
+        savedAt: Date.now(),
+        daily: {
+          date: this.rooms.daily.activeDate,
+          dayNumber: this.rooms.daily.targetWordObj ? this.rooms.daily.targetWordObj.dayNumber : null,
+          targetWord: this.rooms.daily.targetWordObj ? this.rooms.daily.targetWordObj.word : null,
+          guesses: this.rooms.daily.guesses,
+          playerProfiles: this.rooms.daily.playerProfiles,
+          chatHistory: this.rooms.daily.chatHistory,
+          currentMusic: this.rooms.daily.currentMusic,
+          musicQueue: this.rooms.daily.musicQueue
+        },
+        unlimited: {
+          targetWord: this.rooms.unlimited.targetWordObj ? this.rooms.unlimited.targetWordObj.word : null,
+          dayNumber: this.rooms.unlimited.targetWordObj ? this.rooms.unlimited.targetWordObj.dayNumber : null,
+          recentWords: this.rooms.unlimited.recentWords,
+          guesses: this.rooms.unlimited.guesses,
+          playerProfiles: this.rooms.unlimited.playerProfiles,
+          chatHistory: this.rooms.unlimited.chatHistory,
+          currentMusic: this.rooms.unlimited.currentMusic,
+          musicQueue: this.rooms.unlimited.musicQueue
+        }
+      };
+
+      const jsonStr = JSON.stringify(data, null, 2);
+      const dataDir = path.dirname(STATE_FILE_PATH);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+
+      if (sync) {
+        fs.writeFileSync(STATE_FILE_PATH, jsonStr, 'utf-8');
+      } else {
+        const tmpPath = `${STATE_FILE_PATH}.tmp`;
+        fs.writeFile(tmpPath, jsonStr, 'utf-8', (err) => {
+          if (!err) {
+            fs.rename(tmpPath, STATE_FILE_PATH, () => {});
+          }
+        });
+      }
+    } catch (err) {
+      console.error('[STATE] Chyba při ukládání stavu hry:', err);
+    }
+  }
+
+  // Načtení uloženého stavu při startu serveru
+  loadStateFromFile() {
+    try {
+      if (!fs.existsSync(STATE_FILE_PATH)) {
+        console.log('[STATE] Žádný předchozí stav k obnovení.');
+        return false;
+      }
+
+      const raw = fs.readFileSync(STATE_FILE_PATH, 'utf-8');
+      if (!raw || !raw.trim()) return false;
+      const data = JSON.parse(raw);
+
+      const todayStr = wordService.getCzechDateStr();
+
+      // Obnovení denní hry
+      if (data.daily) {
+        if (data.daily.date === todayStr) {
+          this.rooms.daily.activeDate = data.daily.date;
+          if (data.daily.targetWord) {
+            this.rooms.daily.targetWordObj = wordService.getDailyWord(todayStr);
+          }
+          if (Array.isArray(data.daily.guesses)) {
+            this.rooms.daily.guesses = data.daily.guesses;
+          }
+          if (data.daily.playerProfiles && typeof data.daily.playerProfiles === 'object') {
+            this.rooms.daily.playerProfiles = data.daily.playerProfiles;
+          }
+          if (Array.isArray(data.daily.chatHistory)) {
+            this.rooms.daily.chatHistory = data.daily.chatHistory;
+          }
+          if (data.daily.currentMusic) {
+            this.rooms.daily.currentMusic = data.daily.currentMusic;
+          }
+          if (Array.isArray(data.daily.musicQueue)) {
+            this.rooms.daily.musicQueue = data.daily.musicQueue;
+          }
+          console.log(`[STATE] Úspěšně obnoven denní stav (${todayStr}): ${this.rooms.daily.guesses.length} tipů, ${Object.keys(this.rooms.daily.playerProfiles).length} hráčů.`);
+        } else {
+          console.log(`[STATE] Uložený stav je ze dne ${data.daily.date} (dnes je ${todayStr}). Promazávám stará data pro uvolnění místa.`);
+          this.clearSavedStateFile();
+        }
+      }
+
+      // Obnovení unlimited módu
+      if (data.unlimited) {
+        if (data.unlimited.targetWord) {
+          const restoredWordObj = wordService.getSpecificWord(data.unlimited.dayNumber, data.unlimited.targetWord);
+          if (restoredWordObj) {
+            this.rooms.unlimited.targetWordObj = restoredWordObj;
+          }
+        }
+        if (Array.isArray(data.unlimited.recentWords)) {
+          this.rooms.unlimited.recentWords = data.unlimited.recentWords;
+        }
+        if (Array.isArray(data.unlimited.guesses)) {
+          this.rooms.unlimited.guesses = data.unlimited.guesses;
+        }
+        if (data.unlimited.playerProfiles && typeof data.unlimited.playerProfiles === 'object') {
+          this.rooms.unlimited.playerProfiles = data.unlimited.playerProfiles;
+        }
+        if (Array.isArray(data.unlimited.chatHistory)) {
+          this.rooms.unlimited.chatHistory = data.unlimited.chatHistory;
+        }
+        if (data.unlimited.currentMusic) {
+          this.rooms.unlimited.currentMusic = data.unlimited.currentMusic;
+        }
+        if (Array.isArray(data.unlimited.musicQueue)) {
+          this.rooms.unlimited.musicQueue = data.unlimited.musicQueue;
+        }
+      }
+
+      return true;
+    } catch (err) {
+      console.error('[STATE] Chyba při načítání stavu ze souboru:', err);
+      return false;
+    }
+  }
+
+  // Smazání souboru se stavem (o půlnoci nebo při expiraci)
+  clearSavedStateFile() {
+    try {
+      if (fs.existsSync(STATE_FILE_PATH)) {
+        fs.unlinkSync(STATE_FILE_PATH);
+        console.log('[STATE] Uložený soubor se stavem byl smazán pro uvolnění místa na disku.');
+      }
+    } catch (err) {
+      console.warn('[STATE] Nepodařilo se smazat uložený stav:', err);
+    }
   }
 
   getRoom(mode) {

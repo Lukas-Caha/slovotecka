@@ -110,6 +110,37 @@ const musicQueueBody = document.getElementById('music-queue-body');
 const btnCloseQueue = document.getElementById('btn-close-queue');
 const btnMusicEnable = document.getElementById('btn-music-enable');
 const musicControlsActive = document.getElementById('music-controls-active');
+const vinylRecordWrap = document.getElementById('vinyl-record-wrap');
+const vinylDisc = document.getElementById('vinyl-disc');
+const vinylThumb = document.getElementById('vinyl-thumb');
+
+function updateVinylState(isPlaying, isPaused, videoId) {
+  if (!vinylRecordWrap) return;
+  if (videoId && vinylThumb) {
+    const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    if (vinylThumb.src !== thumbUrl) {
+      vinylThumb.src = thumbUrl;
+    }
+    if (typeof activeTrack !== 'undefined' && activeTrack && activeTrack.title) {
+      vinylRecordWrap.title = `Hraje: ${activeTrack.title} (kliknutím pozastavíš/spustíš)`;
+    }
+  }
+  if (isPlaying) {
+    vinylRecordWrap.classList.add('is-playing');
+    vinylRecordWrap.classList.remove('is-paused');
+  } else if (isPaused) {
+    vinylRecordWrap.classList.remove('is-playing');
+    vinylRecordWrap.classList.add('is-paused');
+  } else {
+    vinylRecordWrap.classList.remove('is-playing', 'is-paused');
+  }
+}
+
+if (vinylRecordWrap) {
+  vinylRecordWrap.addEventListener('click', () => {
+    if (typeof toggleMusic === 'function') toggleMusic();
+  });
+}
 
 // DOM – Nápověda příkazů chatu
 const chatCommandsPopover = document.getElementById('chat-commands-popover');
@@ -1230,6 +1261,7 @@ function initYouTubePlayer() {
         onStateChange: (e) => {
           if (e.data === YT.PlayerState.PLAYING) {
             isLocalPaused = false;
+            updateVinylState(true, false, activeTrack ? activeTrack.videoId : null);
             if (musicToggleIcon) musicToggleIcon.textContent = '⏸';
             if (btnMusicToggle) btnMusicToggle.title = 'Pozastavit hudbu pro tebe';
 
@@ -1254,9 +1286,11 @@ function initYouTubePlayer() {
             }
           } else if (e.data === YT.PlayerState.PAUSED) {
             isLocalPaused = true;
+            updateVinylState(false, true, activeTrack ? activeTrack.videoId : null);
             if (musicToggleIcon) musicToggleIcon.textContent = '▶';
             if (btnMusicToggle) btnMusicToggle.title = 'Spustit hudbu';
           } else if (e.data === YT.PlayerState.ENDED) {
+            updateVinylState(false, false, null);
             if (activeTrack) {
               socket.emit('track_ended', { videoId: activeTrack.videoId });
             }
@@ -1385,6 +1419,7 @@ function playTrack(track) {
 
   // Každý si musí hudbu explicitně zapnout ("jak přijde, musí si to každý zapnout")
   if (!musicAllowed) {
+    updateVinylState(false, true, track.videoId);
     if (btnMusicEnable) btnMusicEnable.style.display = 'inline-flex';
     if (musicControlsActive) musicControlsActive.style.display = 'none';
     if (musicTime) {
@@ -1396,6 +1431,7 @@ function playTrack(track) {
   }
 
   // Uživatel si hudbu zapnul
+  updateVinylState(true, false, track.videoId);
   if (btnMusicEnable) btnMusicEnable.style.display = 'none';
   if (musicControlsActive) musicControlsActive.style.display = 'flex';
 
@@ -1512,6 +1548,7 @@ function tickMusic() {
 function stopMusicLocal() {
   activeTrack = null;
   pendingTrack = null;
+  updateVinylState(false, false, null);
   if (musicTicker) {
     clearInterval(musicTicker);
     musicTicker = null;
@@ -1558,6 +1595,7 @@ function toggleMusic() {
     if (state === YT.PlayerState.PLAYING) {
       ytPlayer.pauseVideo();
       isLocalPaused = true;
+      updateVinylState(false, true, activeTrack ? activeTrack.videoId : null);
       if (musicToggleIcon) musicToggleIcon.textContent = '▶';
       if (btnMusicToggle) btnMusicToggle.title = 'Spustit hudbu';
     } else {
@@ -1571,6 +1609,7 @@ function toggleMusic() {
       }
       ytPlayer.playVideo();
       isLocalPaused = false;
+      updateVinylState(true, false, activeTrack ? activeTrack.videoId : null);
       if (musicToggleIcon) musicToggleIcon.textContent = '⏸';
       if (btnMusicToggle) btnMusicToggle.title = 'Pozastavit hudbu pro tebe';
     }

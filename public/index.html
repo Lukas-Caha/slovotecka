@@ -26,6 +26,16 @@
     <aside id="music-bar" class="music-bar" style="display: none;" aria-label="Společný hudební přehrávač">
       <div class="music-bar-inner">
         <div class="music-bar-left">
+          <div class="vinyl-record-wrap" id="vinyl-record-wrap" title="Přehrávání hudby">
+            <div class="vinyl-disc" id="vinyl-disc">
+              <div class="vinyl-grooves"></div>
+              <div class="vinyl-center-label" id="vinyl-center-label">
+                <img id="vinyl-thumb" class="vinyl-thumb" alt="" src="">
+                <div class="vinyl-spindle-hole"></div>
+              </div>
+            </div>
+            <div class="vinyl-tonearm"></div>
+          </div>
           <span class="music-icon-pulse" aria-hidden="true">🎵</span>
           <span class="music-tag">[ HRAJE ]</span>
           <span class="music-title" id="music-title" title="">--</span>
@@ -131,6 +141,9 @@
             <li>Posledni napsane slovo a jeho # je nyni videt vzdy nahoře. Barevny bar je u vsech odpovedi.</li>
             <li>Pozor: V chatu jde poustet hudba, hlasitost je potichu, a musi si to kazdy zapnout jak prijde. ale bacha Okayge</li>
             <li>hudbu jde skipnout hlasovanim nebo tlacitkem.</li>
+            <li>kdyz hraje hudba, nahore se toci stylovej malej vinyl s thumbnail videa jako na gramofonu pagMan.</li>
+            <li>zvetsen limit na pismena do jmena (ted muzes mit delsi nick) i v chatu, uz se nemusis bat ze se ti to nevejde.</li>
+            <li>kdyz se restartne nebo vypne server, stav se ulozi a po navratu pod stejnym jmenem vidis zpatky svoje odpovedi i pocet tipu. o pulnoci se to vzdy maze aby to nezralo misto.</li>
             <li>napoveda commandu pres !</li>
             <li>more cumming soon</li>
           </ul>
@@ -157,7 +170,7 @@
         
         <form id="join-form">
           <label class="field-label" for="player-name">TVOJE PŘEZDÍVKA</label>
-          <input class="input input-name" type="text" id="player-name" placeholder="PŘEZDÍVKA" maxlength="20" autocomplete="off" autofocus>
+          <input class="input input-name" type="text" id="player-name" placeholder="PŘEZDÍVKA" maxlength="40" autocomplete="off" autofocus>
           <button type="submit" class="btn btn-primary btn-full" id="btn-enter-game">
             VSTOUPIT DO ARÉNY
             <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square">
@@ -362,7 +375,7 @@
                 <line x1="15" y1="9" x2="15.01" y2="9" stroke-width="3" stroke-linecap="round"></line>
               </svg>
             </button>
-            <input class="input input-chat" type="text" id="chat-input" placeholder="Napiš zprávu... (např. xdd)" maxlength="200" autocomplete="off">
+            <input class="input input-chat" type="text" id="chat-input" placeholder="Napiš zprávu... (např. xdd)" maxlength="500" autocomplete="off">
             <button type="submit" class="btn btn-primary btn-chat" aria-label="Poslat zprávu">
               <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="22" y1="2" x2="11" y2="13"></line>

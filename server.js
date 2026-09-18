@@ -14,6 +14,9 @@ const PORT = process.env.PORT || 3000;
 // Inicializace 7TV emotů (Vernaton999 Kick & 7TV + Globální)
 emoteService.init();
 
+// Obnovení uloženého stavu hry z disku (pokud existuje a je aktuální)
+gameManager.loadStateFromFile();
+
 // Statické soubory z /public
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -645,3 +648,13 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
   console.log(`Server běží na portu ${PORT}: http://localhost:${PORT}`);
 });
+
+// Uložení stavu při vypnutí serveru (Ctrl+C nebo SIGTERM)
+function handleShutdown(signal) {
+  console.log(`\n[SERVER] Přijat signál ${signal}. Ukládám stav hry před vypnutím...`);
+  gameManager.saveStateToFile(true);
+  process.exit(0);
+}
+
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));

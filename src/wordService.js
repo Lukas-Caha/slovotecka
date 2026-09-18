@@ -234,6 +234,29 @@ function getUnlimitedWord(excludeWords = []) {
   };
 }
 
+// Získání konkrétního slova (např. při obnově stavu z disku)
+function getSpecificWord(dayNumber, word) {
+  if (!word) return null;
+  const cleanWord = word.trim().toLowerCase();
+  const scheduleEntry = schedule.find((s) => (dayNumber ? s.day === dayNumber : false) && s.word === cleanWord) || schedule.find((s) => s.word === cleanWord);
+  const useDay = scheduleEntry ? scheduleEntry.day : (dayNumber || 1);
+  const useWord = scheduleEntry ? scheduleEntry.word : cleanWord;
+  const dayData = loadDayData(useDay, useWord);
+  let hint = wordsData.targets?.[useWord]?.hint;
+  if (!hint) {
+    hint = `Slovo má ${useWord.length} písmen a začíná na písmeno "${useWord[0].toUpperCase()}".`;
+  }
+  return {
+    key: useWord,
+    date: `Archiv (Den #${useDay})`,
+    dayNumber: useDay,
+    word: useWord,
+    hint: hint,
+    category: wordsData.targets?.[useWord]?.category || 'obecné',
+    dayData: dayData
+  };
+}
+
 // Výpočet sémantické blízkosti podle vygenerovaných embedding dat
 function calculateRank(targetWordObj, userGuess) {
   const cleanGuess = normalizeWord(userGuess);
@@ -302,6 +325,7 @@ module.exports = {
   getRandomWord,
   getPastWordsPool,
   getUnlimitedWord,
+  getSpecificWord,
   calculateRank,
   normalizeWord,
   removeDiacritics,
