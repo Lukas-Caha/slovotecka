@@ -127,14 +127,15 @@
         </div>
         <div class="modal-body">
           <ul class="whats-new-list">
+            <li>uz jsou jenom podstatna jmena xdd</li>
             <li>Kazdy vidi pouze svoje slova a ty spolecne (zadne otazniky ani jak blizko jsou ostatni). Kdyz dva lidi trefi to same, vidi odpoved stejne.</li>
             <li>Posledni napsane slovo a jeho # je nyni videt vzdy nahoře. Barevny bar je u vsech odpovedi.</li>
             <li>Pozor: V chatu jde poustet hudba, hlasitost je potichu, a musi si to kazdy zapnout jak prijde. ale bacha Okayge</li>
             <li>hudbu jde skipnout hlasovanim nebo tlacitkem.</li>
             <li>kdyz hraje hudba, nahore se toci stylovej malej vinyl s thumbnail videa jako na gramofonu pagMan.</li>
-            <li>Vetsi limit pismen pro jmeno a chat</li>
             <li>kdyz se restartne nebo vypne server, stav se ulozi a po navratu pod stejnym jmenem vidis zpatky svoje odpovedi i pocet tipu. o pulnoci se to vzdy maze aby to nezralo misto.</li>
             <li>napoveda commandu pres !</li>
+            <li><strong>NOVINKA:</strong> Divácký mód! Kdo uhodne slovo nebo se vzdá, vidí naživo všechny tipy ostatních hráčů i s jejich jmény a přepínačem (všechny tipy / moje tipy).</li>
             <li>more cumming soon</li>
           </ul>
         </div>
@@ -204,7 +205,7 @@
             <span class="vote-tag">[ 🗳️ HLASOVÁNÍ O NOVÉ SLOVO ]</span>
             <span id="vote-count-badge" class="vote-count-badge">0 / 1 HLASŮ</span>
           </div>
-          <p class="vote-desc" id="vote-desc">Když se shodne nadpoloviční většina hráčů (např. 2 ze 3), vylosuje se nové slovo z fondu 1–16.</p>
+          <p class="vote-desc" id="vote-desc">Když se shodne nadpoloviční většina hráčů (např. 2 ze 3), vylosuje se nové slovo z fondu archivních slov.</p>
         </div>
         <button type="button" class="btn btn-vote" id="btn-vote-new-word">
           <span class="vote-icon">🗳️</span>
@@ -274,6 +275,15 @@
           </div>
           <p id="guess-feedback" class="guess-feedback"></p>
 
+          <!-- Divácký mód banner (zobrazí se po vyřešení nebo vzdání) -->
+          <div id="spectator-banner" class="spectator-banner" style="display: none;">
+            <div class="spectator-badge-row">
+              <span class="spectator-pulse-dot" aria-hidden="true"></span>
+              <span class="spectator-tag">[ 👁️ DIVÁCKÝ MÓD ]</span>
+            </div>
+            <span class="spectator-desc">Uhodl(a) jsi nebo ses vzdal(a). Nyní sleduješ tipy ostatních hráčů v reálném čase!</span>
+          </div>
+
           <!-- Poslední tip přímo pod zadávacím polem (Contexto styl) -->
           <div id="last-guess-container" class="last-guess-container" style="display: none;">
             <div class="last-guess-row">
@@ -286,7 +296,14 @@
           </div>
 
           <div class="guesses-header">
-            <span class="guesses-title">[ ODHALENÁ SLOVA ]</span>
+            <div class="guesses-header-left">
+              <span class="guesses-title" id="guesses-title">[ ODHALENÁ SLOVA ]</span>
+              <!-- Přepínač zobrazení tipů pro diváky -->
+              <div id="spectator-filter-tabs" class="guesses-filter-tabs" style="display: none;">
+                <button type="button" class="btn-filter-tab is-active" id="btn-filter-all" data-filter="all">VŠECHNY TIPY</button>
+                <button type="button" class="btn-filter-tab" id="btn-filter-mine" data-filter="mine">POUZE MOJE</button>
+              </div>
+            </div>
             <span class="guesses-count" id="guesses-count">0 tipů</span>
           </div>
 

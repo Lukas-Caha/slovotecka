@@ -334,12 +334,12 @@ class BaseGameRoom {
   }
 
   // Sanitizace tipů:
-  // - Každý vidí pouze svoje tipy a společné tipy
-  // - Žádné otazníky ani jak blízko jsou ostatní
-  // - Ostatní neodhadnuté tipy se pro hráče vůbec neposílají
+  // - Aktivní hráč vidí pouze svoje tipy a společné tipy (které sám také trefil)
+  // - Divák (ten, kdo uhodl nebo se vzdal) vidí naživo všechny tipy všech hráčů
   getSanitizedGuesses(forSocketId, canSeeSecret) {
     const player = this.players[forSocketId];
     const playerName = player ? player.name.toLowerCase() : null;
+    const isSpectator = !!canSeeSecret;
 
     // Seznam slov a ranků, které tento hráč již sám uhodl/zadal
     const myGuessedWords = new Set();
@@ -357,8 +357,8 @@ class BaseGameRoom {
       const isMine = g.socketId === forSocketId || (playerName && g.player.toLowerCase() === playerName);
       const isShared = (g.word && myGuessedWords.has(g.word.toLowerCase())) || (g.rank && myGuessedRanks.has(g.rank));
 
-      // Hráč vidí pouze svoje tipy nebo společné (které sám také trefil)
-      if (isMine || isShared || (g.rank === 1 && canSeeSecret)) {
+      // Hráč vidí svoje tipy, společné tipy, nebo jako divák vidí úplně všechny tipy v aréně
+      if (isSpectator || isMine || isShared || (g.rank === 1 && canSeeSecret)) {
         visibleGuesses.push({
           id: g.id,
           player: g.player,
@@ -367,7 +367,8 @@ class BaseGameRoom {
           isWinner: g.isWinner,
           timestamp: g.timestamp,
           isMine: isMine,
-          isShared: !isMine && isShared
+          isShared: !isMine && isShared,
+          isOther: !isMine && !isShared
         });
       }
     }
@@ -437,6 +438,7 @@ class DailyGameRoom extends BaseGameRoom {
       mode: 'daily',
       date: this.activeDate,
       dayNumber: this.targetWordObj.dayNumber,
+      isSpectator: !!canSeeSecret,
       hint: player && player.usedHint ? this.targetWordObj.hint : null,
       hasUsedHint: player ? !!player.usedHint : false,
       myStatus: player
@@ -473,7 +475,7 @@ class DailyGameRoom extends BaseGameRoom {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Unlimited mód (fond archivních slov 1–16, hlasování o nové slovo)
+// Unlimited mód (fond archivních slov, hlasování o nové slovo)
 // ─────────────────────────────────────────────────────────────
 class UnlimitedGameRoom extends BaseGameRoom {
   constructor() {
@@ -605,8 +607,9 @@ class UnlimitedGameRoom extends BaseGameRoom {
 
     return {
       mode: 'unlimited',
-      date: `Archivní slovo (z předchozích dnů 1–16)`,
+      date: `Archivní slovo (z předchozích dnů)`,
       dayNumber: this.targetWordObj.dayNumber,
+      isSpectator: !!canSeeSecret,
       hint: player && player.usedHint ? this.targetWordObj.hint : null,
       hasUsedHint: player ? !!player.usedHint : false,
       myStatus: player

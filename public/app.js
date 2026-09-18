@@ -30,7 +30,7 @@ const lobbyDesc = document.getElementById('lobby-desc');
 if (isUnlimited) {
   if (lobbyTag) lobbyTag.textContent = '[ 01. UNLIMITED ARÉNA ]';
   if (lobbyTitle) lobbyTitle.textContent = 'NEOMEZENÁ ARCHIVNÍ ARÉNA';
-  if (lobbyDesc) lobbyDesc.textContent = 'Hrajte společně se slovy z předchozích dnů (1–16). Hráči v místnosti mohou společným hlasováním (např. 2 ze 3) kdykoliv vylosovat nové slovo!';
+  if (lobbyDesc) lobbyDesc.textContent = 'Hrajte společně se slovy z předchozích dnů. Hráči v místnosti mohou společným hlasováním (např. 2 ze 3) kdykoliv vylosovat nové slovo!';
 }
 
 // DOM – Popup Whats New
@@ -87,6 +87,33 @@ const guessFeedback = document.getElementById('guess-feedback');
 const guessesList = document.getElementById('guesses-list');
 const guessesCount = document.getElementById('guesses-count');
 const toastContainer = document.getElementById('toast-container');
+
+// DOM – Divácký mód (Spectator)
+const spectatorBanner = document.getElementById('spectator-banner');
+const spectatorFilterTabs = document.getElementById('spectator-filter-tabs');
+const btnFilterAll = document.getElementById('btn-filter-all');
+const btnFilterMine = document.getElementById('btn-filter-mine');
+const guessesTitle = document.getElementById('guesses-title');
+let spectatorFilterMode = 'all'; // 'all' | 'mine'
+let latestGameState = null;
+
+if (btnFilterAll) {
+  btnFilterAll.addEventListener('click', () => {
+    spectatorFilterMode = 'all';
+    btnFilterAll.classList.add('is-active');
+    if (btnFilterMine) btnFilterMine.classList.remove('is-active');
+    if (latestGameState) renderGameState(latestGameState);
+  });
+}
+
+if (btnFilterMine) {
+  btnFilterMine.addEventListener('click', () => {
+    spectatorFilterMode = 'mine';
+    btnFilterMine.classList.add('is-active');
+    if (btnFilterAll) btnFilterAll.classList.remove('is-active');
+    if (latestGameState) renderGameState(latestGameState);
+  });
+}
 
 // DOM – YouTube Hudební přehrávač
 const musicBar = document.getElementById('music-bar');
@@ -1114,6 +1141,8 @@ socket.on('game_state', (state) => {
 let chatLoaded = false;
 
 function renderGameState(state) {
+  latestGameState = state;
+
   // Synchronizace online hráčů pro @mentions
   currentRoomPlayers = state.players || [];
 
@@ -1126,7 +1155,7 @@ function renderGameState(state) {
   if (state.mode === 'unlimited') {
     if (displayModeLabel) displayModeLabel.textContent = '[ UNLIMITED REŽIM ]';
     displayDayTitle.textContent = `ARCHIV #${state.dayNumber || '?'}`;
-    if (displayMetaText) displayMetaText.textContent = 'ARCHIVNÍ SADA (1–16)';
+    if (displayMetaText) displayMetaText.textContent = 'ARCHIVNÍ SADA';
     if (secretLabel) secretLabel.textContent = '[ ARCHIVNÍ TAJNÉ SLOVO ]';
 
     if (voteBar) {
@@ -1197,12 +1226,25 @@ function renderGameState(state) {
     btnRevealWord.disabled = locked;
 
     if (state.myStatus.solved) {
-      setFeedback(state.mode === 'unlimited' ? 'Toto archivní slovo jsi úspěšně uhodl(a)! Můžeš hlasovat pro další slovo.' : 'Dnešní slovo jsi úspěšně uhodl(a)! Gratuluji.');
+      setFeedback(state.mode === 'unlimited' ? 'Toto archivní slovo jsi úspěšně uhodl(a)! Můžeš sledovat tipy ostatních naživo nebo hlasovat pro další slovo.' : 'Dnešní slovo jsi úspěšně uhodl(a)! Nyní jsi v diváckém módu.');
     } else if (state.myStatus.gaveUp) {
-      setFeedback('Vzdal(a) ses v tomto kole – hádání je uzamčeno.');
+      setFeedback('Vzdal(a) ses v tomto kole – hádání je uzamčeno. Nyní jsi v diváckém módu.');
     } else {
       setFeedback('');
     }
+  }
+
+  // Divácký mód UI (indikátor, přepínač filtrů, titulek)
+  const isSpectator = !!state.isSpectator || (state.myStatus && (state.myStatus.solved || state.myStatus.gaveUp));
+
+  if (spectatorBanner) {
+    spectatorBanner.style.display = isSpectator ? 'flex' : 'none';
+  }
+  if (spectatorFilterTabs) {
+    spectatorFilterTabs.style.display = isSpectator ? 'inline-flex' : 'none';
+  }
+  if (guessesTitle) {
+    guessesTitle.textContent = isSpectator ? '[ ODHALENÁ SLOVA • DIVÁK 👁️ ]' : '[ ODHALENÁ SLOVA ]';
   }
 
   // Zpracování posledního tipu hráče (Contexto styl přímo pod polem)
@@ -1252,23 +1294,36 @@ function renderGameState(state) {
     playersList.appendChild(li);
   });
 
+  // Filtrování tipů pro zobrazení (v diváckém módu podle záložky: všechny vs pouze moje)
+  const displayGuesses = (isSpectator && spectatorFilterMode === 'mine')
+    ? state.guesses.filter(g => g.isMine || (myPlayerName && g.player.toLowerCase() === myPlayerName.toLowerCase()))
+    : state.guesses;
+
   // Tipy seřazené od nejbližšího
-  const sorted = [...state.guesses].sort((a, b) => a.rank - b.rank || (a.timestamp || 0) - (b.timestamp || 0));
-  const totalGuesses = state.guesses.length;
+  const sorted = [...displayGuesses].sort((a, b) => a.rank - b.rank || (a.timestamp || 0) - (b.timestamp || 0));
+  const totalGuesses = displayGuesses.length;
   guessesCount.textContent = `${totalGuesses} ${totalGuesses === 1 ? 'tip' : totalGuesses < 5 ? 'tipy' : 'tipů'}`;
 
   if (sorted.length === 0) {
-    guessesList.innerHTML = `<div class="empty-guesses">ZATÍM ŽÁDNÉ TIPY. ZAČNI HÁDAT DNEŠNÍ SLOVO!</div>`;
+    if (isSpectator && spectatorFilterMode === 'mine') {
+      guessesList.innerHTML = `<div class="empty-guesses">ZATÍM JSI NEZADAL(A) ŽÁDNÉ VLASTNÍ TIPY.</div>`;
+    } else {
+      guessesList.innerHTML = `<div class="empty-guesses">ZATÍM ŽÁDNÉ TIPY. ZAČNI HÁDAT DNEŠNÍ SLOVO!</div>`;
+    }
   } else {
     guessesList.innerHTML = '';
     sorted.forEach((g) => {
       const card = document.createElement('div');
       const isMine = g.isMine || (myPlayerName && g.player.toLowerCase() === myPlayerName.toLowerCase());
+      const isShared = !isMine && g.isShared;
+      const isOther = !isMine && !g.isShared;
       const isLast = lastGuess && g.id === lastGuess.id;
 
       let cls = 'guess-card';
       if (isMine) cls += ' is-me';
-      else cls += ' is-shared';
+      else if (isShared) cls += ' is-shared';
+      else if (isOther) cls += ' is-other is-spectator-guess';
+
       if (isLast) cls += ' is-last-guess';
       if (g.isWinner) cls += ' is-winner';
       card.className = cls;
@@ -1278,9 +1333,14 @@ function renderGameState(state) {
 
       const wordText = escapeHtml(g.word);
 
-      const whoHtml = isMine
-        ? `<span class="badge-you">(ty)</span>`
-        : `<span class="who-other">${escapeHtml(g.player)}</span> <span class="badge-shared">[společné]</span>`;
+      let whoHtml = '';
+      if (isMine) {
+        whoHtml = `<span class="badge-you">(ty)</span>`;
+      } else if (isShared) {
+        whoHtml = `<span class="who-other">${escapeHtml(g.player)}</span> <span class="badge-shared">[společné]</span>`;
+      } else {
+        whoHtml = `<span class="who-other who-spectator-other">${escapeHtml(g.player)}</span>`;
+      }
 
       card.innerHTML = `
         <div class="guess-card-bar-bg" style="width: ${width}; background-color: ${bg};"></div>

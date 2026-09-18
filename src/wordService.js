@@ -95,7 +95,9 @@ function loadDayData(day, targetWord) {
 
   if (!fs.existsSync(filePath)) {
     const allFiles = fs.readdirSync(VYSTUP_DIR);
-    const match = allFiles.find((f) => f.startsWith(`den_${numStr}_`));
+    const cleanTarget = normalizeWord(targetWord);
+    const match = allFiles.find((f) => f.toLowerCase().endsWith(`_${cleanTarget}.csv`)) ||
+                  allFiles.find((f) => f.startsWith(`den_${numStr}_`));
     if (match) {
       filePath = path.join(VYSTUP_DIR, match);
     }
