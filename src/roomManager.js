@@ -17,6 +17,7 @@ class BaseGameRoom {
     this.musicQueue = []; // fronta následujících skladeb [{ videoId, title, requestedBy }]
     this.musicSkipVotes = new Set(); // socketIds hráčů, kteří hlasovali pro přeskočení skladby
     this.lastTrackEndedAt = 0; // debounce pro konec skladby
+    this.pendingSongConfirmations = {}; // socketId -> { confirmId, videoId, title, query, requestedBy, expiresAt }
     this.onStateChange = null;
   }
 
@@ -202,6 +203,7 @@ class BaseGameRoom {
   // Odebrání hráče z místnosti
   removePlayer(socketId) {
     this.musicSkipVotes.delete(socketId);
+    delete this.pendingSongConfirmations[socketId];
     const player = this.players[socketId];
     if (player) {
       delete this.players[socketId];
@@ -297,7 +299,7 @@ class BaseGameRoom {
   }
 
   // Uložení zprávy do chatu
-  addChatMessage(player, message, isAdmin = false) {
+  addChatMessage(player, message, isAdmin = false, confirmAction = null) {
     const time = new Date().toLocaleTimeString('cs-CZ', {
       timeZone: 'Europe/Prague',
       hour: '2-digit',
@@ -310,6 +312,10 @@ class BaseGameRoom {
       message: message.slice(0, 500),
       time
     };
+
+    if (confirmAction) {
+      entry.confirmAction = confirmAction;
+    }
 
     this.chatHistory.push(entry);
     if (this.chatHistory.length > 60) {

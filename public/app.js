@@ -971,7 +971,8 @@ chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = chatInput.value.trim();
   if (!text) return;
-  if (text.toLowerCase().startsWith('!play')) {
+  const lowerText = text.toLowerCase().trim();
+  if (lowerText.startsWith('!play') || ['ano', 'jo', 'yes', 'y', 'jj', '!ano', '!yes'].includes(lowerText)) {
     musicAllowed = true;
     try {
       sessionStorage.setItem('slovotecka_music_allowed', 'true');
@@ -982,7 +983,7 @@ chatForm.addEventListener('submit', (e) => {
         ytPlayer.setVolume(currentVolume);
       } catch (err) {}
     }
-  } else if (text.toLowerCase() === '!stop') {
+  } else if (lowerText === '!stop') {
     musicAllowed = false;
     try {
       sessionStorage.removeItem('slovotecka_music_allowed');
@@ -1048,13 +1049,58 @@ function appendChatMessage(data) {
     ? ' <span class="badge-admin" title="Administrátor"><span class="badge-admin-crown">👑</span> ADMIN</span>'
     : '';
 
+  let confirmBoxHtml = '';
+  if (data.confirmAction) {
+    const isTarget = myPlayerName && data.confirmAction.targetPlayer &&
+      myPlayerName.toLowerCase() === data.confirmAction.targetPlayer.toLowerCase();
+    confirmBoxHtml = `
+      <div class="chat-confirm-box" id="confirm-box-${escapeHtml(data.confirmAction.confirmId)}">
+        <button type="button" class="chat-confirm-btn chat-confirm-yes" data-action="yes" data-id="${escapeHtml(data.confirmAction.confirmId)}" data-target="${escapeHtml(data.confirmAction.targetPlayer)}" title="${isTarget ? 'Potvrdit přehrání skladby' : 'Může potvrdit jen ' + escapeHtml(data.confirmAction.targetPlayer)}">ANO</button>
+        <button type="button" class="chat-confirm-btn chat-confirm-no" data-action="no" data-id="${escapeHtml(data.confirmAction.confirmId)}" data-target="${escapeHtml(data.confirmAction.targetPlayer)}" title="${isTarget ? 'Zrušit výběr skladby' : 'Může zrušit jen ' + escapeHtml(data.confirmAction.targetPlayer)}">NE</button>
+      </div>
+    `;
+  }
+
   div.innerHTML = `
     <div class="chat-msg-header">
       <span class="chat-msg-author">${escapeHtml(data.player)}${adminBadge}${isMe ? ' (ty)' : ''}</span>
       <span class="chat-msg-time">${data.time || ''}</span>
     </div>
-    <div class="chat-msg-text" data-raw="${escapeHtml(data.message)}">${parsedHtml}</div>
+    <div class="chat-msg-text" data-raw="${escapeHtml(data.message)}">
+      ${parsedHtml}
+      ${confirmBoxHtml}
+    </div>
   `;
+
+  if (data.confirmAction) {
+    const box = div.querySelector('.chat-confirm-box');
+    if (box) {
+      box.addEventListener('click', (e) => {
+        const btn = e.target.closest('.chat-confirm-btn');
+        if (!btn) return;
+        const targetPlayer = btn.dataset.target;
+        const isTarget = myPlayerName && targetPlayer && myPlayerName.toLowerCase() === targetPlayer.toLowerCase();
+        if (!isTarget) {
+          showToast(`Tuto volbu může potvrdit pouze ${targetPlayer}.`, true);
+          return;
+        }
+        const isYes = btn.dataset.action === 'yes';
+        const confirmId = btn.dataset.id;
+        if (isYes) {
+          musicAllowed = true;
+          try { sessionStorage.setItem('slovotecka_music_allowed', 'true'); } catch (err) {}
+          if (ytPlayer && typeof ytPlayer.unMute === 'function') {
+            try {
+              ytPlayer.unMute();
+              ytPlayer.setVolume(currentVolume);
+            } catch (err) {}
+          }
+        }
+        socket.emit('confirm_play_song', { confirm: isYes, confirmId });
+        box.innerHTML = `<span class="chat-confirmed-badge ${isYes ? 'badge-yes' : 'badge-no'}">${isYes ? '✓ Potvrzeno (ANO)' : '✕ Zrušeno (NE)'}</span>`;
+      });
+    }
+  }
 
   chatMessages.appendChild(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -1470,7 +1516,7 @@ function updateMusicQueueUI(queue, queueLength) {
 
   if (musicQueueBody) {
     if (!queue || queue.length === 0) {
-      musicQueueBody.innerHTML = '<div class="queue-empty">Fronta je prázdná. Přidej skladbu příkazem <code>!play &lt;odkaz&gt;</code></div>';
+      musicQueueBody.innerHTML = '<div class="queue-empty">Fronta je prázdná. Přidej skladbu příkazem <code>!play &lt;název / odkaz&gt;</code></div>';
     } else {
       musicQueueBody.innerHTML = queue.map((item, idx) => {
         const pos = item.position || (idx + 1);

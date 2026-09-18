@@ -2620,5 +2620,71 @@ body {
   line-height: 1;
 }
 
+/* ── Chat Confirmation Box (ano / ne pro !play písničky) ────────────────── */
+.chat-confirm-box {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-confirm-btn {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: all 0.15s ease;
+}
+
+.chat-confirm-yes {
+  background: var(--color-amber);
+  color: #121110;
+  border: 1px solid var(--color-amber);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+.chat-confirm-yes:hover {
+  background: #fbbf24;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+  transform: translateY(-1px);
+}
+
+.chat-confirm-no {
+  background: rgba(250, 248, 245, 0.08);
+  color: var(--color-base-600);
+  border: 1px solid rgba(250, 248, 245, 0.2);
+}
+
+.chat-confirm-no:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+}
+
+.chat-confirmed-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  padding: 3px 8px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+}
+
+.chat-confirmed-badge.badge-yes {
+  color: var(--color-amber);
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.chat-confirmed-badge.badge-no {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
 
 

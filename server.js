@@ -88,6 +88,120 @@ async function fetchYouTubeTitle(videoId) {
   return `YouTube video (${videoId})`;
 }
 
+async function searchYouTube(query) {
+  if (!query || !query.trim()) return null;
+  const cleanQ = query.trim();
+  try {
+    const url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(cleanQ);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'cs-CZ,cs;q=0.9,en;q=0.8'
+      }
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    const jsonMatch = html.match(/var\s+ytInitialData\s*=\s*({.+?});<\/script>/s) ||
+                      html.match(/ytInitialData\s*=\s*({.+?});<\/script>/s) ||
+                      html.match(/ytInitialData\s*=\s*({.+?});/s);
+    if (jsonMatch) {
+      try {
+        const data = JSON.parse(jsonMatch[1]);
+        const sections = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
+        for (const sec of sections) {
+          const items = sec.itemSectionRenderer?.contents || [];
+          for (const item of items) {
+            if (item.videoRenderer) {
+              const vr = item.videoRenderer;
+              const videoId = vr.videoId;
+              const title = vr.title?.runs?.map(r => r.text).join('') || vr.title?.simpleText;
+              if (videoId && title) {
+                return { videoId, title };
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    const videoMatches = html.matchAll(/\/watch\?v=([a-zA-Z0-9_-]{11})/g);
+    for (const m of videoMatches) {
+      const vid = m[1];
+      if (vid && vid !== 'dQw4w9WgXcQ') {
+        const title = await fetchYouTubeTitle(vid);
+        return { videoId: vid, title };
+      }
+    }
+  } catch (err) {
+    console.warn('Chyba při vyhledávání na YouTube:', err.message);
+  }
+  return null;
+}
+
+function handlePlayTrackSuccess(room, mode, player, track, originalMsg) {
+  const result = room.enqueueMusicTrack(track);
+
+  if (originalMsg) {
+    const chatEntry = room.addChatMessage(player.name, originalMsg, player.isAdmin);
+    io.to(mode).emit('chat_message', chatEntry);
+  }
+
+  if (result.playingNow) {
+    io.to(mode).emit('music_play', {
+      ...result.track,
+      skipVotes: 0,
+      requiredSkipVotes: room.getRequiredSkipVotes(),
+      hasVotedSkip: false,
+      serverTime: Date.now(),
+      queue: room.musicQueue.map((t, idx) => ({
+        position: idx + 1,
+        videoId: t.videoId,
+        title: t.title,
+        requestedBy: t.requestedBy
+      })),
+      queueLength: room.musicQueue.length
+    });
+    io.to(mode).emit('notification', {
+      message: `🎵 ${player.name} pustil(a) hudbu: ${track.title}`
+    });
+  } else {
+    io.to(mode).emit('music_queue_update', {
+      queue: room.musicQueue.map((t, idx) => ({
+        position: idx + 1,
+        videoId: t.videoId,
+        title: t.title,
+        requestedBy: t.requestedBy
+      })),
+      queueLength: room.musicQueue.length
+    });
+    io.to(mode).emit('notification', {
+      message: `📋 ${player.name} přidal(a) do fronty (#${result.position}): ${track.title}`
+    });
+  }
+  broadcastGameState(mode);
+}
+
+function handleSongConfirmation(socket, room, mode, player, pendingConf, isYes) {
+  delete room.pendingSongConfirmations[socket.id];
+
+  if (isYes) {
+    const track = {
+      videoId: pendingConf.videoId,
+      title: pendingConf.title,
+      requestedBy: player.name
+    };
+    handlePlayTrackSuccess(room, mode, player, track);
+  } else {
+    const cancelMsg = room.addChatMessage('🤖 DJ', `@${player.name} Výběr skladby "${pendingConf.title}" zrušen.`);
+    io.to(mode).emit('chat_message', cancelMsg);
+  }
+}
+
 io.on('connection', (socket) => {
   // 1. Vstup do hry (denní nebo unlimited)
   socket.on('join_game', ({ playerName, mode }) => {
@@ -219,65 +333,81 @@ io.on('connection', (socket) => {
     const player = room.players[socket.id];
     if (!player) return;
 
-    // Příkaz pro přehrávání hudby: !play [youtube odkaz]
+    // Kontrola, zda hráč odpovídá na čekající potvrzení skladby (ano / ne)
+    const pendingConf = room.pendingSongConfirmations ? room.pendingSongConfirmations[socket.id] : null;
+    if (pendingConf && Date.now() < pendingConf.expiresAt) {
+      const lower = cleanMsg.toLowerCase().trim();
+      const isYes = ['ano', 'jo', 'yes', 'y', 'jj', '!ano', '!yes', '1'].includes(lower);
+      const isNo = ['ne', 'no', 'n', 'nn', '!ne', '!no', 'zrusit', 'cancel', '0'].includes(lower);
+
+      if (isYes || isNo) {
+        const userMsg = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
+        io.to(mode).emit('chat_message', userMsg);
+        handleSongConfirmation(socket, room, mode, player, pendingConf, isYes);
+        return;
+      }
+    }
+
+    // Příkaz pro přehrávání hudby: !play [youtube odkaz / název skladby]
     if (cleanMsg.toLowerCase().startsWith('!play')) {
-      const urlPart = cleanMsg.slice(5).trim();
-      const videoId = extractYouTubeId(urlPart);
-      if (!videoId) {
+      const queryPart = cleanMsg.slice(5).trim();
+      if (!queryPart) {
         socket.emit('error_message', {
-          message: 'Neplatný YouTube odkaz. Použij např.: !play https://www.youtube.com/watch?v=...'
+          message: 'Zadej název skladby nebo YouTube odkaz. Např.: !play kabat pohoda nebo !play https://www.youtube.com/watch?v=...'
         });
         return;
       }
 
-      const title = await fetchYouTubeTitle(videoId);
-      const track = {
-        videoId,
+      // 1. Zkontrolujeme, zda jde o přímý YouTube odkaz nebo ID -> rovnou pustit bez potvrzení
+      const directVideoId = extractYouTubeId(queryPart);
+      if (directVideoId) {
+        const title = await fetchYouTubeTitle(directVideoId);
+        const track = {
+          videoId: directVideoId,
+          title,
+          requestedBy: player.name
+        };
+        handlePlayTrackSuccess(room, mode, player, track, cleanMsg);
+        return;
+      }
+
+      // 2. Vyhledání podle názvu skladby -> vyžaduje potvrzení: "myslis tuhle sus ? " ano/ne
+      const userMsg = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
+      io.to(mode).emit('chat_message', userMsg);
+
+      const searchResult = await searchYouTube(queryPart);
+      if (!searchResult || !searchResult.videoId) {
+        const notFoundMsg = room.addChatMessage(
+          '🤖 DJ',
+          `@${player.name} Nenašel jsem na YouTube žádnou skladbu pro "${queryPart}". Zkus jiný název nebo zadej přímo odkaz.`
+        );
+        io.to(mode).emit('chat_message', notFoundMsg);
+        return;
+      }
+
+      let title = searchResult.title;
+      if (!title) {
+        title = await fetchYouTubeTitle(searchResult.videoId);
+      }
+
+      const confirmId = 'conf-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+      if (!room.pendingSongConfirmations) room.pendingSongConfirmations = {};
+      room.pendingSongConfirmations[socket.id] = {
+        confirmId,
+        videoId: searchResult.videoId,
         title,
-        requestedBy: player.name
+        requestedBy: player.name,
+        expiresAt: Date.now() + 60000
       };
 
-      const result = room.enqueueMusicTrack(track);
-
-      // Zápis zprávy do chatu
-      const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
-      io.to(mode).emit('chat_message', chatEntry);
-
-      if (result.playingNow) {
-        // Hudba začala hrát ihned od začátku
-        io.to(mode).emit('music_play', {
-          ...result.track,
-          skipVotes: 0,
-          requiredSkipVotes: room.getRequiredSkipVotes(),
-          hasVotedSkip: false,
-          serverTime: Date.now(),
-          queue: room.musicQueue.map((t, idx) => ({
-            position: idx + 1,
-            videoId: t.videoId,
-            title: t.title,
-            requestedBy: t.requestedBy
-          })),
-          queueLength: room.musicQueue.length
-        });
-        io.to(mode).emit('notification', {
-          message: `🎵 ${player.name} pustil(a) hudbu: ${title}`
-        });
-      } else {
-        // Skladba byla zařazena do fronty
-        io.to(mode).emit('music_queue_update', {
-          queue: room.musicQueue.map((t, idx) => ({
-            position: idx + 1,
-            videoId: t.videoId,
-            title: t.title,
-            requestedBy: t.requestedBy
-          })),
-          queueLength: room.musicQueue.length
-        });
-        io.to(mode).emit('notification', {
-          message: `📋 ${player.name} přidal(a) do fronty (#${result.position}): ${title}`
-        });
-      }
-      broadcastGameState(mode);
+      const confirmText = `@${player.name} myslis tuhle sus ? "${title}"`;
+      const botMsg = room.addChatMessage('🤖 DJ', confirmText, false, {
+        confirmId,
+        targetPlayer: player.name,
+        videoId: searchResult.videoId,
+        title
+      });
+      io.to(mode).emit('chat_message', botMsg);
       return;
     }
 
@@ -512,7 +642,7 @@ io.on('connection', (socket) => {
 
     // Nápověda příkazů: !, !help, !prikazy
     if (['!', '!help', '!prikazy', '!commands'].includes(cleanMsg.toLowerCase())) {
-      let helpText = 'Příkazy: !play [YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (fronta), !skip (hlasovat pro skip), !stop (zastavení pro sebe)';
+      let helpText = 'Příkazy: !play [název skladby nebo YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (fronta), !skip (hlasovat pro skip), !stop (zastavení pro sebe)';
       if (player.isAdmin) {
         helpText += '\n👑 Admin příkazy: !kick <hráč>, !clear, !announce <text>, !forceskip, !forcestop, !forceword, !reveal';
       }
@@ -582,6 +712,22 @@ io.on('connection', (socket) => {
     socket.emit('notification', {
       message: '⏹️ Hudba byla zastavena pro tebe.'
     });
+  });
+
+  // Potvrzení vyhledané skladby tlačítkem ANO / NE z chatu
+  socket.on('confirm_play_song', ({ confirm, confirmId }) => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    const player = room?.players[socket.id];
+    if (!room || !player) return;
+
+    const pendingConf = room.pendingSongConfirmations ? room.pendingSongConfirmations[socket.id] : null;
+    if (!pendingConf || (confirmId && pendingConf.confirmId !== confirmId)) {
+      socket.emit('error_message', { message: 'Žádost o potvrzení skladby již vypršela nebo neexistuje.' });
+      return;
+    }
+
+    handleSongConfirmation(socket, room, mode, player, pendingConf, !!confirm);
   });
 
   // Konec skladby ohlášený klientem (automatický přechod na další skladbu ve frontě)
