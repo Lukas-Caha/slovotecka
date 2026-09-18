@@ -494,6 +494,20 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Příkaz pro zábavu: !debil
+    if (cleanMsg.toLowerCase() === '!debil' || cleanMsg.toLowerCase().startsWith('!debil ')) {
+      const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
+      io.to(mode).emit('chat_message', chatEntry);
+
+      const rawTarget = cleanMsg.slice(6).trim();
+      const target = rawTarget ? rawTarget.replace(/^@/, '').trim() : player.name;
+      const percent = Math.floor(Math.random() * 101);
+
+      const botMsg = room.addChatMessage('🤖 BOT', `@${target} je na ${percent}% debil`);
+      io.to(mode).emit('chat_message', botMsg);
+      return;
+    }
+
     // ── ADMINISTRÁTORSKÉ PŘÍKAZY ─────────────────────────
     // Admin příkaz pro promazání chatu: !clear, !clearchat
     if (['!clear', '!clearchat'].includes(cleanMsg.toLowerCase())) {
@@ -642,7 +656,7 @@ io.on('connection', (socket) => {
 
     // Nápověda příkazů: !, !help, !prikazy
     if (['!', '!help', '!prikazy', '!commands'].includes(cleanMsg.toLowerCase())) {
-      let helpText = 'Příkazy: !play [název skladby nebo YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (fronta), !skip (hlasovat pro skip), !stop (zastavení pro sebe)';
+      let helpText = 'Příkazy: !play [název skladby nebo YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (fronta), !skip (hlasovat pro skip), !stop (zastavení pro sebe), !debil (změří na kolik % jsi debil)';
       if (player.isAdmin) {
         helpText += '\n👑 Admin příkazy: !kick <hráč>, !clear, !announce <text>, !forceskip, !forcestop, !forceword, !reveal';
       }
