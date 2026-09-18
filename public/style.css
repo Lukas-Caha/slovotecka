@@ -1175,16 +1175,18 @@ body {
 /* ── TOAST NOTIFICATIONS ────────────────────────────────────────────────── */
 #toast-container {
   position: fixed;
-  bottom: 24px;
+  bottom: 136px;
   left: 24px;
   display: flex;
   flex-direction: column-reverse;
   gap: 10px;
   z-index: 1000;
   max-width: 380px;
+  pointer-events: none;
 }
 
 .toast {
+  pointer-events: auto;
   background: rgba(20, 18, 17, 0.96);
   border: 2px solid var(--border-strong);
   color: var(--color-base-900);
@@ -1247,7 +1249,7 @@ body {
   #toast-container {
     left: 14px;
     right: 14px;
-    bottom: 14px;
+    bottom: 100px;
     max-width: none;
   }
   .game-grid {
