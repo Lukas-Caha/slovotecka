@@ -112,6 +112,7 @@ function loadDayData(day, targetWord) {
 
   const exactMap = new Map();
   const normalizedMap = new Map();
+  const top50Map = new Map();
   let maxRank = 1;
 
   for (let i = 1; i < lines.length; i++) {
@@ -130,6 +131,10 @@ function loadDayData(day, targetWord) {
       exactMap.set(word, rank);
     }
 
+    if (rank <= 50 && !top50Map.has(rank)) {
+      top50Map.set(rank, word);
+    }
+
     const norm = removeDiacritics(word);
     const existing = normalizedMap.get(norm);
     if (!existing || existing.rank > rank) {
@@ -140,13 +145,22 @@ function loadDayData(day, targetWord) {
   // Garantujeme, že cílové slovo má rank 1
   const cleanTarget = normalizeWord(targetWord);
   exactMap.set(cleanTarget, 1);
+  top50Map.set(1, cleanTarget);
   normalizedMap.set(removeDiacritics(cleanTarget), { word: cleanTarget, rank: 1 });
+
+  const top50 = [];
+  for (let r = 1; r <= 50; r++) {
+    if (top50Map.has(r)) {
+      top50.push({ rank: r, word: top50Map.get(r) });
+    }
+  }
 
   const dayData = {
     day,
     targetWord: cleanTarget,
     exactMap,
     normalizedMap,
+    top50,
     maxRank
   };
 
@@ -322,6 +336,12 @@ function calculateRank(targetWordObj, userGuess) {
   };
 }
 
+// Získání TOP 50 nejbližších slov
+function getTop50(targetWordObj) {
+  if (!targetWordObj || !targetWordObj.dayData) return [];
+  return targetWordObj.dayData.top50 || [];
+}
+
 module.exports = {
   getDailyWord,
   getRandomWord,
@@ -329,8 +349,10 @@ module.exports = {
   getUnlimitedWord,
   getSpecificWord,
   calculateRank,
+  getTop50,
   normalizeWord,
   removeDiacritics,
   getCzechDateStr,
   getDayNumber
 };
+

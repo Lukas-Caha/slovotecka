@@ -230,6 +230,175 @@ if (btnFilterMine) {
   });
 }
 
+// DOM – TOP 50 Modal
+const top50Modal = document.getElementById('top50-modal');
+const btnShowTop50 = document.getElementById('btn-show-top50');
+const btnCloseTop50 = document.getElementById('btn-close-top50');
+const btnAckTop50 = document.getElementById('btn-ack-top50');
+const top50Grid = document.getElementById('top50-grid');
+const top50SecretBadge = document.getElementById('top50-secret-badge');
+let currentTop50Data = null;
+
+function showTop50Modal() {
+  if (top50Modal) top50Modal.style.display = 'flex';
+}
+
+function hideTop50Modal() {
+  if (top50Modal) top50Modal.style.display = 'none';
+}
+
+if (btnCloseTop50) btnCloseTop50.addEventListener('click', hideTop50Modal);
+if (btnAckTop50) btnAckTop50.addEventListener('click', hideTop50Modal);
+if (top50Modal) {
+  top50Modal.addEventListener('click', (e) => {
+    if (e.target === top50Modal) hideTop50Modal();
+  });
+}
+
+function renderTop50Modal(data) {
+  if (!top50Grid) return;
+  top50Grid.innerHTML = '';
+
+  const word = data?.word || latestGameState?.secretWord || '';
+  if (top50SecretBadge) {
+    top50SecretBadge.textContent = word ? `#1 ${word.toUpperCase()}` : '#1 ???';
+  }
+
+  const items = data?.top50 || [];
+  if (items.length === 0) {
+    top50Grid.innerHTML = '<div class="empty-guesses">Data TOP 50 nejsou k dispozici.</div>';
+    return;
+  }
+
+  // Zjistíme, která slova hráč sám trefil
+  const myWordsMap = new Map();
+  if (latestGameState?.guesses) {
+    for (const g of latestGameState.guesses) {
+      if (g.isMine && g.word) {
+        myWordsMap.set(g.word.toLowerCase(), g);
+      }
+    }
+  }
+
+  for (const item of items) {
+    const isMine = myWordsMap.has(item.word.toLowerCase());
+    const div = document.createElement('div');
+    div.className = 'top50-item' + (isMine ? ' is-mine' : '');
+
+    // Výpočet šířky pruhu
+    const fillWidth = Math.max(8, Math.round((1 - (item.rank - 1) / 50) * 100));
+    let barColor = '#22c55e';
+    if (item.rank === 1) barColor = '#eab308';
+    else if (item.rank > 20) barColor = '#10b981';
+
+    div.innerHTML = `
+      <div class="top50-item-bg" style="width: ${fillWidth}%; background-color: ${barColor};"></div>
+      <div class="top50-item-left">
+        <span class="top50-rank" style="color: ${barColor}; border-color: ${barColor}40;">#${item.rank}</span>
+        <span class="top50-word">${escapeHtml(item.word)}</span>
+      </div>
+      <div class="top50-item-right">
+        ${isMine ? '<span class="top50-mine-badge">✓ TVŮJ TIP</span>' : ''}
+      </div>
+    `;
+
+    top50Grid.appendChild(div);
+  }
+}
+
+if (btnShowTop50) {
+  btnShowTop50.addEventListener('click', () => {
+    if (currentTop50Data && currentTop50Data.top50 && currentTop50Data.top50.length > 0) {
+      renderTop50Modal(currentTop50Data);
+      showTop50Modal();
+    } else {
+      socket.emit('get_top_50');
+      showTop50Modal();
+    }
+  });
+}
+
+// DOM – Chat Ankety (!poll)
+const chatPollWidget = document.getElementById('chat-poll-widget');
+const pollQuestion = document.getElementById('poll-question');
+const pollTimerBadge = document.getElementById('poll-timer-badge');
+const pollOptionsList = document.getElementById('poll-options-list');
+const pollVotesTotal = document.getElementById('poll-votes-total');
+const pollAuthor = document.getElementById('poll-author');
+
+let currentPollState = null;
+let pollTimerCountdown = null;
+
+function renderPoll(poll) {
+  currentPollState = poll;
+  if (!chatPollWidget) return;
+
+  if (pollTimerCountdown) {
+    clearInterval(pollTimerCountdown);
+    pollTimerCountdown = null;
+  }
+
+  if (!poll || !poll.active) {
+    chatPollWidget.style.display = 'none';
+    return;
+  }
+
+  chatPollWidget.style.display = 'block';
+  if (pollQuestion) pollQuestion.textContent = poll.question;
+  if (pollAuthor) pollAuthor.textContent = `od ${poll.createdBy || 'Neznámý'}`;
+  if (pollVotesTotal) {
+    const total = poll.totalVotes || 0;
+    pollVotesTotal.textContent = `${total} ${total === 1 ? 'hlas' : (total >= 2 && total <= 4 ? 'hlasy' : 'hlasů')}`;
+  }
+
+  let timeLeft = typeof poll.timeLeft === 'number' ? poll.timeLeft : 60;
+  if (pollTimerBadge) {
+    pollTimerBadge.textContent = `${timeLeft} s`;
+  }
+
+  pollTimerCountdown = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      clearInterval(pollTimerCountdown);
+      pollTimerCountdown = null;
+      if (pollTimerBadge) pollTimerBadge.textContent = '0 s';
+    } else {
+      if (pollTimerBadge) pollTimerBadge.textContent = `${timeLeft} s`;
+    }
+  }, 1000);
+
+  if (pollOptionsList) {
+    pollOptionsList.innerHTML = '';
+    const myVotedIdx = poll.myVotedOption;
+
+    poll.options.forEach((opt, idx) => {
+      const isVoted = myVotedIdx === idx;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'poll-option-btn' + (isVoted ? ' is-voted' : '');
+
+      btn.innerHTML = `
+        <div class="poll-option-bar" style="width: ${opt.percent || 0}%;"></div>
+        <div class="poll-option-text">
+          <span class="poll-option-num">${idx + 1}.</span>
+          ${isVoted ? '<span class="poll-check-icon">✓</span>' : ''}
+          <span>${escapeHtml(opt.text)}</span>
+        </div>
+        <div class="poll-option-stats">
+          <span>${opt.percent || 0}%</span>
+          <span style="opacity: 0.7;">(${opt.votesCount || 0})</span>
+        </div>
+      `;
+
+      btn.addEventListener('click', () => {
+        socket.emit('vote_poll', { optionIndex: idx });
+      });
+
+      pollOptionsList.appendChild(btn);
+    });
+  }
+}
+
 // DOM – YouTube Hudební přehrávač
 const musicBar = document.getElementById('music-bar');
 const musicTitle = document.getElementById('music-title');
@@ -1256,10 +1425,28 @@ socket.on('game_state', (state) => {
   renderGameState(state);
 });
 
+socket.on('top_50_data', (data) => {
+  currentTop50Data = data;
+  renderTop50Modal(data);
+  showTop50Modal();
+});
+
+socket.on('poll_update', (poll) => {
+  renderPoll(poll);
+});
+
 let chatLoaded = false;
 
 function renderGameState(state) {
   latestGameState = state;
+
+  if (state.top50) {
+    currentTop50Data = { word: state.secretWord, top50: state.top50 };
+  }
+
+  if (state.poll !== undefined) {
+    renderPoll(state.poll);
+  }
 
   // Synchronizace online hráčů pro @mentions
   currentRoomPlayers = state.players || [];
@@ -1370,6 +1557,10 @@ function renderGameState(state) {
   }
   if (guessesTitle) {
     guessesTitle.textContent = isSpectator ? '[ ODHALENÁ SLOVA • DIVÁK 👁️ ]' : '[ ODHALENÁ SLOVA ]';
+  }
+
+  if (top50Modal && top50Modal.style.display === 'flex' && currentTop50Data) {
+    renderTop50Modal(currentTop50Data);
   }
 
   // Zpracování posledního tipu hráče (Contexto styl přímo pod polem)

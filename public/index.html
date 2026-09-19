@@ -135,12 +135,37 @@
             <li>kdyz hraje hudba, nahore se toci stylovej malej vinyl s thumbnail videa jako na gramofonu pagMan.</li>
             <li>kdyz se restartne nebo vypne server, stav se ulozi a po navratu pod stejnym jmenem vidis zpatky svoje odpovedi i pocet tipu. o pulnoci se to vzdy maze aby to nezralo misto.</li>
             <li>napoveda commandu pres !</li>
-            <li><strong>NOVINKA:</strong> Divácký mód! Kdo uhodne slovo nebo se vzdá, vidí naživo všechny tipy ostatních hráčů i s jejich jmény a přepínačem (všechny tipy / moje tipy).</li>
+            <li>kdyz uhodnes slovo nebo to vzdas, prepne se ti to do divaka a vidis live vsechny tipy ostatnich lidi i s jejich jmenama lol. muzes si nahore prepinat jen svoje / vsechny.</li>
+            <li>jakmile dohrajes (vyhra nebo ragequit), muzes si rozkliknout TOP 50 nejblizsich slov od #1 po #50 a vidis i co z toho jsi sam trefil pagMan.</li>
+            <li>ankety v chatu! napis "!poll Otazka? | moznost 1 | moznost 2" a lidi muzou normalne klikat tlacitka nebo psat cisla do chatu.</li>
+            <li>kdyz nekdo trefi #1, bot v chatu hodi shrnuti kola – kdo byl snajpr, kdo zabloudil s nejvetsim nesmyslem xdd, kdo si vzal napovedu clown a kdo mackal klavesnici jak ADHD.</li>
             <li>more cumming soon</li>
           </ul>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary btn-modal-ack" id="btn-ack-whats-new">ROZUMÍM</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup: TOP 50 NEJBLIŽŠÍCH SLOV (Pro hráče po dohrání kola) -->
+    <div id="top50-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card modal-card-top50">
+        <div class="modal-header">
+          <div class="top50-header-left">
+            <span class="modal-title">[ TOP 50 NEJBLIŽŠÍCH SLOV ]</span>
+            <span class="top50-secret-badge" id="top50-secret-badge">#1 ???</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="btn-close-top50" aria-label="Zavřít">&times;</button>
+        </div>
+        <div class="modal-body top50-modal-body">
+          <p class="top50-info-text">Žebříček 50 sémanticky nejbližších slov z našeho modelu k dnešnímu tajnému slovu. Zeleně označená slova jsou ta, která jsi sám/sama během hry trefil(a)!</p>
+          <div class="top50-grid" id="top50-grid">
+            <!-- Dynamicky generováno: 50 položek -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary btn-modal-ack" id="btn-ack-top50">ZAVŘÍT</button>
         </div>
       </div>
     </div>
@@ -343,9 +368,15 @@
 
           <!-- Divácký mód banner (zobrazí se po vyřešení nebo vzdání) -->
           <div id="spectator-banner" class="spectator-banner" style="display: none;">
-            <div class="spectator-badge-row">
-              <span class="spectator-pulse-dot" aria-hidden="true"></span>
-              <span class="spectator-tag">[ 👁️ DIVÁCKÝ MÓD ]</span>
+            <div class="spectator-banner-head">
+              <div class="spectator-badge-row">
+                <span class="spectator-pulse-dot" aria-hidden="true"></span>
+                <span class="spectator-tag">[ 👁️ DIVÁCKÝ MÓD ]</span>
+              </div>
+              <button type="button" class="btn btn-spectator-top50" id="btn-show-top50" title="Zobrazit 50 nejbližších slov">
+                <span class="top50-btn-icon">🏆</span>
+                <span>ZOBRAZIT TOP 50</span>
+              </button>
             </div>
             <span class="spectator-desc">Uhodl(a) jsi nebo ses vzdal(a). Nyní sleduješ tipy ostatních hráčů v reálném čase!</span>
           </div>
@@ -387,6 +418,26 @@
             <span class="chat-emote-tag" id="chat-emote-count" title="Dostupné 7TV emoty (Vernaton999 & Globální)">7TV EMOTES</span>
             <img src="/symbolWhite.svg" alt="" class="panel-symbol" aria-hidden="true">
           </div>
+
+          <!-- Živá anketa v chatu (!poll) -->
+          <div id="chat-poll-widget" class="chat-poll-widget" style="display: none;">
+            <div class="poll-header-row">
+              <div class="poll-badge-wrap">
+                <span class="poll-pulse-dot" aria-hidden="true"></span>
+                <span class="poll-tag">[ 📊 ANKETA ]</span>
+              </div>
+              <span class="poll-timer-badge" id="poll-timer-badge">60 s</span>
+            </div>
+            <div class="poll-question" id="poll-question">Otázka ankety...</div>
+            <div class="poll-options-list" id="poll-options-list">
+              <!-- Dynamicky generováno -->
+            </div>
+            <div class="poll-footer-meta">
+              <span class="poll-votes-total" id="poll-votes-total">0 hlasů</span>
+              <span class="poll-author" id="poll-author">od Lukas</span>
+            </div>
+          </div>
+
           <div class="chat-messages" id="chat-messages">
             <div class="chat-empty">Zatím žádné zprávy. Napiš něco do chatu!</div>
           </div>
@@ -428,6 +479,10 @@
               <button type="button" class="chat-command-item" data-command="!debil">
                 <span class="cmd-code">!debil</span>
                 <span class="cmd-desc">Změří, na kolik procent jsi debil</span>
+              </button>
+              <button type="button" class="chat-command-item" data-command="!poll Otázka? | Ano | Ne">
+                <span class="cmd-code">!poll &lt;otázka&gt; | &lt;volba 1&gt; | &lt;volba 2&gt;</span>
+                <span class="cmd-desc">Vyhlásí anketu v chatu na 60 sekund</span>
               </button>
             </div>
           </div>

@@ -41,6 +41,8 @@ class BaseGameRoom {
     this.musicSkipVotes = new Set(); // socketIds hráčů, kteří hlasovali pro přeskočení skladby
     this.lastTrackEndedAt = 0; // debounce pro konec skladby
     this.pendingSongConfirmations = {}; // socketId -> { confirmId, videoId, title, query, requestedBy, expiresAt }
+    this.currentPoll = null; // { id, question, options: [{ text, voters }], createdBy, createdAt, expiresAt, active }
+    this.lastPollCreatedAt = 0;
     this.onStateChange = null;
   }
 
@@ -372,6 +374,193 @@ class BaseGameRoom {
     this.chatHistory = [];
   }
 
+  // ── ANKETY V CHATU (!poll) ──────────────────────────────────
+  createPoll(question, options, createdBy, isAdmin = false) {
+    const now = Date.now();
+    if (!isAdmin && this.lastPollCreatedAt && (now - this.lastPollCreatedAt < 60000)) {
+      const waitSec = Math.ceil((60000 - (now - this.lastPollCreatedAt)) / 1000);
+      return { error: `Další anketu můžeš vytvořit za ${waitSec} s.` };
+    }
+    if (this.currentPoll && this.currentPoll.active && now < this.currentPoll.expiresAt) {
+      if (!isAdmin) {
+        return { error: 'V aréně právě probíhá jiná anketa. Počkej, až skončí.' };
+      }
+    }
+
+    const cleanQuestion = (question || '').trim().slice(0, 120);
+    if (!cleanQuestion) {
+      return { error: 'Zadej otázku ankety. Např.: !poll Dáme těžké slovo? | Ano | Ne' };
+    }
+
+    const cleanOptions = (options || [])
+      .map(o => (o || '').trim().slice(0, 50))
+      .filter(o => o.length > 0);
+
+    if (cleanOptions.length < 2) {
+      return { error: 'Anketa musí mít alespoň 2 možnosti oddělené svislicí |.' };
+    }
+    if (cleanOptions.length > 5) {
+      return { error: 'Anketa může mít maximálně 5 možností.' };
+    }
+
+    this.lastPollCreatedAt = now;
+    this.currentPoll = {
+      id: 'poll-' + now + '-' + Math.random().toString(36).substr(2, 4),
+      question: cleanQuestion,
+      options: cleanOptions.map(text => ({ text, voters: new Set() })),
+      createdBy: createdBy || 'Neznámý',
+      createdAt: now,
+      expiresAt: now + 60000,
+      active: true
+    };
+
+    return {
+      success: true,
+      poll: this.getPollPublicState()
+    };
+  }
+
+  votePoll(socketId, optionIndex) {
+    if (!this.currentPoll || !this.currentPoll.active) {
+      return { error: 'Právě neprobíhá žádná aktivní anketa.' };
+    }
+    if (Date.now() > this.currentPoll.expiresAt) {
+      this.currentPoll.active = false;
+      return { error: 'Tato anketa již skončila.' };
+    }
+    const idx = parseInt(optionIndex, 10);
+    if (isNaN(idx) || idx < 0 || idx >= this.currentPoll.options.length) {
+      return { error: 'Neplatná možnost ankety.' };
+    }
+
+    // Odstranění předchozího hlasu tohoto hráče ze všech možností
+    for (const opt of this.currentPoll.options) {
+      opt.voters.delete(socketId);
+    }
+
+    // Započtení nového hlasu
+    this.currentPoll.options[idx].voters.add(socketId);
+
+    return {
+      success: true,
+      poll: this.getPollPublicState(socketId),
+      optionIndex: idx
+    };
+  }
+
+  endPoll() {
+    if (!this.currentPoll) return null;
+    this.currentPoll.active = false;
+    const finalState = this.getPollPublicState();
+
+    let winner = null;
+    let maxVotes = -1;
+    let isTie = false;
+    for (const opt of finalState.options) {
+      if (opt.votesCount > maxVotes) {
+        maxVotes = opt.votesCount;
+        winner = opt;
+        isTie = false;
+      } else if (opt.votesCount === maxVotes && maxVotes > 0) {
+        isTie = true;
+      }
+    }
+
+    return {
+      ...finalState,
+      winner: isTie ? null : (winner && maxVotes > 0 ? winner.text : null),
+      isTie: isTie && maxVotes > 0
+    };
+  }
+
+  getPollPublicState(forSocketId = null) {
+    if (!this.currentPoll) return null;
+    const totalVotes = this.currentPoll.options.reduce((sum, opt) => sum + opt.voters.size, 0);
+
+    let myVotedOption = null;
+    const options = this.currentPoll.options.map((opt, idx) => {
+      const votesCount = opt.voters.size;
+      const percent = totalVotes > 0 ? Math.round((votesCount / totalVotes) * 100) : 0;
+      if (forSocketId && opt.voters.has(forSocketId)) {
+        myVotedOption = idx;
+      }
+      return {
+        index: idx,
+        text: opt.text,
+        votesCount,
+        percent
+      };
+    });
+
+    const timeLeft = Math.max(0, Math.ceil((this.currentPoll.expiresAt - Date.now()) / 1000));
+
+    return {
+      id: this.currentPoll.id,
+      question: this.currentPoll.question,
+      options,
+      totalVotes,
+      createdBy: this.currentPoll.createdBy,
+      active: this.currentPoll.active && timeLeft > 0,
+      timeLeft,
+      myVotedOption
+    };
+  }
+
+  // ── BOT KOMENTÁTOR NA KONCI KOLA ────────────────────────────
+  generateRoundCommentary(winnerPlayer) {
+    if (!winnerPlayer) return [];
+
+    const lines = [];
+
+    // 1. 🏆 Vítěz kola
+    const count = winnerPlayer.guessCount || 1;
+    if (count < 25) {
+      lines.push(`🏆 Kolo vyhrál ${winnerPlayer.name} na pouhých ${count} pokusů! Čistá telepatie, nebo cheatoval? monkaS`);
+    } else if (count <= 70) {
+      lines.push(`🏆 Vítězem kola je ${winnerPlayer.name} na ${count}. pokus! EZ Clap`);
+    } else {
+      lines.push(`🏆 ${winnerPlayer.name} to konečně po těžkém boji dotáhl na ${count}. pokus! Pot a slzy. Sadge`);
+    }
+
+    // 2. 💀 Největší bloudění kola (hledá se tip s nejvyšším rankem >= 5 000)
+    let worstGuess = null;
+    for (const g of this.guesses) {
+      if (g.rank && g.word && (!worstGuess || g.rank > worstGuess.rank)) {
+        worstGuess = g;
+      }
+    }
+    if (worstGuess && worstGuess.rank >= 5000) {
+      lines.push(`💀 Největší bloudění předvedl ${worstGuess.player}, který zkusil slovo "${worstGuess.word}" (rank #${worstGuess.rank})! Co to mělo jako bejt?! xdd`);
+    }
+
+    // 4. 🤡 Klaun kola (použil nápovědu)
+    const allProfiles = Object.values(this.playerProfiles);
+    const clownPlayer = allProfiles.find(p => p.usedHint);
+    if (clownPlayer) {
+      lines.push(`🤡 Ocenění Klaun kola získává ${clownPlayer.name}, protože nevydržel tlak a zobrazil si nápovědu! clown`);
+    }
+
+    // 5. ⌨️ Stroj na slova (ADHD)
+    let maxGuesser = null;
+    for (const p of allProfiles) {
+      if (!maxGuesser || (p.guessCount || 0) > (maxGuesser.guessCount || 0)) {
+        maxGuesser = p;
+      }
+    }
+    if (maxGuesser && (maxGuesser.guessCount || 0) >= 30) {
+      lines.push(`⌨️ Klávesnici nejvíc zavařil ${maxGuesser.name} s celkem ${maxGuesser.guessCount} tipy. ADHD`);
+    }
+
+    // 6. 🏳️ Bílý prapor (vzdal se)
+    const surrenderedPlayer = allProfiles.find(p => p.gaveUp);
+    if (surrenderedPlayer) {
+      lines.push(`🏳️ ${surrenderedPlayer.name} to psychicky neunesl a vzdal se. F v chatu pro padlého bratra.`);
+    }
+
+    return lines;
+  }
+
+
   // Sanitizace tipů:
   // - Aktivní hráč vidí pouze svoje tipy a společné tipy (které sám také trefil)
   // - Divák (ten, kdo uhodl nebo se vzdal) vidí naživo všechny tipy všech hráčů
@@ -493,6 +682,8 @@ class DailyGameRoom extends BaseGameRoom {
           }
         : null,
       secretWord: canSeeSecret ? this.targetWordObj.word : null,
+      top50: canSeeSecret ? wordService.getTop50(this.targetWordObj) : null,
+      poll: this.getPollPublicState(socketId),
       players: Object.values(this.players).map((p) => ({
         id: p.id,
         name: p.name,
@@ -667,6 +858,8 @@ class UnlimitedGameRoom extends BaseGameRoom {
           }
         : null,
       secretWord: canSeeSecret ? this.targetWordObj.word : null,
+      top50: canSeeSecret ? wordService.getTop50(this.targetWordObj) : null,
+      poll: this.getPollPublicState(socketId),
       players: Object.values(this.players).map((p) => ({
         id: p.id,
         name: p.name,

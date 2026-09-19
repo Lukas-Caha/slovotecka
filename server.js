@@ -20,6 +20,11 @@ gameManager.loadStateFromFile();
 // Statické soubory z /public
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Ping / Health endpoint pro UptimeRobot a Render keep-alive
+app.get(['/ping', '/health'], (req, res) => {
+  res.status(200).send('pong');
+});
+
 // 7TV Emotes API pro herní chat
 app.get('/api/emotes', (req, res) => {
   res.json(emoteService.getEmotes());
@@ -54,6 +59,46 @@ function broadcastGameState(mode) {
       }
     }
   }
+}
+
+// Správa anket v aréně (!poll)
+const activePollTimers = new Map(); // mode -> timerId
+
+function broadcastPollUpdate(mode) {
+  const room = gameManager.getRoom(mode);
+  if (!room) return;
+  for (const socketId of Object.keys(room.players)) {
+    const playerSocket = io.sockets.sockets.get(socketId);
+    if (playerSocket) {
+      playerSocket.emit('poll_update', room.getPollPublicState(socketId));
+    }
+  }
+}
+
+function handleEndPoll(mode, byAdmin = false) {
+  const room = gameManager.getRoom(mode);
+  if (!room || !room.currentPoll || !room.currentPoll.active) return;
+
+  if (activePollTimers.has(mode)) {
+    clearTimeout(activePollTimers.get(mode));
+    activePollTimers.delete(mode);
+  }
+
+  const result = room.endPoll();
+  broadcastPollUpdate(mode);
+
+  let endMsg = `📊 Anketa "${result.question}" skončila! `;
+  if (result.winner) {
+    endMsg += `Vítězí "${result.winner}" (${result.totalVotes} hlasů)!`;
+  } else if (result.isTie) {
+    endMsg += `Remíza (${result.totalVotes} hlasů)!`;
+  } else {
+    endMsg += `Nikdo nehlasoval.`;
+  }
+
+  const botMsg = room.addChatMessage('📊 ANKETA', endMsg, false, null, '#f59e0b');
+  io.to(mode).emit('chat_message', botMsg);
+  broadcastGameState(mode);
 }
 
 // Kontrola půlnoci každých 30 sekund (pro denní hru)
@@ -294,6 +339,14 @@ io.on('connection', (socket) => {
       socket.emit('notification', {
         message: `Výborně! Uhodl(a) jsi tajné slovo: "${result.guess.word}" na ${result.player.guessCount}. pokus!`
       });
+
+      // Bot komentátor na konci kola
+      const commentaryLines = room.generateRoundCommentary(result.player);
+      if (commentaryLines && commentaryLines.length > 0) {
+        const fullCommentary = commentaryLines.join('\n');
+        const botMsg = room.addChatMessage('🤖 BOT', fullCommentary, false, null, '#10b981');
+        io.to(mode).emit('chat_message', botMsg);
+      }
     } else {
       socket.to(mode).emit('notification', {
         message: `${result.player.name} poslal(a) nový tip.`
@@ -574,6 +627,87 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Příkaz pro vytvoření ankety: !poll <otázka> | <volba 1> | <volba 2> [| <volba 3> ...]
+    if (cleanMsg.toLowerCase().startsWith('!poll ') || cleanMsg.toLowerCase() === '!poll') {
+      const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
+      io.to(mode).emit('chat_message', chatEntry);
+
+      const pollContent = cleanMsg.slice(5).trim();
+      if (!pollContent || !pollContent.includes('|')) {
+        socket.emit('error_message', {
+          message: 'Použití: !poll Otázka? | Možnost 1 | Možnost 2 (odděluj svislicí |).'
+        });
+        return;
+      }
+
+      const parts = pollContent.split('|').map(s => s.trim()).filter(Boolean);
+      if (parts.length < 3) {
+        socket.emit('error_message', {
+          message: 'Zadej otázku a alespoň 2 možnosti. Např.: !poll Dáme těžké slovo? | Ano | Ne'
+        });
+        return;
+      }
+
+      const question = parts[0];
+      const options = parts.slice(1);
+
+      const createRes = room.createPoll(question, options, player.name, player.isAdmin);
+      if (createRes.error) {
+        socket.emit('error_message', { message: createRes.error });
+        return;
+      }
+
+      if (activePollTimers.has(mode)) {
+        clearTimeout(activePollTimers.get(mode));
+      }
+      activePollTimers.set(mode, setTimeout(() => {
+        handleEndPoll(mode);
+      }, 60000));
+
+      const annMsg = room.addChatMessage(
+        '📊 ANKETA',
+        `@${player.name} vyhlásil(a) anketu: "${createRes.poll.question}"!\nHlasuj kliknutím na tlačítko nebo napiš číslo 1-${options.length} do chatu (zbývá 60 s).`,
+        false,
+        null,
+        '#f59e0b'
+      );
+      io.to(mode).emit('chat_message', annMsg);
+      broadcastPollUpdate(mode);
+      return;
+    }
+
+    // Příkaz pro předčasné ukončení ankety: !endpoll
+    if (cleanMsg.toLowerCase() === '!endpoll') {
+      if (!player.isAdmin) {
+        socket.emit('error_message', { message: 'Nemáš administrátorská oprávnění.' });
+        return;
+      }
+      if (!room.currentPoll || !room.currentPoll.active) {
+        socket.emit('error_message', { message: 'Právě neprobíhá žádná aktivní anketa.' });
+        return;
+      }
+      handleEndPoll(mode, true);
+      return;
+    }
+
+    // Hlasování v anketě napsáním čísla do chatu (1, 2, 3...)
+    if (/^[1-5]$/.test(cleanMsg) && room.currentPoll && room.currentPoll.active) {
+      const optIdx = parseInt(cleanMsg, 10) - 1;
+      if (optIdx < room.currentPoll.options.length) {
+        const vRes = room.votePoll(socket.id, optIdx);
+        if (!vRes.error) {
+          const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
+          io.to(mode).emit('chat_message', chatEntry);
+
+          socket.emit('notification', {
+            message: `Tvůj hlas byl započítán pro: "${room.currentPoll.options[optIdx].text}"`
+          });
+          broadcastPollUpdate(mode);
+          return;
+        }
+      }
+    }
+
     // ── ADMINISTRÁTORSKÉ PŘÍKAZY ─────────────────────────
     // Admin příkaz pro promazání chatu: !clear, !clearchat
     if (['!clear', '!clearchat'].includes(cleanMsg.toLowerCase())) {
@@ -723,9 +857,9 @@ io.on('connection', (socket) => {
 
     // Nápověda příkazů: !, !help, !prikazy
     if (['!', '!help', '!prikazy', '!commands'].includes(cleanMsg.toLowerCase())) {
-      let helpText = 'Příkazy: !play [název skladby nebo YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (fronta), !skip (hlasovat pro skip), !stop (zastavení pro sebe), !debil (změří na kolik % jsi debil)';
+      let helpText = 'Příkazy: !play [název skladby nebo YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (fronta), !skip (hlasovat pro skip), !stop (zastavení pro sebe), !debil (změří na kolik % jsi debil), !poll <otázka> | <volba 1> | <volba 2> (anketa)';
       if (player.isAdmin) {
-        helpText += '\n👑 Admin příkazy: !kick <hráč>, !clear, !announce <text>, !forceskip, !forcestop, !forceword, !reveal';
+        helpText += '\n👑 Admin příkazy: !kick <hráč>, !clear, !announce <text>, !forceskip, !forcestop, !forceword, !reveal, !endpoll';
       }
       const helpMsg = room.addChatMessage('ℹ️ NÁPOVĚDA', helpText, player.isAdmin);
       socket.emit('chat_message', helpMsg);
@@ -734,6 +868,44 @@ io.on('connection', (socket) => {
 
     const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
     io.to(mode).emit('chat_message', chatEntry);
+  });
+
+  // Hlasování v anketě kliknutím na tlačítko
+  socket.on('vote_poll', ({ optionIndex }) => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    const player = room?.players[socket.id];
+    if (!room || !player) return;
+
+    const vRes = room.votePoll(socket.id, optionIndex);
+    if (vRes.error) {
+      socket.emit('error_message', { message: vRes.error });
+      return;
+    }
+
+    socket.emit('notification', {
+      message: `Hlasoval(a) jsi pro: "${room.currentPoll.options[optionIndex].text}"`
+    });
+    broadcastPollUpdate(mode);
+  });
+
+  // Žádost o data TOP 50 pro hráče v diváckém režimu
+  socket.on('get_top_50', () => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    const player = room?.players[socket.id];
+    if (!room || !player) return;
+
+    const canSeeSecret = player.solved || player.gaveUp;
+    if (!canSeeSecret) {
+      socket.emit('error_message', { message: 'TOP 50 je dostupné až po uhodnutí slova nebo vzdání se.' });
+      return;
+    }
+
+    const top50 = wordService.getTop50(room.targetWordObj);
+    socket.emit('top_50_data', {
+      word: room.targetWordObj.word,
+      top50
+    });
   });
 
   // Hlasování o přeskočení hudby tlačítkem z horního baru

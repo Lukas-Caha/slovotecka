@@ -1320,6 +1320,7 @@ body {
   line-height: 1.5;
   font-size: 0.88rem;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 /* 7TV Emoty v chatu */
@@ -3110,6 +3111,327 @@ body {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.5);
 }
+
+/* ── TOP 50 MODAL & SPECTATOR BUTTON ─────────────────────────────────────── */
+.spectator-banner-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.btn-spectator-top50 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-spectator-top50:hover {
+  background: #f59e0b;
+  color: #121110;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+  transform: translateY(-1px);
+}
+
+.top50-btn-icon {
+  font-size: 0.9rem;
+}
+
+.modal-card-top50 {
+  max-width: 760px;
+  width: 95%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.top50-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.top50-secret-badge {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--color-green, #22c55e);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  padding: 2px 8px;
+  letter-spacing: 0.05em;
+}
+
+.top50-modal-body {
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.top50-info-text {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--color-base-600);
+  line-height: 1.45;
+  margin-bottom: 14px;
+  border-left: 2px solid var(--color-amber);
+  padding-left: 10px;
+}
+
+.top50-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 8px;
+}
+
+.top50-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  background: rgba(18, 16, 15, 0.8);
+  border: 1px solid rgba(250, 248, 245, 0.12);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.top50-item:hover {
+  transform: translateX(2px);
+  border-color: rgba(250, 248, 245, 0.3);
+}
+
+.top50-item-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  opacity: 0.18;
+  z-index: 1;
+  pointer-events: none;
+  transition: width 0.3s ease;
+}
+
+.top50-item.is-mine {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(34, 197, 94, 0.08);
+  box-shadow: inset 0 0 8px rgba(34, 197, 94, 0.15);
+}
+
+.top50-item-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top50-rank {
+  font-weight: 800;
+  font-size: 0.8rem;
+  min-width: 38px;
+  padding: 2px 6px;
+  text-align: center;
+  letter-spacing: 0.05em;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.top50-word {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--color-base-900);
+  letter-spacing: 0.04em;
+}
+
+.top50-item-right {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.top50-mine-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+}
+
+/* ── CHAT POLL WIDGET (!poll) ────────────────────────────────────────────── */
+.chat-poll-widget {
+  background: rgba(18, 16, 14, 0.95);
+  border-bottom: 2px solid var(--color-amber, #f59e0b);
+  padding: 10px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  animation: pollSlideDown 0.25s ease-out;
+}
+
+@keyframes pollSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.poll-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.poll-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.poll-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 6px #f59e0b;
+  animation: pulseDot 1.5s infinite;
+}
+
+.poll-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #f59e0b;
+  letter-spacing: 0.08em;
+}
+
+.poll-timer-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--color-base-700);
+  background: rgba(250, 248, 245, 0.08);
+  border: 1px solid rgba(250, 248, 245, 0.15);
+  padding: 1px 7px;
+  border-radius: 2px;
+}
+
+.poll-question {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--color-base-900);
+  margin-bottom: 10px;
+  line-height: 1.35;
+}
+
+.poll-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.poll-option-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 10px;
+  background: rgba(30, 27, 25, 0.9);
+  border: 1px solid rgba(250, 248, 245, 0.15);
+  color: var(--color-base-900);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.poll-option-btn:hover:not(:disabled) {
+  border-color: var(--color-amber);
+  transform: translateX(1px);
+}
+
+.poll-option-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: rgba(245, 158, 11, 0.25);
+  border-right: 2px solid rgba(245, 158, 11, 0.7);
+  transition: width 0.35s ease;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.poll-option-btn.is-voted {
+  border-color: var(--color-amber);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+}
+
+.poll-option-btn.is-voted .poll-option-bar {
+  background: rgba(245, 158, 11, 0.4);
+  border-right: 2px solid #f59e0b;
+}
+
+.poll-option-text {
+  position: relative;
+  z-index: 2;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.poll-option-num {
+  color: var(--color-base-600);
+  font-size: 0.75rem;
+}
+
+.poll-check-icon {
+  color: #f59e0b;
+  font-size: 0.85rem;
+}
+
+.poll-option-stats {
+  position: relative;
+  z-index: 2;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--color-base-700);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.poll-footer-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-base-600);
+}
+
 
 
 
