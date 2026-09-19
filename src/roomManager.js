@@ -6,6 +6,29 @@ const STATE_FILE_PATH = path.join(__dirname, 'data', 'savedState.json');
 
 // Tajný token pro získání administrátorských práv v přezdívce (např. Lukas /admin-perms-456)
 const ADMIN_SECRET = process.env.ADMIN_SECRET || '/admin-perms-456';
+
+// 8 základních barev pro výběr přezdívky
+const ALLOWED_COLORS = [
+  '#ef4444', // Červená
+  '#f97316', // Oranžová
+  '#eab308', // Žlutá
+  '#22c55e', // Zelená
+  '#06b6d4', // Azurová
+  '#3b82f6', // Modrá
+  '#a855f7', // Fialová
+  '#ec4899'  // Růžová
+];
+const DEFAULT_COLOR = '#3b82f6';
+
+function sanitizeColor(color) {
+  if (typeof color === 'string') {
+    const trimmed = color.trim().toLowerCase();
+    if (ALLOWED_COLORS.includes(trimmed)) return trimmed;
+    if (/^#[0-9a-f]{6}$/.test(trimmed)) return trimmed;
+  }
+  return DEFAULT_COLOR;
+}
+
 class BaseGameRoom {
   constructor(mode) {
     this.mode = mode;
@@ -133,6 +156,7 @@ class BaseGameRoom {
     if (!player || !player.name) return;
     this.playerProfiles[player.name.toLowerCase()] = {
       name: player.name,
+      color: player.color || DEFAULT_COLOR,
       isAdmin: !!player.isAdmin,
       solved: !!player.solved,
       gaveUp: !!player.gaveUp,
@@ -146,7 +170,7 @@ class BaseGameRoom {
   }
 
   // Připojení hráče do místnosti
-  joinPlayer(socketId, playerName) {
+  joinPlayer(socketId, playerName, playerColor = null) {
     let raw = (playerName || '').trim().slice(0, 40);
     let isAdmin = false;
 
@@ -174,10 +198,12 @@ class BaseGameRoom {
 
     // Obnovení předchozího stavu hráče se stejným jménem (pokud už v této hře/dnu hádal)
     const existingProfile = this.playerProfiles[cleanName.toLowerCase()];
+    const chosenColor = sanitizeColor(playerColor || (existingProfile ? existingProfile.color : null));
 
     const player = {
       id: socketId,
       name: existingProfile ? existingProfile.name : cleanName,
+      color: chosenColor,
       isAdmin: existingProfile && existingProfile.isAdmin !== undefined ? (existingProfile.isAdmin || !!isAdmin) : !!isAdmin,
       solved: existingProfile ? !!existingProfile.solved : false,
       gaveUp: existingProfile ? !!existingProfile.gaveUp : false,
@@ -241,6 +267,7 @@ class BaseGameRoom {
     const guessEntry = {
       id: Date.now() + '-' + Math.random().toString(36).substr(2, 5),
       player: player.name,
+      playerColor: player.color || DEFAULT_COLOR,
       socketId: socketId,
       word: rankResult.word,
       rank: rankResult.rank,
@@ -299,15 +326,27 @@ class BaseGameRoom {
   }
 
   // Uložení zprávy do chatu
-  addChatMessage(player, message, isAdmin = false, confirmAction = null) {
+  addChatMessage(player, message, isAdmin = false, confirmAction = null, color = null) {
     const time = new Date().toLocaleTimeString('cs-CZ', {
       timeZone: 'Europe/Prague',
       hour: '2-digit',
       minute: '2-digit'
     });
 
+    let playerColor = color;
+    if (!playerColor && player) {
+      const norm = player.toLowerCase();
+      const p = Object.values(this.players).find(x => x.name && x.name.toLowerCase() === norm);
+      if (p && p.color) {
+        playerColor = p.color;
+      } else if (this.playerProfiles[norm] && this.playerProfiles[norm].color) {
+        playerColor = this.playerProfiles[norm].color;
+      }
+    }
+
     const entry = {
       player,
+      playerColor: playerColor || null,
       isAdmin: !!isAdmin,
       message: message.slice(0, 500),
       time
@@ -362,6 +401,7 @@ class BaseGameRoom {
         visibleGuesses.push({
           id: g.id,
           player: g.player,
+          playerColor: g.playerColor || DEFAULT_COLOR,
           word: g.word,
           rank: g.rank,
           isWinner: g.isWinner,
@@ -420,9 +460,9 @@ class DailyGameRoom extends BaseGameRoom {
     return { isNewDay: false };
   }
 
-  joinPlayer(socketId, playerName) {
+  joinPlayer(socketId, playerName, playerColor = null) {
     this.checkMidnightRoll();
-    return super.joinPlayer(socketId, playerName);
+    return super.joinPlayer(socketId, playerName, playerColor);
   }
 
   submitGuess(socketId, rawWord) {
@@ -444,6 +484,7 @@ class DailyGameRoom extends BaseGameRoom {
       myStatus: player
         ? {
             name: player.name,
+            color: player.color || DEFAULT_COLOR,
             isAdmin: !!player.isAdmin,
             solved: player.solved,
             gaveUp: player.gaveUp,
@@ -455,6 +496,7 @@ class DailyGameRoom extends BaseGameRoom {
       players: Object.values(this.players).map((p) => ({
         id: p.id,
         name: p.name,
+        color: p.color || DEFAULT_COLOR,
         isAdmin: !!p.isAdmin,
         solved: p.solved,
         gaveUp: p.gaveUp,
@@ -615,6 +657,7 @@ class UnlimitedGameRoom extends BaseGameRoom {
       myStatus: player
         ? {
             name: player.name,
+            color: player.color || DEFAULT_COLOR,
             isAdmin: !!player.isAdmin,
             solved: player.solved,
             gaveUp: player.gaveUp,
@@ -627,6 +670,7 @@ class UnlimitedGameRoom extends BaseGameRoom {
       players: Object.values(this.players).map((p) => ({
         id: p.id,
         name: p.name,
+        color: p.color || DEFAULT_COLOR,
         isAdmin: !!p.isAdmin,
         solved: p.solved,
         gaveUp: p.gaveUp,
@@ -833,7 +877,17 @@ class RoomManager {
     return this.socketToRoom.get(socketId) || 'daily';
   }
 
-  joinPlayer(socketId, playerName, mode = 'daily') {
+  getOnlineCounts() {
+    const dailyCount = Object.keys(this.rooms.daily.players).length;
+    const unlimitedCount = Object.keys(this.rooms.unlimited.players).length;
+    return {
+      daily: dailyCount,
+      unlimited: unlimitedCount,
+      total: dailyCount + unlimitedCount
+    };
+  }
+
+  joinPlayer(socketId, playerName, mode = 'daily', color = null) {
     const validMode = mode === 'unlimited' ? 'unlimited' : 'daily';
 
     // Pokud byl hráč v jiné místnosti, odebereme ho
@@ -843,7 +897,7 @@ class RoomManager {
     }
 
     const room = this.rooms[validMode];
-    const player = room.joinPlayer(socketId, playerName);
+    const player = room.joinPlayer(socketId, playerName, color);
     this.socketToRoom.set(socketId, validMode);
 
     return { player, room, mode: validMode };

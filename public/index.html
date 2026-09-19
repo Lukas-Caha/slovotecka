@@ -159,9 +159,75 @@
         <h2 class="card-title" id="lobby-title">DNEŠNÍ SPOLEČNÁ VÝZVA</h2>
         <p class="lobby-desc" id="lobby-desc">Zadej své jméno nebo přezdívku a zapoj se do společného hádání se všemi, kdo jsou právě v aréně.</p>
         
+        <!-- Živý přehled hráčů v aréně (Denní vs Unlimited) -->
+        <div class="lobby-arena-live" id="lobby-arena-live">
+          <div class="arena-live-header">
+            <div class="arena-live-title-wrap">
+              <span class="live-pulse-dot" aria-hidden="true"></span>
+              <span class="arena-live-title">[ PRÁVĚ V ARÉNĚ ]</span>
+            </div>
+            <span class="arena-live-total-badge" id="arena-live-total">0 HRÁČŮ ONLINE</span>
+          </div>
+          <div class="arena-live-grid">
+            <a href="/" class="arena-live-card" id="card-mode-daily" title="Přejít na Denní výzvu">
+              <div class="live-card-head">
+                <span class="live-card-mode">[ DENNÍ VÝZVA ]</span>
+                <span class="live-card-badge-status" id="badge-status-daily">DNES</span>
+              </div>
+              <div class="live-card-count-row">
+                <span class="live-card-number" id="count-daily">0</span>
+                <span class="live-card-unit" id="unit-daily">hráčů</span>
+              </div>
+              <div class="live-card-sub">Dnešní sémantická hádanka</div>
+            </a>
+            <a href="/unlimited" class="arena-live-card" id="card-mode-unlimited" title="Přejít na Unlimited archiv">
+              <div class="live-card-head">
+                <span class="live-card-mode">[ UNLIMITED ]</span>
+                <span class="live-card-badge-status" id="badge-status-unlimited">ARCHIV</span>
+              </div>
+              <div class="live-card-count-row">
+                <span class="live-card-number" id="count-unlimited">0</span>
+                <span class="live-card-unit" id="unit-unlimited">hráčů</span>
+              </div>
+              <div class="live-card-sub">Archivní slova & hlasování</div>
+            </a>
+          </div>
+        </div>
+
         <form id="join-form">
           <label class="field-label" for="player-name">TVOJE PŘEZDÍVKA</label>
           <input class="input input-name" type="text" id="player-name" placeholder="PŘEZDÍVKA" maxlength="40" autocomplete="off" autofocus>
+
+          <!-- Výběr z 8 základních barev -->
+          <div class="color-picker-group">
+            <div class="color-picker-top">
+              <label class="field-label" id="color-picker-label">ZVOL SI BARVU SVÉHO JMÉNA</label>
+              <span class="color-selected-badge" id="color-selected-badge" style="color: #3b82f6;">[ MODRÁ ]</span>
+            </div>
+            <div class="color-palette" role="radiogroup" aria-labelledby="color-picker-label" id="color-palette">
+              <button type="button" class="color-swatch-btn" data-color="#ef4444" data-name="Červená" style="--swatch-color: #ef4444;" title="Červená" aria-label="Červená"></button>
+              <button type="button" class="color-swatch-btn" data-color="#f97316" data-name="Oranžová" style="--swatch-color: #f97316;" title="Oranžová" aria-label="Oranžová"></button>
+              <button type="button" class="color-swatch-btn" data-color="#eab308" data-name="Žlutá" style="--swatch-color: #eab308;" title="Žlutá" aria-label="Žlutá"></button>
+              <button type="button" class="color-swatch-btn" data-color="#22c55e" data-name="Zelená" style="--swatch-color: #22c55e;" title="Zelená" aria-label="Zelená"></button>
+              <button type="button" class="color-swatch-btn" data-color="#06b6d4" data-name="Azurová" style="--swatch-color: #06b6d4;" title="Azurová" aria-label="Azurová"></button>
+              <button type="button" class="color-swatch-btn is-selected" data-color="#3b82f6" data-name="Modrá" style="--swatch-color: #3b82f6;" title="Modrá" aria-label="Modrá"></button>
+              <button type="button" class="color-swatch-btn" data-color="#a855f7" data-name="Fialová" style="--swatch-color: #a855f7;" title="Fialová" aria-label="Fialová"></button>
+              <button type="button" class="color-swatch-btn" data-color="#ec4899" data-name="Růžová" style="--swatch-color: #ec4899;" title="Růžová" aria-label="Růžová"></button>
+            </div>
+            <input type="hidden" id="player-color-input" value="#3b82f6">
+
+            <!-- Živý náhled formátu jména -->
+            <div class="player-name-preview">
+              <span class="preview-tag">[ NÁHLED V CHATU ]:</span>
+              <div class="preview-badge-wrap">
+                <span class="preview-badge" id="preview-badge" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.4);">
+                  <span class="preview-dot" id="preview-dot" style="background-color: #3b82f6;"></span>
+                  <span id="preview-name-text">PŘEZDÍVKA</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
           <button type="submit" class="btn btn-primary btn-full" id="btn-enter-game">
             VSTOUPIT DO ARÉNY
             <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square">

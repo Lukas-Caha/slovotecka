@@ -33,6 +33,121 @@ if (isUnlimited) {
   if (lobbyDesc) lobbyDesc.textContent = 'Hrajte společně se slovy z předchozích dnů. Hráči v místnosti mohou společným hlasováním (např. 2 ze 3) kdykoliv vylosovat nové slovo!';
 }
 
+// DOM – Přehled hráčů v aréně (Lobby)
+const arenaLiveTotal = document.getElementById('arena-live-total');
+const countDaily = document.getElementById('count-daily');
+const unitDaily = document.getElementById('unit-daily');
+const countUnlimited = document.getElementById('count-unlimited');
+const unitUnlimited = document.getElementById('unit-unlimited');
+const cardModeDaily = document.getElementById('card-mode-daily');
+const cardModeUnlimited = document.getElementById('card-mode-unlimited');
+
+if (isUnlimited) {
+  if (cardModeUnlimited) cardModeUnlimited.classList.add('is-current');
+  if (cardModeDaily) cardModeDaily.classList.remove('is-current');
+} else {
+  if (cardModeDaily) cardModeDaily.classList.add('is-current');
+  if (cardModeUnlimited) cardModeUnlimited.classList.remove('is-current');
+}
+
+// DOM – Výběr barvy hráče
+const colorPalette = document.getElementById('color-palette');
+const colorSelectedBadge = document.getElementById('color-selected-badge');
+const playerColorInput = document.getElementById('player-color-input');
+const previewBadge = document.getElementById('preview-badge');
+const previewDot = document.getElementById('preview-dot');
+const previewNameText = document.getElementById('preview-name-text');
+
+let myPlayerColor = localStorage.getItem('slovotecka_color') || '#3b82f6';
+
+function getPlayerPlural(count) {
+  if (count === 1) return 'hráč';
+  if (count >= 2 && count <= 4) return 'hráči';
+  return 'hráčů';
+}
+
+function updateLobbyArenaStats(counts) {
+  if (!counts) return;
+  const d = counts.daily || 0;
+  const u = counts.unlimited || 0;
+  const tot = d + u;
+
+  if (countDaily) countDaily.textContent = d;
+  if (unitDaily) unitDaily.textContent = getPlayerPlural(d);
+  if (countUnlimited) countUnlimited.textContent = u;
+  if (unitUnlimited) unitUnlimited.textContent = getPlayerPlural(u);
+  if (arenaLiveTotal) {
+    arenaLiveTotal.textContent = `${tot} ${getPlayerPlural(tot).toUpperCase()} ONLINE`;
+  }
+}
+
+function updatePlayerColorUI(color, name) {
+  myPlayerColor = color;
+  try {
+    localStorage.setItem('slovotecka_color', color);
+  } catch (e) {}
+
+  if (playerColorInput) playerColorInput.value = color;
+
+  if (colorPalette) {
+    const swatches = colorPalette.querySelectorAll('.color-swatch-btn');
+    swatches.forEach(btn => {
+      const isSel = btn.dataset.color.toLowerCase() === color.toLowerCase();
+      btn.classList.toggle('is-selected', isSel);
+      if (isSel && !name && btn.dataset.name) {
+        name = btn.dataset.name;
+      }
+    });
+  }
+
+  if (colorSelectedBadge) {
+    colorSelectedBadge.textContent = `[ ${(name || 'MODRÁ').toUpperCase()} ]`;
+    colorSelectedBadge.style.color = color;
+  }
+
+  if (previewBadge) {
+    previewBadge.style.color = color;
+    previewBadge.style.borderColor = color + '66';
+  }
+  if (previewDot) {
+    previewDot.style.backgroundColor = color;
+  }
+}
+
+function updatePlayerNamePreview() {
+  const name = playerNameInput ? playerNameInput.value.trim() : '';
+  if (previewNameText) {
+    previewNameText.textContent = name ? name.toUpperCase() : 'PŘEZDÍVKA';
+  }
+}
+
+if (colorPalette) {
+  colorPalette.addEventListener('click', (e) => {
+    const btn = e.target.closest('.color-swatch-btn');
+    if (!btn) return;
+    updatePlayerColorUI(btn.dataset.color, btn.dataset.name);
+  });
+}
+
+if (playerNameInput) {
+  playerNameInput.addEventListener('input', updatePlayerNamePreview);
+}
+
+// Inicializace barvy a náhledu jména při načtení
+updatePlayerColorUI(myPlayerColor);
+updatePlayerNamePreview();
+
+// Posluchač socketu pro živé aktualizace počtů hráčů v aréně
+socket.on('arena_counts', (counts) => {
+  updateLobbyArenaStats(counts);
+});
+
+// Počáteční načtení statistik arény přes API
+fetch('/api/arena-stats')
+  .then(res => res.ok ? res.json() : null)
+  .then(data => { if (data) updateLobbyArenaStats(data); })
+  .catch(() => {});
+
 // DOM – Popup Whats New
 const whatsNewModal = document.getElementById('whats-new-modal');
 const btnCloseWhatsNew = document.getElementById('btn-close-whats-new');
@@ -370,7 +485,7 @@ joinForm.addEventListener('submit', (e) => {
   myPlayerName = name;
   localStorage.setItem('slovotecka_nickname', name);
 
-  socket.emit('join_game', { playerName: name, mode: currentMode });
+  socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor });
 });
 
 // Automatické znovupřipojení při výpadku spojení
@@ -381,7 +496,7 @@ socket.on('connect', () => {
     if (adminStored) joinName = adminStored;
   } catch (err) {}
   if (joinName && gameSection.style.display !== 'none') {
-    socket.emit('join_game', { playerName: joinName, mode: currentMode });
+    socket.emit('join_game', { playerName: joinName, mode: currentMode, color: myPlayerColor });
   }
 });
 
@@ -1088,9 +1203,12 @@ function appendChatMessage(data) {
     `;
   }
 
+  const authorColor = data.playerColor ? escapeHtml(data.playerColor) : '';
+  const authorStyle = authorColor ? `style="color: ${authorColor};"` : '';
+
   div.innerHTML = `
     <div class="chat-msg-header">
-      <span class="chat-msg-author">${escapeHtml(data.player)}${adminBadge}${isMe ? ' (ty)' : ''}</span>
+      <span class="chat-msg-author" ${authorStyle}>${escapeHtml(data.player)}${adminBadge}${isMe ? ' (ty)' : ''}</span>
       <span class="chat-msg-time">${data.time || ''}</span>
     </div>
     <div class="chat-msg-text" data-raw="${escapeHtml(data.message)}">
@@ -1212,6 +1330,13 @@ function renderGameState(state) {
   // Stav ovládání
   if (state.myStatus) {
     myIsAdmin = !!state.myStatus.isAdmin;
+    if (state.myStatus.color) {
+      myPlayerColor = state.myStatus.color;
+      try {
+        localStorage.setItem('slovotecka_color', myPlayerColor);
+      } catch (e) {}
+      updatePlayerColorUI(myPlayerColor);
+    }
     if (state.myStatus.name) {
       myPlayerName = state.myStatus.name;
       try {
@@ -1270,6 +1395,7 @@ function renderGameState(state) {
   playersList.innerHTML = '';
   state.players.forEach((p) => {
     const isMe = p.name === myPlayerName;
+    const pColor = p.color || '#3b82f6';
     const li = document.createElement('li');
     let cls = 'player-item';
     if (isMe)      cls += ' is-me';
@@ -1288,7 +1414,10 @@ function renderGameState(state) {
     const nameLabel = `${escapeHtml(p.name)}${adminBadge}${clown}${votedBadge}${isMeTag}`;
 
     li.innerHTML = `
-      <span class="player-name">${nameLabel}</span>
+      <span class="player-name" style="color: ${escapeHtml(pColor)};">
+        <span class="player-color-dot" style="background-color: ${escapeHtml(pColor)};"></span>
+        ${nameLabel}
+      </span>
       <span class="player-status">${statusText}</span>
     `;
     playersList.appendChild(li);
@@ -1332,14 +1461,16 @@ function renderGameState(state) {
       const rClass = rankClass(g.rank);
 
       const wordText = escapeHtml(g.word);
+      const pColor = g.playerColor ? escapeHtml(g.playerColor) : '';
+      const colorStyle = pColor ? `style="color: ${pColor}; border-color: ${pColor}55;"` : '';
 
       let whoHtml = '';
       if (isMine) {
         whoHtml = `<span class="badge-you">(ty)</span>`;
       } else if (isShared) {
-        whoHtml = `<span class="who-other">${escapeHtml(g.player)}</span> <span class="badge-shared">[společné]</span>`;
+        whoHtml = `<span class="who-other" ${colorStyle}>${escapeHtml(g.player)}</span> <span class="badge-shared">[společné]</span>`;
       } else {
-        whoHtml = `<span class="who-other who-spectator-other">${escapeHtml(g.player)}</span>`;
+        whoHtml = `<span class="who-other who-spectator-other" ${colorStyle}>${escapeHtml(g.player)}</span>`;
       }
 
       card.innerHTML = `

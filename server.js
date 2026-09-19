@@ -30,6 +30,16 @@ app.get('/unlimited', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Počty hráčů online pro lobby přehled
+app.get('/api/arena-stats', (req, res) => {
+  res.json(gameManager.getOnlineCounts());
+});
+
+// Odeslání aktuálních počtů hráčů v aréně všem klientům (i v lobby)
+function broadcastArenaCounts() {
+  io.emit('arena_counts', gameManager.getOnlineCounts());
+}
+
 // Odeslání aktuálního stavu hry hráčům v dané místnosti
 function broadcastGameState(mode) {
   const modes = mode ? [mode] : ['daily', 'unlimited'];
@@ -240,8 +250,11 @@ function handleSongConfirmation(socket, room, mode, player, pendingConf, isYes) 
 }
 
 io.on('connection', (socket) => {
+  // Odeslání aktuálních počtů hráčů v obou arénách (denní + unlimited) nově připojenému klientovi
+  socket.emit('arena_counts', gameManager.getOnlineCounts());
+
   // 1. Vstup do hry (denní nebo unlimited)
-  socket.on('join_game', ({ playerName, mode }) => {
+  socket.on('join_game', ({ playerName, mode, color }) => {
     const gameMode = mode === 'unlimited' ? 'unlimited' : 'daily';
 
     // Opuštění předchozích místností
@@ -249,7 +262,7 @@ io.on('connection', (socket) => {
     socket.leave('unlimited');
     socket.join(gameMode);
 
-    const { player } = gameManager.joinPlayer(socket.id, playerName, gameMode);
+    const { player } = gameManager.joinPlayer(socket.id, playerName, gameMode, color);
 
     // Oznámení pro ostatní v téže místnosti
     socket.to(gameMode).emit('notification', {
@@ -258,6 +271,9 @@ io.on('connection', (socket) => {
 
     // Odeslání stavu všem v dané místnosti
     broadcastGameState(gameMode);
+
+    // Aktualizace počtů hráčů pro všechny klienty (včetně těch v lobby)
+    broadcastArenaCounts();
   });
 
   // 2. Odeslání tipu
@@ -616,6 +632,7 @@ io.on('connection', (socket) => {
         message: `👢 Hráč ${kickedPlayer.name} byl vyhozen administrátorem.`
       });
       broadcastGameState(mode);
+      broadcastArenaCounts();
       return;
     }
 
@@ -899,6 +916,7 @@ io.on('connection', (socket) => {
       }
 
       broadcastGameState(removal.mode);
+      broadcastArenaCounts();
     }
   });
 });
