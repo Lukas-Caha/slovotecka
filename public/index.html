@@ -137,7 +137,7 @@
             <li>napoveda commandu pres !</li>
             <li>kdyz uhodnes slovo nebo to vzdas, prepne se ti to do divaka a vidis live vsechny tipy ostatnich lidi i s jejich jmenama lol. muzes si nahore prepinat jen svoje / vsechny.</li>
             <li>jakmile dohrajes (vyhra nebo ragequit), muzes si rozkliknout TOP 50 nejblizsich slov od #1 po #50 a vidis i co z toho jsi sam trefil pagMan.</li>
-            <li>ankety v chatu! napis "!poll Otazka? | moznost 1 | moznost 2" a lidi muzou normalne klikat tlacitka nebo psat cisla do chatu.</li>
+            <li>ankety v chatu pro admina! napis "!poll Otazka? | moznost 1 | moznost 2" a lidi muzou normalne klikat tlacitka nebo psat cisla do chatu.</li>
             <li>kdyz nekdo trefi #1, bot v chatu hodi shrnuti kola – kdo byl snajpr, kdo zabloudil s nejvetsim nesmyslem xdd, kdo si vzal napovedu clown a kdo mackal klavesnici jak ADHD.</li>
             <li>more cumming soon</li>
           </ul>
@@ -184,52 +184,39 @@
         <h2 class="card-title" id="lobby-title">DNEŠNÍ SPOLEČNÁ VÝZVA</h2>
         <p class="lobby-desc" id="lobby-desc">Zadej své jméno nebo přezdívku a zapoj se do společného hádání se všemi, kdo jsou právě v aréně.</p>
         
-        <!-- Živý přehled hráčů v aréně (Denní vs Unlimited) -->
-        <div class="lobby-arena-live" id="lobby-arena-live">
-          <div class="arena-live-header">
-            <div class="arena-live-title-wrap">
-              <span class="live-pulse-dot" aria-hidden="true"></span>
-              <span class="arena-live-title">[ PRÁVĚ V ARÉNĚ ]</span>
-            </div>
-            <span class="arena-live-total-badge" id="arena-live-total">0 HRÁČŮ ONLINE</span>
-          </div>
-          <div class="arena-live-grid">
-            <a href="/" class="arena-live-card" id="card-mode-daily" title="Přejít na Denní výzvu">
-              <div class="live-card-head">
-                <span class="live-card-mode">[ DENNÍ VÝZVA ]</span>
-                <span class="live-card-badge-status" id="badge-status-daily">DNES</span>
-              </div>
-              <div class="live-card-count-row">
-                <span class="live-card-number" id="count-daily">0</span>
-                <span class="live-card-unit" id="unit-daily">hráčů</span>
-              </div>
-              <div class="live-card-sub">Dnešní sémantická hádanka</div>
-            </a>
-            <a href="/unlimited" class="arena-live-card" id="card-mode-unlimited" title="Přejít na Unlimited archiv">
-              <div class="live-card-head">
-                <span class="live-card-mode">[ UNLIMITED ]</span>
-                <span class="live-card-badge-status" id="badge-status-unlimited">ARCHIV</span>
-              </div>
-              <div class="live-card-count-row">
-                <span class="live-card-number" id="count-unlimited">0</span>
-                <span class="live-card-unit" id="unit-unlimited">hráčů</span>
-              </div>
-              <div class="live-card-sub">Archivní slova & hlasování</div>
-            </a>
-          </div>
+        <!-- Subtilní přepínač arén s počtem online hráčů -->
+        <div class="lobby-mode-pills" id="lobby-mode-pills">
+          <a href="/" class="lobby-mode-pill" id="card-mode-daily" title="Přejít na Denní výzvu">
+            <span class="mode-pill-dot" aria-hidden="true"></span>
+            <span class="mode-pill-name">DENNÍ VÝZVA</span>
+            <span class="mode-pill-count"><strong id="count-daily">0</strong> <span id="unit-daily">online</span></span>
+          </a>
+          <a href="/unlimited" class="lobby-mode-pill" id="card-mode-unlimited" title="Přejít na Unlimited archiv">
+            <span class="mode-pill-name">UNLIMITED ARCHIV</span>
+            <span class="mode-pill-count"><strong id="count-unlimited">0</strong> <span id="unit-unlimited">online</span></span>
+          </a>
         </div>
 
         <form id="join-form">
-          <label class="field-label" for="player-name">TVOJE PŘEZDÍVKA</label>
-          <input class="input input-name" type="text" id="player-name" placeholder="PŘEZDÍVKA" maxlength="40" autocomplete="off" autofocus>
+          <div class="field-label-row">
+            <label class="field-label" for="player-name">TVOJE PŘEZDÍVKA</label>
+            <span class="color-selected-badge" id="color-selected-badge" style="color: #3b82f6;">[ MODRÁ ]</span>
+          </div>
+          <div class="input-with-gear-wrap">
+            <span class="input-color-dot" id="preview-dot" style="background-color: #3b82f6;"></span>
+            <input class="input input-name" type="text" id="player-name" placeholder="PŘEZDÍVKA" maxlength="40" autocomplete="off" autofocus>
+            <button type="button" class="btn-color-gear" id="btn-toggle-color-picker" title="Změnit barvu jména v chatu" aria-label="Změnit barvu jména v chatu">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="gear-icon">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </button>
+          </div>
 
-          <!-- Výběr z 8 základních barev -->
-          <div class="color-picker-group">
-            <div class="color-picker-top">
-              <label class="field-label" id="color-picker-label">ZVOL SI BARVU SVÉHO JMÉNA</label>
-              <span class="color-selected-badge" id="color-selected-badge" style="color: #3b82f6;">[ MODRÁ ]</span>
-            </div>
-            <div class="color-palette" role="radiogroup" aria-labelledby="color-picker-label" id="color-palette">
+          <!-- Výsuvný popover pro výběr z 8 barev -->
+          <div class="color-picker-popover" id="color-picker-popover" style="display: none;">
+            <div class="color-picker-popover-title">[ VYBER SI BARVU ]</div>
+            <div class="color-palette" role="radiogroup" id="color-palette">
               <button type="button" class="color-swatch-btn" data-color="#ef4444" data-name="Červená" style="--swatch-color: #ef4444;" title="Červená" aria-label="Červená"></button>
               <button type="button" class="color-swatch-btn" data-color="#f97316" data-name="Oranžová" style="--swatch-color: #f97316;" title="Oranžová" aria-label="Oranžová"></button>
               <button type="button" class="color-swatch-btn" data-color="#eab308" data-name="Žlutá" style="--swatch-color: #eab308;" title="Žlutá" aria-label="Žlutá"></button>
@@ -239,19 +226,8 @@
               <button type="button" class="color-swatch-btn" data-color="#a855f7" data-name="Fialová" style="--swatch-color: #a855f7;" title="Fialová" aria-label="Fialová"></button>
               <button type="button" class="color-swatch-btn" data-color="#ec4899" data-name="Růžová" style="--swatch-color: #ec4899;" title="Růžová" aria-label="Růžová"></button>
             </div>
-            <input type="hidden" id="player-color-input" value="#3b82f6">
-
-            <!-- Živý náhled formátu jména -->
-            <div class="player-name-preview">
-              <span class="preview-tag">[ NÁHLED V CHATU ]:</span>
-              <div class="preview-badge-wrap">
-                <span class="preview-badge" id="preview-badge" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.4);">
-                  <span class="preview-dot" id="preview-dot" style="background-color: #3b82f6;"></span>
-                  <span id="preview-name-text">PŘEZDÍVKA</span>
-                </span>
-              </div>
-            </div>
           </div>
+          <input type="hidden" id="player-color-input" value="#3b82f6">
 
           <button type="submit" class="btn btn-primary btn-full" id="btn-enter-game">
             VSTOUPIT DO ARÉNY
@@ -261,6 +237,11 @@
             </svg>
           </button>
         </form>
+
+        <!-- Blok včerejší rekapitulace v Lobby (po půlnoci) -->
+        <div id="lobby-yesterday-recap" class="lobby-yesterday-recap" style="display: none;">
+          <!-- Dynamicky generováno: tajné slovo, vítěz, klaun, bloudění -->
+        </div>
 
         <div class="card-footer-decor">
           <img src="/barcode.svg" alt="" class="card-barcode" aria-hidden="true">
@@ -366,21 +347,6 @@
           </div>
           <p id="guess-feedback" class="guess-feedback"></p>
 
-          <!-- Divácký mód banner (zobrazí se po vyřešení nebo vzdání) -->
-          <div id="spectator-banner" class="spectator-banner" style="display: none;">
-            <div class="spectator-banner-head">
-              <div class="spectator-badge-row">
-                <span class="spectator-pulse-dot" aria-hidden="true"></span>
-                <span class="spectator-tag">[ 👁️ DIVÁCKÝ MÓD ]</span>
-              </div>
-              <button type="button" class="btn btn-spectator-top50" id="btn-show-top50" title="Zobrazit 50 nejbližších slov">
-                <span class="top50-btn-icon">🏆</span>
-                <span>ZOBRAZIT TOP 50</span>
-              </button>
-            </div>
-            <span class="spectator-desc">Uhodl(a) jsi nebo ses vzdal(a). Nyní sleduješ tipy ostatních hráčů v reálném čase!</span>
-          </div>
-
           <!-- Poslední tip přímo pod zadávacím polem (Contexto styl) -->
           <div id="last-guess-container" class="last-guess-container" style="display: none;">
             <div class="last-guess-row">
@@ -395,10 +361,20 @@
           <div class="guesses-header">
             <div class="guesses-header-left">
               <span class="guesses-title" id="guesses-title">[ ODHALENÁ SLOVA ]</span>
-              <!-- Přepínač zobrazení tipů pro diváky -->
-              <div id="spectator-filter-tabs" class="guesses-filter-tabs" style="display: none;">
-                <button type="button" class="btn-filter-tab is-active" id="btn-filter-all" data-filter="all">VŠECHNY TIPY</button>
-                <button type="button" class="btn-filter-tab" id="btn-filter-mine" data-filter="mine">POUZE MOJE</button>
+
+              <!-- Subtilní lišta pro diváky (zobrazí se po vyřešení nebo vzdání) -->
+              <div id="spectator-toolbar" class="spectator-toolbar" style="display: none;">
+                <span class="spectator-pill-badge">
+                  <span class="spectator-pulse-dot" aria-hidden="true"></span>
+                  DIVÁK
+                </span>
+                <button type="button" class="btn-subtle-top50" id="btn-show-top50" title="Zobrazit 50 nejbližších slov">
+                  🏆 TOP 50
+                </button>
+                <div id="spectator-filter-tabs" class="guesses-filter-tabs">
+                  <button type="button" class="btn-filter-tab is-active" id="btn-filter-all" data-filter="all">VŠECHNY TIPY</button>
+                  <button type="button" class="btn-filter-tab" id="btn-filter-mine" data-filter="mine">POUZE MOJE</button>
+                </div>
               </div>
             </div>
             <span class="guesses-count" id="guesses-count">0 tipů</span>
@@ -479,10 +455,6 @@
               <button type="button" class="chat-command-item" data-command="!debil">
                 <span class="cmd-code">!debil</span>
                 <span class="cmd-desc">Změří, na kolik procent jsi debil</span>
-              </button>
-              <button type="button" class="chat-command-item" data-command="!poll Otázka? | Ano | Ne">
-                <span class="cmd-code">!poll &lt;otázka&gt; | &lt;volba 1&gt; | &lt;volba 2&gt;</span>
-                <span class="cmd-desc">Vyhlásí anketu v chatu na 60 sekund</span>
               </button>
             </div>
           </div>

@@ -340,195 +340,163 @@ body {
   margin-bottom: 20px;
 }
 
-/* ── LOBBY ARENA LIVE STATS ─────────────────────────────────────────────── */
-.lobby-arena-live {
-  background: rgba(14, 13, 12, 0.85);
-  border: 1px solid var(--border);
-  padding: 14px 16px;
-  margin-bottom: 22px;
-  text-align: left;
-}
-
-.arena-live-header {
+/* ── SUBTILNÍ PŘEPÍNAČ MÓDŮ (LOBBY) ─────────────────────────────────────── */
+.lobby-mode-pills {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px dashed rgba(250, 248, 245, 0.15);
-}
-
-.arena-live-title-wrap {
-  display: inline-flex;
-  align-items: center;
   gap: 8px;
+  margin-bottom: 20px;
 }
 
-.live-pulse-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background-color: #10b981;
-  box-shadow: 0 0 10px #10b981;
-  animation: pulse-live 1.8s infinite;
-}
-
-@keyframes pulse-live {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1.15); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-
-.arena-live-title {
+.lobby-mode-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(20, 18, 16, 0.8);
+  border: 1px solid rgba(250, 248, 245, 0.14);
+  color: var(--color-base-700);
+  text-decoration: none;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--color-base-800);
-}
-
-.arena-live-total-badge {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 2px 7px;
-}
-
-.arena-live-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.arena-live-card {
-  display: flex;
-  flex-direction: column;
-  padding: 12px 14px;
-  background: rgba(28, 26, 25, 0.9);
-  border: 1px solid rgba(250, 248, 245, 0.2);
-  text-decoration: none;
-  color: inherit;
+  letter-spacing: 0.05em;
   transition: all 0.15s ease;
-  position: relative;
-  overflow: hidden;
+  border-radius: 2px;
 }
 
-.arena-live-card:hover {
-  border-color: var(--border-strong);
-  background: rgba(45, 41, 39, 0.95);
-  transform: translateY(-1px);
+.lobby-mode-pill:hover {
+  border-color: rgba(250, 248, 245, 0.3);
+  color: var(--color-base-900);
+  background: rgba(250, 248, 245, 0.04);
 }
 
-.arena-live-card.is-current {
-  border-color: #f59e0b;
-  box-shadow: inset 0 0 0 1px #f59e0b;
+.lobby-mode-pill.is-current {
+  border-color: var(--color-amber, #f59e0b);
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-base-900);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
 }
 
-.live-card-head {
+.mode-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  flex-shrink: 0;
+}
+
+.mode-pill-count {
+  font-size: 0.72rem;
+  color: var(--color-base-600);
+}
+
+.lobby-mode-pill.is-current .mode-pill-count strong {
+  color: #f59e0b;
+}
+
+/* ── NICKNAME S OZUBENÝM KOLEM & POPOVER BAREV ────────────────────────────── */
+.field-label-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
 }
 
-.live-card-mode {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--color-base-700);
-}
-
-.live-card-badge-status {
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 1px 5px;
-  border: 1px solid rgba(250, 248, 245, 0.2);
-  background: rgba(0, 0, 0, 0.4);
-  color: var(--color-base-800);
-}
-
-.arena-live-card.is-current .live-card-badge-status {
-  border-color: #f59e0b;
-  color: #f59e0b;
-}
-
-.live-card-count-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-bottom: 3px;
-}
-
-.live-card-number {
-  font-family: var(--font-grunge);
-  font-size: 2.2rem;
-  line-height: 1;
-  color: var(--color-base-900);
-  letter-spacing: 0.02em;
-}
-
-.live-card-unit {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-base-700);
-}
-
-.live-card-sub {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  color: var(--color-base-600);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ── COLOR PICKER ────────────────────────────────────────────────────────── */
-.color-picker-group {
-  margin-bottom: 22px;
-  text-align: left;
-  background: rgba(14, 13, 12, 0.85);
-  border: 1px solid var(--border);
-  padding: 14px 16px;
-}
-
-.color-picker-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.color-picker-top .field-label {
-  margin-bottom: 0;
-}
-
 .color-selected-badge {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.input-with-gear-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.input-color-dot {
+  position: absolute;
+  left: 12px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow: 0 0 6px currentColor;
+  transition: background-color 0.2s ease;
+}
+
+.input-with-gear-wrap .input-name {
+  padding-left: 32px;
+  padding-right: 44px;
+  width: 100%;
+}
+
+.btn-color-gear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 1px solid rgba(250, 248, 245, 0.15);
+  color: var(--color-base-600);
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-color-gear:hover {
+  border-color: var(--color-base-400);
+  color: var(--color-base-900);
+  background: rgba(250, 248, 245, 0.08);
+}
+
+.gear-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.color-picker-popover {
+  background: rgba(20, 18, 16, 0.98);
+  border: 1px solid var(--border-strong);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
+  animation: popoverFadeIn 0.15s ease-out;
+  text-align: left;
+}
+
+.color-picker-popover-title {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-base-600);
+  margin-bottom: 8px;
+  letter-spacing: 0.06em;
 }
 
 .color-palette {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 6px;
 }
 
 .color-swatch-btn {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 0;
+  border-radius: 2px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   background-color: var(--swatch-color);
   cursor: pointer;
@@ -565,47 +533,76 @@ body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px #000000;
 }
 
-.player-name-preview {
+/* ── VČEREJŠÍ REKAPITULACE V LOBBY ───────────────────────────────────────── */
+.lobby-yesterday-recap {
+  margin-top: 24px;
+  padding: 12px 14px;
+  background: rgba(18, 16, 14, 0.85);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-left: 3px solid #f59e0b;
+  font-family: var(--font-mono);
+  border-radius: 2px;
+  text-align: left;
+}
+
+.yesterday-head {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed rgba(250, 248, 245, 0.15);
   flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(250, 248, 245, 0.1);
 }
 
-.preview-tag {
-  font-family: var(--font-mono);
+.yesterday-tag {
   font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--color-base-700);
-}
-
-.preview-badge-wrap {
-  display: inline-flex;
-}
-
-.preview-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  padding: 4px 10px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(250, 248, 245, 0.25);
-  transition: all 0.15s ease;
+  color: #f59e0b;
+  letter-spacing: 0.08em;
 }
 
-.preview-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 6px currentColor;
+.yesterday-word-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  padding: 1px 7px;
+  border-radius: 2px;
+}
+
+.yesterday-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 6px;
+}
+
+.yesterday-stat-item {
+  background: rgba(250, 248, 245, 0.03);
+  border: 1px solid rgba(250, 248, 245, 0.08);
+  padding: 5px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 2px;
+}
+
+.yesterday-stat-label {
+  font-size: 0.62rem;
+  color: var(--color-base-600);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.yesterday-stat-val {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--color-base-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-footer-decor {
@@ -1278,49 +1275,46 @@ body {
 }
 
 .chat-msg {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
-  border: 1px solid rgba(250, 248, 245, 0.15);
-  background: rgba(14, 13, 12, 0.7);
-  font-size: 0.88rem;
+  display: block;
+  padding: 3px 6px;
+  border-left: 2px solid transparent;
+  font-size: 0.86rem;
+  line-height: 1.45;
   word-break: break-word;
+  transition: background 0.1s ease;
+  border-radius: 2px;
 }
 
-.chat-msg.is-me {
-  border: 1px solid var(--border-strong);
-  background: rgba(40, 36, 33, 0.85);
-  box-shadow: inset 2px 0 0 var(--border-strong);
+.chat-msg:hover {
+  background: rgba(250, 248, 245, 0.03);
 }
 
 .chat-msg-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
+  display: inline;
 }
 
 .chat-msg-author {
+  display: inline;
   font-weight: 700;
-  font-size: 0.76rem;
-  letter-spacing: 0.05em;
-  color: var(--color-base-900);
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  margin-right: 4px;
 }
 
 .chat-msg-time {
+  display: inline;
   font-size: 0.68rem;
   color: var(--color-base-600);
+  margin-right: 6px;
+  user-select: none;
 }
 
 .chat-msg-text {
+  display: inline;
   color: var(--color-base-800);
-  line-height: 1.5;
-  font-size: 0.88rem;
+  line-height: 1.45;
+  font-size: 0.86rem;
   word-break: break-word;
-  white-space: pre-wrap;
 }
 
 /* 7TV Emoty v chatu */
@@ -3020,8 +3014,8 @@ body {
 }
 
 .chat-msg.has-mention {
-  border-left: 3px solid #10b981;
-  background: rgba(16, 185, 129, 0.05);
+  border-left: 2px solid #10b981;
+  background: rgba(16, 185, 129, 0.08);
 }
 
 /* ── Admin Badge ────────────────────────────────────────────────────────── */
@@ -3112,42 +3106,62 @@ body {
   border: 1px solid rgba(239, 68, 68, 0.5);
 }
 
-/* ── TOP 50 MODAL & SPECTATOR BUTTON ─────────────────────────────────────── */
-.spectator-banner-head {
-  display: flex;
-  justify-content: space-between;
+/* ── SUBTILNÍ DIVÁCKÝ MÓD V LIŠTĚ ODHALENÝCH SLOV ─────────────────────────── */
+.spectator-toolbar {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 6px;
 }
 
+.spectator-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 3px 7px;
+  border-radius: 2px;
+  letter-spacing: 0.06em;
+}
+
+.spectator-pill-badge .spectator-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+  animation: pulse-live 1.6s infinite;
+}
+
+.btn-subtle-top50,
 .btn-spectator-top50 {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: rgba(245, 158, 11, 0.12);
   color: #fbbf24;
   border: 1px solid rgba(245, 158, 11, 0.5);
-  padding: 5px 12px;
+  padding: 4px 8px;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  border-radius: 2px;
 }
 
+.btn-subtle-top50:hover,
 .btn-spectator-top50:hover {
   background: #f59e0b;
   color: #121110;
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
-  transform: translateY(-1px);
-}
-
-.top50-btn-icon {
-  font-size: 0.9rem;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
 }
 
 .modal-card-top50 {

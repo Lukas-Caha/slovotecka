@@ -40,6 +40,11 @@ app.get('/api/arena-stats', (req, res) => {
   res.json(gameManager.getOnlineCounts());
 });
 
+// Včerejší výsledky pro Lobby po půlnoci
+app.get('/api/yesterday-recap', (req, res) => {
+  res.json(gameManager.getYesterdayRecap());
+});
+
 // Odeslání aktuálních počtů hráčů v aréně všem klientům (i v lobby)
 function broadcastArenaCounts() {
   io.emit('arena_counts', gameManager.getOnlineCounts());
@@ -340,13 +345,12 @@ io.on('connection', (socket) => {
         message: `Výborně! Uhodl(a) jsi tajné slovo: "${result.guess.word}" na ${result.player.guessCount}. pokus!`
       });
 
-      // Bot komentátor na konci kola
-      const commentaryLines = room.generateRoundCommentary(result.player);
-      if (commentaryLines && commentaryLines.length > 0) {
-        const fullCommentary = commentaryLines.join('\n');
-        const botMsg = room.addChatMessage('🤖 BOT', fullCommentary, false, null, '#10b981');
-        io.to(mode).emit('chat_message', botMsg);
-      }
+      // Stručné oznámení bota v chatu (místo zaplnění celého okna)
+      const solveText = mode === 'unlimited'
+        ? `🎉 ${result.player.name} uhodl(a) archivní slovo na ${result.player.guessCount}. pokus!`
+        : `🎉 ${result.player.name} právě uhodl(a) dnešní tajné slovo na ${result.player.guessCount}. pokus!`;
+      const botMsg = room.addChatMessage('🤖 BOT', solveText, false, null, '#10b981');
+      io.to(mode).emit('chat_message', botMsg);
     } else {
       socket.to(mode).emit('notification', {
         message: `${result.player.name} poslal(a) nový tip.`
@@ -629,6 +633,13 @@ io.on('connection', (socket) => {
 
     // Příkaz pro vytvoření ankety: !poll <otázka> | <volba 1> | <volba 2> [| <volba 3> ...]
     if (cleanMsg.toLowerCase().startsWith('!poll ') || cleanMsg.toLowerCase() === '!poll') {
+      if (!player.isAdmin) {
+        socket.emit('error_message', {
+          message: 'Anketu v chatu může vyhlásit pouze administrátor.'
+        });
+        return;
+      }
+
       const chatEntry = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
       io.to(mode).emit('chat_message', chatEntry);
 
@@ -857,9 +868,9 @@ io.on('connection', (socket) => {
 
     // Nápověda příkazů: !, !help, !prikazy
     if (['!', '!help', '!prikazy', '!commands'].includes(cleanMsg.toLowerCase())) {
-      let helpText = 'Příkazy: !play [název skladby nebo YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (fronta), !skip (hlasovat pro skip), !stop (zastavení pro sebe), !debil (změří na kolik % jsi debil), !poll <otázka> | <volba 1> | <volba 2> (anketa)';
+      let helpText = 'Příkazy: !play [název skladby nebo YouTube odkaz] (pustit hudbu / přidat do fronty), !queue (fronta), !skip (hlasovat pro skip), !stop (zastavení pro sebe), !debil (změří na kolik % jsi debil)';
       if (player.isAdmin) {
-        helpText += '\n👑 Admin příkazy: !kick <hráč>, !clear, !announce <text>, !forceskip, !forcestop, !forceword, !reveal, !endpoll';
+        helpText += '\n👑 Admin příkazy: !poll <otázka> | <volba 1> | <volba 2> (anketa), !endpoll, !kick <hráč>, !clear, !announce <text>, !forceskip, !forcestop, !forceword, !reveal';
       }
       const helpMsg = room.addChatMessage('ℹ️ NÁPOVĚDA', helpText, player.isAdmin);
       socket.emit('chat_message', helpMsg);

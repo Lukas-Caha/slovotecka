@@ -376,11 +376,10 @@ class BaseGameRoom {
 
   // ── ANKETY V CHATU (!poll) ──────────────────────────────────
   createPoll(question, options, createdBy, isAdmin = false) {
-    const now = Date.now();
-    if (!isAdmin && this.lastPollCreatedAt && (now - this.lastPollCreatedAt < 60000)) {
-      const waitSec = Math.ceil((60000 - (now - this.lastPollCreatedAt)) / 1000);
-      return { error: `Další anketu můžeš vytvořit za ${waitSec} s.` };
+    if (!isAdmin) {
+      return { error: 'Anketu v chatu může vyhlásit pouze administrátor.' };
     }
+    const now = Date.now();
     if (this.currentPoll && this.currentPoll.active && now < this.currentPoll.expiresAt) {
       if (!isAdmin) {
         return { error: 'V aréně právě probíhá jiná anketa. Počkej, až skončí.' };
@@ -606,6 +605,8 @@ class BaseGameRoom {
   }
 }
 
+const YESTERDAY_RECAP_PATH = path.join(__dirname, 'data', 'yesterdayRecap.json');
+
 // ─────────────────────────────────────────────────────────────
 // Denní společná hra (půlnoční reset, pevné slovo dle kalendáře)
 // ─────────────────────────────────────────────────────────────
@@ -614,12 +615,96 @@ class DailyGameRoom extends BaseGameRoom {
     super('daily');
     this.activeDate = wordService.getCzechDateStr();
     this.targetWordObj = wordService.getDailyWord();
+    this.yesterdayRecap = this.loadYesterdayRecap();
+  }
+
+  loadYesterdayRecap() {
+    try {
+      if (fs.existsSync(YESTERDAY_RECAP_PATH)) {
+        return JSON.parse(fs.readFileSync(YESTERDAY_RECAP_PATH, 'utf-8'));
+      }
+    } catch (e) {
+      console.warn('[DailyGameRoom] Nepodařilo se načíst yesterdayRecap.json:', e.message);
+    }
+    return null;
+  }
+
+  saveYesterdayRecap(recap) {
+    this.yesterdayRecap = recap;
+    try {
+      const dir = path.dirname(YESTERDAY_RECAP_PATH);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(YESTERDAY_RECAP_PATH, JSON.stringify(recap, null, 2), 'utf-8');
+    } catch (e) {
+      console.warn('[DailyGameRoom] Nepodařilo se uložit yesterdayRecap.json:', e.message);
+    }
+  }
+
+  generateYesterdayRecap() {
+    if (!this.targetWordObj) return null;
+    const allProfiles = Object.values(this.playerProfiles);
+    const solvedProfiles = allProfiles.filter(p => p.solved);
+
+    // 1. Vítěz (nejméně tipů)
+    let winner = null;
+    for (const p of solvedProfiles) {
+      if (!winner || (p.guessCount || 999) < (winner.guessCount || 999)) {
+        winner = { name: p.name, guessCount: p.guessCount || 1, color: p.color || null };
+      }
+    }
+
+    // 2. Klaun (použil nápovědu)
+    const clownPlayer = allProfiles.find(p => p.usedHint);
+    const clown = clownPlayer ? { name: clownPlayer.name } : null;
+
+    // 3. Stroj na slova (nejvíce tipů, alespoň 15)
+    let maxGuesser = null;
+    for (const p of allProfiles) {
+      if (!maxGuesser || (p.guessCount || 0) > (maxGuesser.guessCount || 0)) {
+        maxGuesser = { name: p.name, guessCount: p.guessCount || 0 };
+      }
+    }
+    if (maxGuesser && maxGuesser.guessCount < 15) maxGuesser = null;
+
+    // 4. Největší bloudění (tip s nejvyšším rankem >= 5000)
+    let worstGuess = null;
+    for (const g of this.guesses) {
+      if (g.rank && g.word && (!worstGuess || g.rank > worstGuess.rank)) {
+        worstGuess = { player: g.player, word: g.word, rank: g.rank };
+      }
+    }
+    if (worstGuess && worstGuess.rank < 5000) worstGuess = null;
+
+    const surrenderedCount = allProfiles.filter(p => p.gaveUp).length;
+
+    return {
+      date: this.activeDate,
+      dayNumber: this.targetWordObj.dayNumber,
+      word: this.targetWordObj.word,
+      hint: this.targetWordObj.hint || '',
+      playersCount: allProfiles.length,
+      guessesCount: this.guesses.length,
+      solvedCount: solvedProfiles.length,
+      winner,
+      clown,
+      maxGuesser,
+      worstGuess,
+      surrenderedCount,
+      commentaryLines: this.generateRoundCommentary(winner ? { name: winner.name, guessCount: winner.guessCount } : null)
+    };
   }
 
   checkMidnightRoll() {
     const todayStr = wordService.getCzechDateStr();
     if (todayStr !== this.activeDate) {
       console.log(`[PŮLNOC] Půlnoční reset denní hry: ${this.activeDate} -> ${todayStr}`);
+
+      // Spočítáme a trvale uložíme včerejší výsledky pro Lobby
+      const recap = this.generateYesterdayRecap();
+      if (recap) {
+        this.saveYesterdayRecap(recap);
+      }
+
       this.activeDate = todayStr;
       this.targetWordObj = wordService.getDailyWord(todayStr);
       this.guesses = [];
@@ -1118,6 +1203,10 @@ class RoomManager {
 
   checkMidnightRoll() {
     return this.rooms.daily.checkMidnightRoll();
+  }
+
+  getYesterdayRecap() {
+    return this.rooms.daily.yesterdayRecap || null;
   }
 }
 

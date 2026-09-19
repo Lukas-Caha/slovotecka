@@ -50,13 +50,13 @@ if (isUnlimited) {
   if (cardModeUnlimited) cardModeUnlimited.classList.remove('is-current');
 }
 
-// DOM – Výběr barvy hráče
+// DOM – Výběr barvy hráče (přes ozubené kolo)
 const colorPalette = document.getElementById('color-palette');
 const colorSelectedBadge = document.getElementById('color-selected-badge');
 const playerColorInput = document.getElementById('player-color-input');
-const previewBadge = document.getElementById('preview-badge');
 const previewDot = document.getElementById('preview-dot');
-const previewNameText = document.getElementById('preview-name-text');
+const btnToggleColorPicker = document.getElementById('btn-toggle-color-picker');
+const colorPickerPopover = document.getElementById('color-picker-popover');
 
 let myPlayerColor = localStorage.getItem('slovotecka_color') || '#3b82f6';
 
@@ -105,20 +105,24 @@ function updatePlayerColorUI(color, name) {
     colorSelectedBadge.style.color = color;
   }
 
-  if (previewBadge) {
-    previewBadge.style.color = color;
-    previewBadge.style.borderColor = color + '66';
-  }
   if (previewDot) {
     previewDot.style.backgroundColor = color;
+    previewDot.style.boxShadow = `0 0 8px ${color}`;
   }
 }
 
-function updatePlayerNamePreview() {
-  const name = playerNameInput ? playerNameInput.value.trim() : '';
-  if (previewNameText) {
-    previewNameText.textContent = name ? name.toUpperCase() : 'PŘEZDÍVKA';
-  }
+if (btnToggleColorPicker && colorPickerPopover) {
+  btnToggleColorPicker.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isShown = colorPickerPopover.style.display !== 'none';
+    colorPickerPopover.style.display = isShown ? 'none' : 'block';
+  });
+
+  document.addEventListener('click', (e) => {
+    if (colorPickerPopover.style.display !== 'none' && !colorPickerPopover.contains(e.target) && e.target !== btnToggleColorPicker) {
+      colorPickerPopover.style.display = 'none';
+    }
+  });
 }
 
 if (colorPalette) {
@@ -126,16 +130,96 @@ if (colorPalette) {
     const btn = e.target.closest('.color-swatch-btn');
     if (!btn) return;
     updatePlayerColorUI(btn.dataset.color, btn.dataset.name);
+    if (colorPickerPopover) {
+      colorPickerPopover.style.display = 'none';
+    }
   });
 }
 
-if (playerNameInput) {
-  playerNameInput.addEventListener('input', updatePlayerNamePreview);
+// Inicializace barvy při načtení
+updatePlayerColorUI(myPlayerColor);
+
+// DOM – Včerejší rekapitulace v Lobby (po půlnoci)
+const lobbyYesterdayRecap = document.getElementById('lobby-yesterday-recap');
+
+function renderYesterdayRecap(recap) {
+  if (!lobbyYesterdayRecap) return;
+  if (!recap || !recap.word) {
+    lobbyYesterdayRecap.style.display = 'none';
+    return;
+  }
+
+  const word = (recap.word || '').toUpperCase();
+  const dayNumStr = recap.dayNumber ? `#${recap.dayNumber}` : '';
+
+  let statsHtml = '';
+  if (recap.winner) {
+    const pCount = recap.winner.guessCount || 1;
+    statsHtml += `
+      <div class="yesterday-stat-item">
+        <span class="yesterday-stat-label">🏆 VÍTĚZ DNE</span>
+        <span class="yesterday-stat-val" style="${recap.winner.color ? 'color: ' + escapeHtml(recap.winner.color) + ';' : ''}">
+          ${escapeHtml(recap.winner.name)} (${pCount} ${pCount === 1 ? 'tip' : (pCount >= 2 && pCount <= 4 ? 'tipy' : 'tipů')})
+        </span>
+      </div>
+    `;
+  }
+
+  if (recap.worstGuess) {
+    statsHtml += `
+      <div class="yesterday-stat-item">
+        <span class="yesterday-stat-label">💀 MIMO MÍSU</span>
+        <span class="yesterday-stat-val" title="${escapeHtml(recap.worstGuess.player)}: ${escapeHtml(recap.worstGuess.word)} (#${recap.worstGuess.rank})">
+          ${escapeHtml(recap.worstGuess.player)}: "${escapeHtml(recap.worstGuess.word)}" (#${recap.worstGuess.rank})
+        </span>
+      </div>
+    `;
+  }
+
+  if (recap.clown) {
+    statsHtml += `
+      <div class="yesterday-stat-item">
+        <span class="yesterday-stat-label">🤡 KLAUN (NÁPOVĚDA)</span>
+        <span class="yesterday-stat-val">${escapeHtml(recap.clown.name)}</span>
+      </div>
+    `;
+  }
+
+  if (recap.maxGuesser) {
+    statsHtml += `
+      <div class="yesterday-stat-item">
+        <span class="yesterday-stat-label">⌨️ STROJ NA TIPY</span>
+        <span class="yesterday-stat-val">${escapeHtml(recap.maxGuesser.name)} (${recap.maxGuesser.guessCount} tipů)</span>
+      </div>
+    `;
+  }
+
+  if (!statsHtml) {
+    statsHtml = `
+      <div class="yesterday-stat-item" style="grid-column: 1 / -1;">
+        <span class="yesterday-stat-val" style="color: var(--color-base-600);">Včera se nikdo nezúčastnil.</span>
+      </div>
+    `;
+  }
+
+  lobbyYesterdayRecap.innerHTML = `
+    <div class="yesterday-head">
+      <span class="yesterday-tag">[ 📜 VÝSLEDKY VČEREJŠKA ${dayNumStr} ]</span>
+      <span class="yesterday-word-badge">#1 ${escapeHtml(word)}</span>
+    </div>
+    <div class="yesterday-stats-grid">
+      ${statsHtml}
+    </div>
+  `;
+
+  lobbyYesterdayRecap.style.display = 'block';
 }
 
-// Inicializace barvy a náhledu jména při načtení
-updatePlayerColorUI(myPlayerColor);
-updatePlayerNamePreview();
+// Načtení včerejších výsledků z API
+fetch('/api/yesterday-recap')
+  .then(res => res.ok ? res.json() : null)
+  .then(data => { if (data) renderYesterdayRecap(data); })
+  .catch(() => {});
 
 // Posluchač socketu pro živé aktualizace počtů hráčů v aréně
 socket.on('arena_counts', (counts) => {
@@ -204,6 +288,7 @@ const guessesCount = document.getElementById('guesses-count');
 const toastContainer = document.getElementById('toast-container');
 
 // DOM – Divácký mód (Spectator)
+const spectatorToolbar = document.getElementById('spectator-toolbar');
 const spectatorBanner = document.getElementById('spectator-banner');
 const spectatorFilterTabs = document.getElementById('spectator-filter-tabs');
 const btnFilterAll = document.getElementById('btn-filter-all');
@@ -779,7 +864,9 @@ function renderMessageWithEmotes(text) {
   // 2. Rozdělíme na slova pro 7TV emoty
   const parts = processed.split(/(\s+)/);
   let html = parts.map(part => {
-    if (!part || /^\s+$/.test(part)) return part;
+    if (!part || /^\s+$/.test(part)) {
+      return part ? part.replace(/\r?\n/g, '<br>') : part;
+    }
 
     if (part.startsWith('___MENTION_') && part.endsWith('___')) {
       return part;
@@ -926,6 +1013,14 @@ function renderAdminCommandsInPopover() {
   adminGroup.className = 'chat-admin-commands-group';
   adminGroup.innerHTML = `
     <div style="font-size:0.68rem; font-weight:800; color:#f59e0b; padding:8px 10px 4px; letter-spacing:0.06em; border-top:1px solid rgba(245, 158, 11, 0.3); margin-top:4px;">[ 👑 ADMIN PŘÍKAZY ]</div>
+    <button type="button" class="chat-command-item" data-command="!poll Otázka? | Ano | Ne">
+      <span class="cmd-code" style="color:#f59e0b;">!poll &lt;otázka&gt; | &lt;volba 1&gt; | &lt;volba 2&gt;</span>
+      <span class="cmd-desc">Vyhlásit anketu v chatu na 60 sekund</span>
+    </button>
+    <button type="button" class="chat-command-item" data-command="!endpoll">
+      <span class="cmd-code" style="color:#f59e0b;">!endpoll</span>
+      <span class="cmd-desc">Předčasně ukončit probíhající anketu</span>
+    </button>
     <button type="button" class="chat-command-item" data-command="!kick ">
       <span class="cmd-code" style="color:#f59e0b;">!kick &lt;hráč&gt;</span>
       <span class="cmd-desc">Vyhodit hráče z arény</span>
@@ -1342,15 +1437,13 @@ function appendChatMessage(data) {
   const div = document.createElement('div');
   div.className = 'chat-msg' + (isMe ? ' is-me' : '');
 
-  // Kontrola zmínky přihlášeného hráče (@myPlayerName)
-  if (myPlayerName) {
+  // Zvýraznění zprávy pouze pokud tě zmíní někdo jiný (@myPlayerName)
+  if (myPlayerName && !isMe) {
     const escapedMyName = myPlayerName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     const mentionRegex = new RegExp(`@${escapedMyName}(?=[\\s.,!?:;]|$)`, 'i');
     if (mentionRegex.test(data.message)) {
       div.classList.add('has-mention');
-      if (!isMe) {
-        showToast(`💬 ${data.player} tě zmínil(a) v chatu!`);
-      }
+      showToast(`💬 ${data.player} tě zmínil(a) v chatu!`);
     }
   }
 
@@ -1376,14 +1469,10 @@ function appendChatMessage(data) {
   const authorStyle = authorColor ? `style="color: ${authorColor};"` : '';
 
   div.innerHTML = `
-    <div class="chat-msg-header">
-      <span class="chat-msg-author" ${authorStyle}>${escapeHtml(data.player)}${adminBadge}${isMe ? ' (ty)' : ''}</span>
-      <span class="chat-msg-time">${data.time || ''}</span>
-    </div>
-    <div class="chat-msg-text" data-raw="${escapeHtml(data.message)}">
-      ${parsedHtml}
-      ${confirmBoxHtml}
-    </div>
+    <span class="chat-msg-time">${data.time || ''}</span>
+    <span class="chat-msg-author" ${authorStyle}>${escapeHtml(data.player)}${adminBadge}${isMe ? ' (ty)' : ''}:</span>
+    <span class="chat-msg-text" data-raw="${escapeHtml(data.message)}">${parsedHtml}</span>
+    ${confirmBoxHtml}
   `;
 
   if (data.confirmAction) {
@@ -1546,17 +1635,17 @@ function renderGameState(state) {
     }
   }
 
-  // Divácký mód UI (indikátor, přepínač filtrů, titulek)
+  // Divácký mód UI (subtilní lišta v hlavičce odhalených slov)
   const isSpectator = !!state.isSpectator || (state.myStatus && (state.myStatus.solved || state.myStatus.gaveUp));
 
-  if (spectatorBanner) {
-    spectatorBanner.style.display = isSpectator ? 'flex' : 'none';
+  if (spectatorToolbar) {
+    spectatorToolbar.style.display = isSpectator ? 'inline-flex' : 'none';
   }
-  if (spectatorFilterTabs) {
-    spectatorFilterTabs.style.display = isSpectator ? 'inline-flex' : 'none';
+  if (spectatorBanner) {
+    spectatorBanner.style.display = 'none';
   }
   if (guessesTitle) {
-    guessesTitle.textContent = isSpectator ? '[ ODHALENÁ SLOVA • DIVÁK 👁️ ]' : '[ ODHALENÁ SLOVA ]';
+    guessesTitle.textContent = '[ ODHALENÁ SLOVA ]';
   }
 
   if (top50Modal && top50Modal.style.display === 'flex' && currentTop50Data) {
