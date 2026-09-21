@@ -3603,14 +3603,26 @@ body {
 }
 
 [data-theme="light"] .mode-tab {
-  background: var(--bg-tab);
+  background: #FAF8F5;
+  border: 2px solid var(--border);
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .mode-tab:hover {
   border-color: var(--border-strong);
   color: var(--color-base-900);
+  background: #F0ECE1;
 }
 
 [data-theme="light"] .mode-tab.active {
-  background: var(--bg-tab-active);
-  color: var(--color-tab-active);
+  border-color: var(--color-accent);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--color-base-900);
+  box-shadow: 2px 2px 0px rgba(220, 38, 38, 0.25);
+}
+
+[data-theme="light"] .mode-tab.active .mode-tab-tag {
+  color: var(--color-accent);
 }
 
 [data-theme="light"] .mode-tab-title {
@@ -3666,24 +3678,33 @@ body {
 [data-theme="light"] .btn {
   border-color: var(--border-strong);
   color: var(--color-base-900);
+  background: transparent;
+}
+
+[data-theme="light"] .btn:hover:not(:disabled) {
+  background: var(--color-base-900);
+  color: #FAF8F5;
+  box-shadow: 2px 2px 0px rgba(20, 19, 18, 0.35);
 }
 
 [data-theme="light"] .btn-primary {
-  background: var(--color-base-900);
-  color: #FAF8F5;
+  background: transparent;
+  border: 2px solid var(--border-strong);
+  color: var(--color-base-900);
 }
 
-[data-theme="light"] .btn-primary:hover {
-  background: #2B261C;
-  color: #FFFFFF;
+[data-theme="light"] .btn-primary:hover:not(:disabled) {
+  background: var(--color-base-900);
+  color: #FAF8F5;
 }
 
 [data-theme="light"] .btn-outline {
   border-color: var(--border-strong);
   color: var(--color-base-900);
+  background: transparent;
 }
 
-[data-theme="light"] .btn-outline:hover {
+[data-theme="light"] .btn-outline:hover:not(:disabled) {
   background: var(--color-base-900);
   color: #FAF8F5;
 }
@@ -4073,21 +4094,26 @@ body {
 }
 
 [data-theme="light"] .lobby-mode-pill {
-  background: #EAE5D8;
-  border-color: rgba(20, 19, 18, 0.2);
+  background: #FAF8F5;
+  border: 1px solid rgba(20, 19, 18, 0.18);
   color: var(--color-base-700);
 }
 
 [data-theme="light"] .lobby-mode-pill:hover {
-  background: #DED8C8;
+  background: #F0ECE1;
   color: var(--color-base-900);
-  border-color: var(--border-strong);
+  border-color: rgba(20, 19, 18, 0.35);
 }
 
 [data-theme="light"] .lobby-mode-pill.is-current {
-  background: var(--color-base-900);
-  color: #FAF8F5;
-  border-color: var(--border-strong);
+  background: rgba(217, 119, 6, 0.08);
+  border: 1.5px solid var(--color-amber, #d97706);
+  color: var(--color-base-900);
+  box-shadow: 0 0 8px rgba(217, 119, 6, 0.2);
+}
+
+[data-theme="light"] .lobby-mode-pill.is-current .mode-pill-count strong {
+  color: var(--color-amber, #d97706);
 }
 
 [data-theme="light"] .lobby-yesterday-recap {
