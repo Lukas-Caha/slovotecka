@@ -3745,20 +3745,39 @@ body {
 
 /* Hráči v levém panelu */
 [data-theme="light"] .player-item {
-  border-bottom-color: rgba(20, 19, 18, 0.12);
+  background: #FAF8F5;
+  border: 1px solid rgba(20, 19, 18, 0.18);
   color: var(--color-base-900);
 }
 
 [data-theme="light"] .player-item:hover {
-  background: #EAE5D8;
+  background: #F0ECE1;
+  border-color: rgba(20, 19, 18, 0.35);
 }
 
 [data-theme="light"] .player-item.is-me {
   background: #EAE5D8;
+  border: 1px solid var(--border-strong);
+  box-shadow: inset 3px 0 0 var(--border-strong);
+}
+
+[data-theme="light"] .player-item.solved {
+  border-color: var(--color-green);
+  box-shadow: inset 3px 0 0 var(--color-green);
+}
+
+[data-theme="light"] .player-item.gave-up {
+  border-color: rgba(20, 19, 18, 0.12);
+  opacity: 0.6;
 }
 
 [data-theme="light"] .player-status {
-  color: var(--color-base-700);
+  color: var(--color-base-600);
+  font-weight: 700;
+}
+
+[data-theme="light"] .player-name {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
 }
 
 /* Contexto progress bary v bílém módu (OPRAVA ČERNÝCH PRUHŮ) */
