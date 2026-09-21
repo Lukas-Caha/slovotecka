@@ -11,7 +11,7 @@
 }
 
 :root {
-  /* Colors from template */
+  /* Colors from template (Dark default) */
   --color-base-100: #141312;
   --color-base-200: #1c1a19;
   --color-base-300: #252322;
@@ -41,6 +41,70 @@
   --rank-hot: #ff9500;
   --rank-warm: #34c759;
   --rank-cool: #8e8e93;
+
+  /* Contexto guess bar & surface variables */
+  --bg-panel: rgba(24, 22, 21, 0.88);
+  --bg-panel-header: rgba(38, 35, 33, 0.6);
+  --bg-guess-card: rgba(18, 16, 15, 0.95);
+  --bg-guess-card-hover: rgba(28, 26, 24, 0.95);
+  --bg-last-guess: rgba(14, 13, 12, 0.95);
+  --border-guess-card: rgba(250, 248, 245, 0.18);
+  --guess-rank-color: #ffffff;
+  --guess-word-color: #ffffff;
+  --guess-card-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+  --bg-input: rgba(12, 11, 10, 0.85);
+  --bg-input-focus: rgba(6, 6, 5, 0.95);
+  --bg-chat-form: rgba(14, 13, 12, 0.8);
+  --bg-chat-msg-me: rgba(255, 255, 255, 0.05);
+  --bg-header: rgba(20, 19, 18, 0.88);
+  --bg-footer: rgba(16, 15, 14, 0.95);
+  --bg-modal: rgba(20, 18, 17, 0.98);
+  --bg-popover: rgba(20, 18, 16, 0.98);
+  --bg-gramophone: rgba(18, 17, 16, 0.96);
+  --svg-invert: 0;
+}
+
+[data-theme="light"] {
+  /* Světlý Grunge Brutalistický styl (papírový tón) */
+  --color-base-100: #F4F0E6;
+  --color-base-200: #EAE5D8;
+  --color-base-300: #DED8C8;
+  --color-base-400: #C4BAA2;
+  --color-base-500: #9A8F78;
+  --color-base-600: #716752;
+  --color-base-700: #4A4333;
+  --color-base-800: #2B261C;
+  --color-base-900: #141312;
+
+  --border: rgba(20, 19, 18, 0.22);
+  --border-strong: #141312;
+  --shadow-brutal: 4px 4px 0px rgba(20, 19, 18, 0.7);
+
+  /* Accents */
+  --color-accent: #dc2626;
+  --color-amber: #d97706;
+  --color-green: #059669;
+
+  /* Contexto bary v bílém módu – nenaplněná část NENÍ černá! */
+  --bg-panel: #FFFFFF;
+  --bg-panel-header: #EAE5D8;
+  --bg-guess-card: #E4DFD3;
+  --bg-guess-card-hover: #D8D2C4;
+  --bg-last-guess: #E4DFD3;
+  --border-guess-card: rgba(20, 19, 18, 0.2);
+  --guess-rank-color: #141312;
+  --guess-word-color: #ffffff;
+  --guess-card-shadow: 2px 2px 0px rgba(20, 19, 18, 0.25);
+  --bg-input: #FFFFFF;
+  --bg-input-focus: #FAF8F5;
+  --bg-chat-form: #EAE5D8;
+  --bg-chat-msg-me: rgba(20, 19, 18, 0.06);
+  --bg-header: rgba(244, 240, 230, 0.94);
+  --bg-footer: #EAE5D8;
+  --bg-modal: #FAF8F5;
+  --bg-popover: #F4F0E6;
+  --bg-gramophone: rgba(244, 240, 230, 0.96);
+  --svg-invert: 1;
 }
 
 /* ── Base HTML & Body ────────────────────────────────────────────────────── */
@@ -86,7 +150,7 @@ body {
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
 .site-header {
-  background: rgba(20, 19, 18, 0.88);
+  background: var(--bg-header);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 2px solid var(--border-strong);
@@ -100,6 +164,43 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
+}
+
+.header-theme-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.btn-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-guess-card);
+  color: var(--color-base-900);
+  cursor: pointer;
+  border-radius: 2px;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease;
+}
+
+.btn-theme-toggle:hover {
+  background: var(--color-base-900);
+  color: var(--color-base-100);
+  border-color: var(--color-base-900);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.6);
+}
+
+.theme-toggle-icon {
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 .header-brand {
@@ -164,7 +265,7 @@ body {
 
 /* ── Shared Brutalist Cards / Panels ────────────────────────────────────── */
 .card, .panel {
-  background: rgba(24, 22, 21, 0.88);
+  background: var(--bg-panel);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 2px solid var(--border-strong);
@@ -177,7 +278,7 @@ body {
   align-items: center;
   padding: 10px 14px;
   border-bottom: 2px solid var(--border-strong);
-  background: rgba(38, 35, 33, 0.6);
+  background: var(--bg-panel-header);
 }
 
 .card-tag, .panel-title {
@@ -218,7 +319,7 @@ body {
   font-family: var(--font-mono);
   font-size: 1rem;
   border: 2px solid var(--border);
-  background: rgba(12, 11, 10, 0.85);
+  background: var(--bg-input);
   color: var(--color-base-900);
   padding: 11px 14px;
   border-radius: 0;
@@ -228,7 +329,7 @@ body {
 
 .input:focus {
   border-color: var(--border-strong);
-  background: rgba(6, 6, 5, 0.95);
+  background: var(--bg-input-focus);
   box-shadow: 0 0 0 1px var(--border-strong);
 }
 
@@ -967,7 +1068,7 @@ body {
 /* ── CONTEXTO-STYLE LAST GUESS ROW (Přímo pod zadáváním) ──────────────────── */
 .last-guess-container {
   padding: 12px 14px 10px 14px;
-  background: rgba(18, 16, 15, 0.5);
+  background: var(--bg-panel-header);
   border-bottom: 2px solid var(--border-strong);
 }
 
@@ -977,8 +1078,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 2px solid #ffffff;
-  background: rgba(14, 13, 12, 0.95);
+  border: 2px solid var(--border-strong);
+  background: var(--bg-last-guess);
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), var(--shadow-brutal);
   min-height: 48px;
   padding: 0 16px;
@@ -1018,9 +1119,14 @@ body {
   font-family: var(--font-mono);
   font-weight: 900;
   font-size: 1.25rem;
-  color: #ffffff;
+  color: var(--guess-rank-color);
   letter-spacing: 0.04em;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+[data-theme="light"] .last-guess-rank {
+  color: #141312;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
 .guesses-header {
@@ -1105,19 +1211,19 @@ body {
   overflow: hidden;
   display: flex;
   align-items: center;
-  border: 1px solid rgba(250, 248, 245, 0.18);
-  background: rgba(18, 16, 15, 0.95);
+  border: 1px solid var(--border-guess-card);
+  background: var(--bg-guess-card);
   min-height: 44px;
-  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--guess-card-shadow);
   transition: transform 0.1s ease, border-color 0.15s ease;
 }
 
 .guess-card:hover {
-  background: rgba(28, 26, 24, 0.95);
+  background: var(--bg-guess-card-hover);
 }
 
 .guess-card.is-me {
-  box-shadow: inset 3px 0 0 rgba(250, 248, 245, 0.7), 2px 2px 0px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 3px 0 0 var(--color-base-900), var(--guess-card-shadow);
 }
 
 .guess-card.is-shared {
@@ -1129,11 +1235,12 @@ body {
 }
 
 .guess-card.is-spectator-guess {
-  background: rgba(22, 19, 28, 0.95);
+  background: var(--bg-guess-card);
+  opacity: 0.94;
 }
 
 .guess-card.is-last-guess {
-  border: 2px solid #ffffff;
+  border: 2px solid var(--border-strong);
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.25), var(--shadow-brutal);
 }
 
@@ -1219,11 +1326,21 @@ body {
   font-family: var(--font-mono);
   font-weight: 900;
   font-size: 1.15rem;
-  color: #ffffff;
+  color: var(--guess-rank-color);
   letter-spacing: 0.04em;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
   flex-shrink: 0;
   margin-left: 12px;
+}
+
+[data-theme="light"] .guess-card-rank {
+  color: #141312;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.guess-card.is-winner .guess-card-rank {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
 }
 
 .empty-guesses {
@@ -3444,6 +3561,582 @@ body {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--color-base-600);
+}
+
+/* ==========================================================================
+   KOMPLETNÍ LIGHT MÓD (Světlé Grunge Brutální téma)
+   ========================================================================== */
+[data-theme="light"] {
+  background-color: var(--color-base-100);
+}
+
+[data-theme="light"] body {
+  background-image: none;
+  background-color: var(--color-base-100);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .noise-overlay {
+  opacity: 0.08;
+}
+
+/* Inverze bílých SVG dekorací na černou ve světlém módu */
+[data-theme="light"] .header-barcode,
+[data-theme="light"] .card-barcode,
+[data-theme="light"] .bottom-barcode,
+[data-theme="light"] .panel-barcode-mini,
+[data-theme="light"] .header-symbol,
+[data-theme="light"] .card-mini-symbol,
+[data-theme="light"] .panel-symbol,
+[data-theme="light"] .bottom-symbol {
+  filter: invert(1);
+}
+
+/* Záhlaví a navigace */
+[data-theme="light"] .site-header {
+  background: var(--bg-header);
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .logo {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .mode-tab {
+  background: var(--bg-tab);
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .mode-tab.active {
+  background: var(--bg-tab-active);
+  color: var(--color-tab-active);
+}
+
+[data-theme="light"] .mode-tab-title {
+  color: inherit;
+}
+
+[data-theme="light"] .btn-theme-toggle {
+  background: #EAE5D8;
+  border-color: #141312;
+  color: #141312;
+}
+
+[data-theme="light"] .btn-theme-toggle:hover {
+  background: #141312;
+  color: #FAF8F5;
+}
+
+/* Karty, panely a rámy */
+[data-theme="light"] .card,
+[data-theme="light"] .panel {
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
+  box-shadow: 4px 4px 0px rgba(20, 19, 18, 0.7);
+}
+
+[data-theme="light"] .card-header-bar,
+[data-theme="light"] .panel-header {
+  background: var(--bg-panel-header);
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .card-tag,
+[data-theme="light"] .panel-title {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .field-label {
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .input {
+  background: var(--bg-input);
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .input:focus {
+  background: var(--bg-input-focus);
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+[data-theme="light"] .btn {
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .btn-primary {
+  background: var(--color-base-900);
+  color: #FAF8F5;
+}
+
+[data-theme="light"] .btn-primary:hover {
+  background: #2B261C;
+  color: #FFFFFF;
+}
+
+[data-theme="light"] .btn-outline {
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .btn-outline:hover {
+  background: var(--color-base-900);
+  color: #FAF8F5;
+}
+
+/* Herní lišta a stav */
+[data-theme="light"] .game-header-card {
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .room-badge {
+  background: var(--bg-panel-header);
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .room-badge-label {
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .room-badge-code {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .meta-chip {
+  background: var(--bg-panel-header);
+  border-color: rgba(20, 19, 18, 0.2);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .secret-word-card {
+  background: #FFFFFF;
+  border-color: var(--color-accent);
+  box-shadow: 4px 4px 0px rgba(220, 38, 38, 0.35);
+}
+
+[data-theme="light"] .secret-word-text {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .hint-bar {
+  background: var(--bg-panel-header);
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .hint-locked-text {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .btn-hint {
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+  background: #FFFFFF;
+}
+
+[data-theme="light"] .btn-hint:hover {
+  background: var(--color-base-900);
+  color: #FAF8F5;
+}
+
+/* Hráči v levém panelu */
+[data-theme="light"] .player-item {
+  border-bottom-color: rgba(20, 19, 18, 0.12);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .player-item:hover {
+  background: #EAE5D8;
+}
+
+[data-theme="light"] .player-item.is-me {
+  background: #EAE5D8;
+}
+
+[data-theme="light"] .player-status {
+  color: var(--color-base-700);
+}
+
+/* Contexto progress bary v bílém módu (OPRAVA ČERNÝCH PRUHŮ) */
+[data-theme="light"] .guess-card {
+  background: var(--bg-guess-card);
+  border-color: var(--border-guess-card);
+  box-shadow: var(--guess-card-shadow);
+}
+
+[data-theme="light"] .guess-card:hover {
+  background: var(--bg-guess-card-hover);
+}
+
+[data-theme="light"] .guess-card.is-me {
+  box-shadow: inset 3px 0 0 var(--color-base-900), var(--guess-card-shadow);
+}
+
+[data-theme="light"] .guess-card.is-last-guess {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 10px rgba(20, 19, 18, 0.2), var(--shadow-brutal);
+}
+
+[data-theme="light"] .guess-card-word {
+  color: #141312;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] .last-guess-word {
+  color: #141312;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] .guess-card.is-winner .guess-card-word {
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+[data-theme="light"] .guess-card-who {
+  color: rgba(20, 19, 18, 0.75);
+  text-shadow: none;
+}
+
+[data-theme="light"] .guess-card-who .badge-you {
+  color: #141312;
+}
+
+[data-theme="light"] .guess-card-rank {
+  color: #141312;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="light"] .guess-card.is-winner .guess-card-rank {
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+[data-theme="light"] .last-guess-container {
+  background: var(--bg-panel-header);
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .last-guess-row {
+  background: var(--bg-last-guess);
+  border-color: var(--border-strong);
+  box-shadow: 0 0 10px rgba(20, 19, 18, 0.2), var(--shadow-brutal);
+}
+
+[data-theme="light"] .last-guess-rank {
+  color: #141312;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="light"] .empty-guesses {
+  color: var(--color-base-600);
+}
+
+/* Chat a zprávy */
+[data-theme="light"] .chat-messages {
+  background: #FFFFFF;
+}
+
+[data-theme="light"] .chat-msg-text {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .chat-msg-time {
+  color: var(--color-base-600);
+}
+
+[data-theme="light"] .chat-msg.is-me {
+  background: #F3EFE6;
+  border-left-color: var(--color-base-900);
+}
+
+[data-theme="light"] .chat-msg.has-mention {
+  background: rgba(245, 158, 11, 0.12);
+  border-left-color: var(--color-amber);
+}
+
+[data-theme="light"] .chat-form {
+  background: var(--bg-chat-form);
+  border-top-color: var(--border-strong);
+}
+
+[data-theme="light"] .btn-emote-toggle {
+  border-right-color: var(--border-strong);
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .btn-emote-toggle:hover,
+[data-theme="light"] .btn-emote-toggle.is-active {
+  color: var(--color-green);
+  background: rgba(20, 19, 18, 0.08);
+}
+
+[data-theme="light"] .chat-commands-popover,
+[data-theme="light"] .chat-autocomplete-popover,
+[data-theme="light"] .emote-picker {
+  background: rgba(250, 248, 245, 0.98);
+  border-color: var(--border-strong);
+  box-shadow: 0 -8px 24px rgba(20, 19, 18, 0.25);
+}
+
+[data-theme="light"] .chat-commands-header,
+[data-theme="light"] .chat-autocomplete-header,
+[data-theme="light"] .emote-picker-header {
+  background: #EAE5D8;
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .emote-search-input {
+  background: #FFFFFF;
+  border-color: var(--border-strong);
+  color: #141312;
+}
+
+[data-theme="light"] .emote-picker-count {
+  color: var(--color-base-600);
+}
+
+[data-theme="light"] .emote-picker-item {
+  background: #EAE5D8;
+  border-color: rgba(20, 19, 18, 0.15);
+}
+
+[data-theme="light"] .emote-picker-item:hover {
+  background: #DED8C8;
+  border-color: var(--color-green);
+}
+
+[data-theme="light"] .chat-command-item,
+[data-theme="light"] .chat-autocomplete-item {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .chat-command-item:hover,
+[data-theme="light"] .chat-autocomplete-item.is-selected {
+  background: #E4DFD3;
+}
+
+[data-theme="light"] .chat-poll-widget {
+  background: #F4F0E6;
+  border-bottom-color: rgba(20, 19, 18, 0.2);
+}
+
+[data-theme="light"] .poll-question {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .poll-option-btn {
+  background: #FFFFFF;
+  border-color: rgba(20, 19, 18, 0.3);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .poll-option-btn:hover:not(:disabled) {
+  border-color: var(--color-amber);
+}
+
+/* Modály a vyskakovací okna */
+[data-theme="light"] .modal-card {
+  background: #FAF8F5;
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+  box-shadow: 6px 6px 0px rgba(20, 19, 18, 0.7);
+}
+
+[data-theme="light"] .modal-header {
+  background: #EAE5D8;
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .modal-title {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .modal-close-btn {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .whats-new-list li {
+  color: #2B261C;
+  border-bottom-color: rgba(20, 19, 18, 0.12);
+}
+
+[data-theme="light"] .modal-footer {
+  background: #EAE5D8;
+  border-top-color: var(--border-strong);
+}
+
+[data-theme="light"] .top50-item {
+  background: #EAE5D8;
+  border-color: rgba(20, 19, 18, 0.15);
+}
+
+[data-theme="light"] .top50-word {
+  color: var(--color-base-900);
+}
+
+/* Plovoucí gramofon vlevo dole & notifikace */
+[data-theme="light"] .floating-gramophone {
+  background: rgba(244, 240, 230, 0.96);
+  border-color: var(--border-strong);
+  box-shadow: 4px 4px 0px rgba(20, 19, 18, 0.6), 0 8px 24px rgba(20, 19, 18, 0.2);
+}
+
+[data-theme="light"] .gramophone-title {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .floating-gramophone.is-minimized {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+[data-theme="light"] .toast {
+  background: #FAF8F5;
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+  box-shadow: 4px 4px 0px rgba(20, 19, 18, 0.75);
+}
+
+/* Hudební přehrávač v záhlaví */
+[data-theme="light"] .music-bar {
+  background: #EAE5D8;
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .music-track-title {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .music-bar-tag {
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .music-btn {
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+  background: #FFFFFF;
+}
+
+[data-theme="light"] .music-btn:hover {
+  background: var(--color-base-900);
+  color: #FFFFFF;
+}
+
+[data-theme="light"] .music-queue-popover {
+  background: #FAF8F5;
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .music-queue-header {
+  background: #EAE5D8;
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .music-queue-item {
+  border-bottom-color: rgba(20, 19, 18, 0.12);
+}
+
+[data-theme="light"] .music-queue-item-title {
+  color: var(--color-base-900);
+}
+
+/* Lobby a výběr z 8 barev */
+[data-theme="light"] .lobby-card {
+  background: #FFFFFF;
+  border-color: var(--border-strong);
+  box-shadow: 6px 6px 0px rgba(20, 19, 18, 0.7);
+}
+
+[data-theme="light"] .lobby-mode-pill {
+  background: #EAE5D8;
+  border-color: rgba(20, 19, 18, 0.2);
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .lobby-mode-pill:hover {
+  background: #DED8C8;
+  color: var(--color-base-900);
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .lobby-mode-pill.is-current {
+  background: var(--color-base-900);
+  color: #FAF8F5;
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .lobby-yesterday-recap {
+  background: #EAE5D8;
+  border-color: var(--color-amber);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .color-picker-popover {
+  background: #FAF8F5;
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 16px rgba(20, 19, 18, 0.2);
+}
+
+[data-theme="light"] .color-picker-popover-title {
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .color-swatch-btn {
+  border: 2px solid rgba(20, 19, 18, 0.2);
+}
+
+[data-theme="light"] .color-swatch-btn.is-selected {
+  border-color: #141312;
+  box-shadow: 0 0 10px var(--swatch-color), inset 0 0 0 2px #FFFFFF;
+}
+
+/* Divácký režim */
+[data-theme="light"] .spectator-tag-pill {
+  background: var(--color-base-900);
+  color: #FAF8F5;
+}
+
+[data-theme="light"] .btn-filter-tab {
+  background: #FFFFFF;
+  border-color: rgba(20, 19, 18, 0.3);
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .btn-filter-tab.is-active {
+  background: var(--color-base-900);
+  color: #FAF8F5;
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .btn-open-top50 {
+  background: var(--color-green);
+  color: #FFFFFF;
+}
+
+/* Spodní lišta a patička */
+[data-theme="light"] .game-bottom-bar {
+  background: #EAE5D8;
+  border-color: var(--border-strong);
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .site-footer {
+  background: #EAE5D8;
+  border-top-color: var(--border-strong);
+}
+
+[data-theme="light"] .footer-brand {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .footer-meta {
+  color: var(--color-base-700);
 }
 
 

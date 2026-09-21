@@ -1,5 +1,44 @@
 const socket = io();
 
+// ── Přepínač Light / Dark módu ───────────────────────────────────────────
+const btnThemeToggle = document.getElementById('btn-theme-toggle');
+
+function getPreferredTheme() {
+  const saved = localStorage.getItem('slovotecka_theme');
+  if (saved === 'light' || saved === 'dark') return saved;
+  return 'dark'; // Výchozí je temný Grunge Brutal styl
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  try {
+    localStorage.setItem('slovotecka_theme', theme);
+  } catch (e) {}
+
+  const themeToggleText = document.getElementById('theme-toggle-text');
+  const themeToggleIcon = document.getElementById('theme-toggle-icon');
+
+  if (themeToggleIcon) {
+    themeToggleIcon.textContent = theme === 'dark' ? '☼' : '☾';
+  }
+  if (themeToggleText) {
+    themeToggleText.textContent = theme === 'dark' ? 'SVĚTLÝ' : 'TMAVÝ';
+  }
+  if (btnThemeToggle) {
+    btnThemeToggle.title = theme === 'dark' ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim';
+  }
+}
+
+let currentTheme = getPreferredTheme();
+applyTheme(currentTheme);
+
+if (btnThemeToggle) {
+  btnThemeToggle.addEventListener('click', () => {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(currentTheme);
+  });
+}
+
 // Detekce režimu podle URL adresy
 const isUnlimited = window.location.pathname.startsWith('/unlimited');
 const currentMode = isUnlimited ? 'unlimited' : 'daily';

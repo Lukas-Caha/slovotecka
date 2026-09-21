@@ -3,4 +3,5 @@ npm-debug.log
 .DS_Store
 .env
 template/
+newTemplate/
 src/data/savedState.json*
