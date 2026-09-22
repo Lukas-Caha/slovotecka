@@ -5,3 +5,4 @@ npm-debug.log
 template/
 newTemplate/
 src/data/savedState.json*
+*.template-backup.*

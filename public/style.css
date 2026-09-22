@@ -11,99 +11,99 @@
 }
 
 :root {
-  /* Colors from template (Dark default) */
-  --color-base-100: #141312;
-  --color-base-200: #1c1a19;
-  --color-base-300: #252322;
-  --color-base-400: #383533;
-  --color-base-500: #524e4a;
-  --color-base-600: #716c67;
-  --color-base-700: #a39c96;
-  --color-base-800: #d6d0c9;
-  --color-base-900: #faf8f5;
+  /* Colors from template (Dark default - Vyvážený tmavý grunge retro styl dle předlohy) */
+  --color-base-100: #141312; /* Hluboký matný grafitový podklad bez žlutého nádechu */
+  --color-base-200: #1c1a19; /* Tmavé lišty a výlisky */
+  --color-base-300: #262321; /* Dělící spáry a vlisované drážky */
+  --color-base-400: #3a3632; /* Zvýrazněné přechody a hrany */
+  --color-base-500: #57504a; /* Tlumené popisky */
+  --color-base-600: #7d756c; /* Sekundární texty (časy, meta informace) */
+  --color-base-700: #aba195; /* Čitelné štítky a popisky */
+  --color-base-800: #d8d0c4; /* Patinovaný světlý tón */
+  --color-base-900: #FAF7F2; /* Čistá, kontrastní vintage slonová kost pro hlavní nápisy */
 
   /* Fonts */
   --font-grunge: 'Road Rage', cursive, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Borders & Shadows */
-  --border: rgba(250, 248, 245, 0.25);
-  --border-strong: #faf8f5;
-  --shadow-brutal: 4px 4px 0px rgba(0, 0, 0, 0.7);
+  --border: rgba(250, 247, 242, 0.22);
+  --border-strong: #EDE7DC; /* Ostrý, kontrastní světlý rámeček přesně jako v předloze */
+  --shadow-brutal: 4px 4px 0px rgba(0, 0, 0, 0.8);
 
-  /* Accents */
-  --color-accent: #ff3b30;
-  --color-amber: #f59e0b;
-  --color-green: #10b981;
+  /* Accents - Stejné v obou módech */
+  --color-accent: #D63031;
+  --color-amber: #D97706;
+  --color-green: #15803D;
 
   /* Rank tiers */
-  --rank-1: #ff3b30;
-  --rank-hot: #ff9500;
-  --rank-warm: #34c759;
-  --rank-cool: #8e8e93;
+  --rank-1: #D63031;
+  --rank-hot: #15803D;
+  --rank-warm: #D97706;
+  --rank-cool: #8A8378;
 
-  /* Contexto guess bar & surface variables */
-  --bg-panel: rgba(24, 22, 21, 0.88);
-  --bg-panel-header: rgba(38, 35, 33, 0.6);
-  --bg-guess-card: rgba(18, 16, 15, 0.95);
-  --bg-guess-card-hover: rgba(28, 26, 24, 0.95);
-  --bg-last-guess: rgba(14, 13, 12, 0.95);
-  --border-guess-card: rgba(250, 248, 245, 0.18);
-  --guess-rank-color: #ffffff;
-  --guess-word-color: #ffffff;
-  --guess-card-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
-  --bg-input: rgba(12, 11, 10, 0.85);
-  --bg-input-focus: rgba(6, 6, 5, 0.95);
-  --bg-chat-form: rgba(14, 13, 12, 0.8);
-  --bg-chat-msg-me: rgba(255, 255, 255, 0.05);
-  --bg-header: rgba(20, 19, 18, 0.88);
-  --bg-footer: rgba(16, 15, 14, 0.95);
-  --bg-modal: rgba(20, 18, 17, 0.98);
-  --bg-popover: rgba(20, 18, 16, 0.98);
-  --bg-gramophone: rgba(18, 17, 16, 0.96);
+  /* Panely a herní prvky – tmavý matný povrch s vysokým kontrastem */
+  --bg-panel: #1A1817;
+  --bg-panel-header: #23211F;
+  --bg-guess-card: #1D1B1A;
+  --bg-guess-card-hover: #272523;
+  --bg-last-guess: #1A1817;
+  --border-guess-card: rgba(250, 247, 242, 0.18);
+  --guess-rank-color: #FAF7F2;
+  --guess-word-color: #FFFFFF;
+  --guess-card-shadow: 2px 2px 0px rgba(0, 0, 0, 0.6);
+  --bg-input: #11100F;
+  --bg-input-focus: #171615;
+  --bg-chat-form: #1E1C1B;
+  --bg-chat-msg-me: transparent;
+  --bg-header: #1A1817;
+  --bg-footer: #161514;
+  --bg-modal: #1A1817;
+  --bg-popover: #1E1C1B;
+  --bg-gramophone: #1A1817;
   --svg-invert: 0;
 }
 
 [data-theme="light"] {
-  /* Světlý Grunge Brutalistický styl (papírový tón) */
-  --color-base-100: #F4F0E6;
-  --color-base-200: #EAE5D8;
-  --color-base-300: #DED8C8;
-  --color-base-400: #C4BAA2;
-  --color-base-500: #9A8F78;
-  --color-base-600: #716752;
-  --color-base-700: #4A4333;
-  --color-base-800: #2B261C;
-  --color-base-900: #141312;
+  /* Retro nažloutlý styl starého plastu (Vintage Yellowed Retro Plastic / NES / Retro PC Aesthetic) */
+  --color-base-100: #E5DAB2; /* Výrazný teplý nažloutlý odstín starého plastu na pozadí */
+  --color-base-200: #D6C898; /* Hlavičky, lišty a výlisky těla */
+  --color-base-300: #C7B784; /* Rámečky a dělící linky */
+  --color-base-400: #B09F6E; /* Zvýrazněné oddělovače */
+  --color-base-500: #8C7C50; /* Tlumené popisky a ikonky */
+  --color-base-600: #665935; /* Sekundární texty (meta info, časy) */
+  --color-base-700: #42391F; /* Texty štítků a tlačítek */
+  --color-base-800: #282211; /* Výrazný tmavý plastový tón */
+  --color-base-900: #18150A; /* Hluboký retro inkoust */
 
-  --border: rgba(20, 19, 18, 0.22);
-  --border-strong: #141312;
-  --shadow-brutal: 4px 4px 0px rgba(20, 19, 18, 0.7);
+  --border: rgba(24, 21, 10, 0.25);
+  --border-strong: #18150A;
+  --shadow-brutal: 4px 4px 0px rgba(24, 21, 10, 0.75);
 
   /* Accents */
-  --color-accent: #dc2626;
-  --color-amber: #d97706;
-  --color-green: #059669;
+  --color-accent: #D63031;
+  --color-amber: #D97706;
+  --color-green: #15803D;
 
-  /* Contexto bary v bílém módu – nenaplněná část NENÍ černá! */
-  --bg-panel: #FFFFFF;
-  --bg-panel-header: #EAE5D8;
-  --bg-guess-card: #E4DFD3;
-  --bg-guess-card-hover: #D8D2C4;
-  --bg-last-guess: #E4DFD3;
-  --border-guess-card: rgba(20, 19, 18, 0.2);
-  --guess-rank-color: #141312;
-  --guess-word-color: #ffffff;
-  --guess-card-shadow: 2px 2px 0px rgba(20, 19, 18, 0.25);
-  --bg-input: #FFFFFF;
-  --bg-input-focus: #FAF8F5;
-  --bg-chat-form: #EAE5D8;
-  --bg-chat-msg-me: rgba(20, 19, 18, 0.06);
-  --bg-header: rgba(244, 240, 230, 0.94);
-  --bg-footer: #EAE5D8;
-  --bg-modal: #FAF8F5;
-  --bg-popover: #F4F0E6;
-  --bg-gramophone: rgba(244, 240, 230, 0.96);
+  /* Panely, karty a herní plochy – sytý starý zažloutlý plast */
+  --bg-panel: #EFE4BA;
+  --bg-panel-header: #DECFA0;
+  --bg-guess-card: #E5D6A4;
+  --bg-guess-card-hover: #DAC892;
+  --bg-last-guess: #E5D6A4;
+  --border-guess-card: rgba(24, 21, 10, 0.22);
+  --guess-rank-color: #18150A;
+  --guess-word-color: #FFFFFF;
+  --guess-card-shadow: 2px 2px 0px rgba(24, 21, 10, 0.35);
+  --bg-input: #F7EFD2;
+  --bg-input-focus: #FAF4DE;
+  --bg-chat-form: #DECFA0;
+  --bg-chat-msg-me: transparent;
+  --bg-header: rgba(229, 218, 178, 0.96);
+  --bg-footer: #DECFA0;
+  --bg-modal: #EFE4BA;
+  --bg-popover: #EFE4BA;
+  --bg-gramophone: rgba(229, 218, 178, 0.96);
   --svg-invert: 1;
 }
 
@@ -117,10 +117,13 @@ html {
 body {
   font-family: var(--font-mono);
   background-color: var(--color-base-100);
-  background-image: url('/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-image: 
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(45, 41, 36, 0.35) 0%, transparent 80%),
+    radial-gradient(ellipse 70% 80% at 50% 120%, rgba(14, 13, 12, 0.85) 0%, transparent 100%),
+    linear-gradient(to right, rgba(250, 247, 242, 0.024) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(250, 247, 242, 0.024) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  background-position: center top;
   background-attachment: fixed;
   color: var(--color-base-900);
   min-height: 100vh;
@@ -129,13 +132,13 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Noise Overlay (Gritty Grunge Texture) ───────────────────────────────── */
+/* ── Noise Overlay (Gritty Grunge Texture - jemná analogová zrnitost) ── */
 .noise-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.22;
+  opacity: 0.052;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
@@ -166,12 +169,14 @@ body {
   gap: 20px;
 }
 
-.header-theme-toggle {
+.header-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
-.btn-theme-toggle {
+.btn-theme-toggle,
+.btn-sound-toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -185,20 +190,34 @@ body {
   background: var(--bg-guess-card);
   color: var(--color-base-900);
   cursor: pointer;
-  border-radius: 2px;
-  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4);
-  transition: all 0.15s ease;
+  border-radius: 0;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+  transition: all 0.12s ease;
+  user-select: none;
 }
 
-.btn-theme-toggle:hover {
+.btn-theme-toggle:hover,
+.btn-sound-toggle:hover {
   background: var(--color-base-900);
   color: var(--color-base-100);
   border-color: var(--color-base-900);
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.6);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.7);
 }
 
-.theme-toggle-icon {
+.btn-theme-toggle:active,
+.btn-sound-toggle:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+.btn-sound-toggle.is-muted {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.theme-toggle-icon,
+.sound-toggle-icon {
   font-size: 0.95rem;
   line-height: 1;
 }
@@ -266,8 +285,6 @@ body {
 /* ── Shared Brutalist Cards / Panels ────────────────────────────────────── */
 .card, .panel {
   background: var(--bg-panel);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 2px solid var(--border-strong);
   box-shadow: var(--shadow-brutal);
 }
@@ -474,18 +491,17 @@ body {
 }
 
 .lobby-mode-pill.is-current {
-  border-color: var(--color-amber, #f59e0b);
-  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--color-amber);
+  background: rgba(217, 119, 6, 0.12);
   color: var(--color-base-900);
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4);
 }
 
 .mode-pill-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 6px #22c55e;
+  background: var(--color-green);
   flex-shrink: 0;
 }
 
@@ -495,7 +511,7 @@ body {
 }
 
 .lobby-mode-pill.is-current .mode-pill-count strong {
-  color: #f59e0b;
+  color: var(--color-amber);
 }
 
 /* ── NICKNAME S OZUBENÝM KOLEM & POPOVER BAREV ────────────────────────────── */
@@ -529,7 +545,7 @@ body {
   border-radius: 50%;
   z-index: 2;
   pointer-events: none;
-  box-shadow: 0 0 6px currentColor;
+  border: 1px solid rgba(0, 0, 0, 0.5);
   transition: background-color 0.2s ease;
 }
 
@@ -608,16 +624,16 @@ body {
 }
 
 .color-swatch-btn:hover {
-  transform: scale(1.12);
-  border-color: #ffffff;
-  box-shadow: 0 0 10px var(--swatch-color);
+  transform: scale(1.1);
+  border-color: var(--color-base-900);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.6);
   z-index: 2;
 }
 
 .color-swatch-btn.is-selected {
-  border-color: #ffffff;
-  transform: scale(1.15);
-  box-shadow: 0 0 12px var(--swatch-color), inset 0 0 0 2px #000000;
+  border-color: var(--color-base-900);
+  transform: scale(1.12);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8), inset 0 0 0 2px #000000;
   z-index: 3;
 }
 
@@ -884,7 +900,7 @@ body {
   font-weight: 700;
   font-size: 0.8rem;
   letter-spacing: 0.1em;
-  color: #34d399;
+  color: var(--color-green);
   text-transform: uppercase;
 }
 
@@ -943,7 +959,7 @@ body {
 }
 
 .player-item.solved .player-name {
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  font-weight: 800;
 }
 
 .player-item.gave-up {
@@ -974,7 +990,7 @@ body {
   border-radius: 50%;
   margin-right: 6px;
   flex-shrink: 0;
-  box-shadow: 0 0 6px currentColor;
+  border: 1px solid rgba(0, 0, 0, 0.4);
 }
 
 .player-status {
@@ -997,7 +1013,7 @@ body {
   gap: 10px;
   align-items: stretch;
   border-bottom: 2px solid var(--border-strong);
-  background: rgba(14, 13, 12, 0.6);
+  background: var(--bg-panel-header);
 }
 
 .input-guess {
@@ -1006,6 +1022,17 @@ body {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+@keyframes inputShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.input-shake {
+  animation: inputShake 0.35s ease;
+  border-color: var(--color-accent) !important;
 }
 
 .guess-feedback {
@@ -1025,9 +1052,8 @@ body {
   gap: 6px;
   padding: 12px 16px;
   border-bottom: 2px solid var(--border-strong);
-  background: rgba(30, 26, 38, 0.95);
-  border-left: 4px solid #a855f7;
-  box-shadow: inset 0 0 20px rgba(168, 85, 247, 0.08);
+  background: var(--bg-panel-header);
+  border-left: 4px solid var(--color-amber);
 }
 
 .spectator-badge-row {
@@ -1040,14 +1066,13 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #a855f7;
-  box-shadow: 0 0 8px #a855f7;
+  background: var(--color-amber);
   animation: spectator-pulse 1.8s infinite;
 }
 
 @keyframes spectator-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.35; transform: scale(1.3); }
+  50% { opacity: 0.35; transform: scale(1.2); }
 }
 
 .spectator-tag {
@@ -1055,7 +1080,7 @@ body {
   font-weight: 800;
   font-size: 0.82rem;
   letter-spacing: 0.1em;
-  color: #c084fc;
+  color: var(--color-amber);
   text-transform: uppercase;
 }
 
@@ -1080,7 +1105,7 @@ body {
   justify-content: space-between;
   border: 2px solid var(--border-strong);
   background: var(--bg-last-guess);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), var(--shadow-brutal);
+  box-shadow: var(--shadow-brutal);
   min-height: 48px;
   padding: 0 16px;
 }
@@ -1091,7 +1116,8 @@ body {
   top: 0;
   bottom: 0;
   width: 0%;
-  background: #f43f5e;
+  background: var(--color-accent);
+  border-right: 2px solid rgba(255, 255, 255, 0.45);
   z-index: 1;
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.35s ease;
 }
@@ -1125,7 +1151,7 @@ body {
 }
 
 [data-theme="light"] .last-guess-rank {
-  color: #141312;
+  color: #18150A;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
@@ -1135,7 +1161,7 @@ body {
   align-items: center;
   padding: 10px 16px;
   border-bottom: 2px solid var(--border-strong);
-  background: rgba(35, 32, 30, 0.6);
+  background: var(--bg-panel-header);
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -1150,9 +1176,9 @@ body {
 .guesses-filter-tabs {
   display: inline-flex;
   gap: 4px;
-  background: rgba(14, 13, 12, 0.9);
+  background: var(--bg-input);
   padding: 2px;
-  border: 1px solid rgba(250, 248, 245, 0.2);
+  border: 1px solid var(--border);
 }
 
 .btn-filter-tab {
@@ -1169,12 +1195,12 @@ body {
 }
 
 .btn-filter-tab:hover {
-  color: #ffffff;
+  color: var(--color-base-900);
 }
 
 .btn-filter-tab.is-active {
-  background: #ffffff;
-  color: #000000;
+  background: var(--color-base-900);
+  color: var(--bg-panel);
   font-weight: 800;
 }
 
@@ -1227,11 +1253,11 @@ body {
 }
 
 .guess-card.is-shared {
-  border-left: 3px solid #34d399;
+  border-left: 3px solid var(--color-green);
 }
 
 .guess-card.is-other {
-  border-left: 3px solid #818cf8;
+  border-left: 3px solid var(--color-base-600);
 }
 
 .guess-card.is-spectator-guess {
@@ -1241,12 +1267,36 @@ body {
 
 .guess-card.is-last-guess {
   border: 2px solid var(--border-strong);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.25), var(--shadow-brutal);
+  box-shadow: var(--shadow-brutal);
 }
 
 .guess-card.is-winner {
-  border: 2px solid #10b981;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+  border: 2px solid var(--color-green);
+  box-shadow: var(--shadow-brutal);
+}
+
+.guess-card.is-new-guess {
+  animation: guessCardReveal 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes guessCardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.guess-card.is-duplicate-flash {
+  animation: duplicateHighlight 0.6s ease 2;
+}
+
+@keyframes duplicateHighlight {
+  0%, 100% { box-shadow: var(--guess-card-shadow); }
+  50% { box-shadow: 0 0 0 3px var(--color-amber), var(--shadow-brutal); }
 }
 
 .guess-card-bar-bg {
@@ -1254,6 +1304,7 @@ body {
   left: 0;
   top: 0;
   bottom: 0;
+  border-right: 2px solid rgba(255, 255, 255, 0.45);
   z-index: 1;
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.35s ease;
 }
@@ -1311,14 +1362,14 @@ body {
 .guess-card-who .badge-shared {
   font-size: 0.68rem;
   font-weight: 700;
-  color: #34d399;
+  color: var(--color-green);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-left: 4px;
 }
 
 .guess-card-who .who-spectator-other {
-  color: #c4b5fd;
+  color: var(--color-amber);
   font-weight: 700;
 }
 
@@ -1334,7 +1385,7 @@ body {
 }
 
 [data-theme="light"] .guess-card-rank {
-  color: #141312;
+  color: #18150A;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
@@ -1367,9 +1418,9 @@ body {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 2px 6px;
-  border: 1px solid #34d399;
-  color: #34d399;
-  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid var(--color-green);
+  color: var(--color-green);
+  background: rgba(22, 163, 74, 0.15);
   margin-left: auto;
   margin-right: 8px;
 }
@@ -1381,6 +1432,38 @@ body {
   flex-direction: column;
   gap: 8px;
   padding: 12px;
+  scroll-behavior: smooth;
+}
+
+.chat-unread-badge {
+  position: absolute;
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  background: var(--color-base-900);
+  color: var(--color-base-100);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 5px 14px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.75);
+  animation: unreadBounce 1.6s infinite ease-in-out;
+  user-select: none;
+}
+
+@keyframes unreadBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
+}
+
+.chat-unread-badge:hover {
+  background: var(--color-amber);
+  color: #121110;
+  border-color: var(--color-amber);
 }
 
 .chat-empty {
@@ -1456,7 +1539,7 @@ body {
 .chat-form {
   display: flex;
   border-top: 2px solid var(--border-strong);
-  background: rgba(14, 13, 12, 0.8);
+  background: var(--bg-chat-form);
   position: relative;
 }
 
@@ -1474,7 +1557,7 @@ body {
 }
 
 .btn-emote-toggle:hover, .btn-emote-toggle.is-active {
-  color: #34d399;
+  color: var(--color-amber);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -1514,15 +1597,13 @@ body {
   bottom: 48px;
   left: 0;
   right: 0;
-  background: rgba(20, 18, 17, 0.98);
+  background: var(--bg-popover);
   border: 2px solid var(--border-strong);
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.7);
   z-index: 50;
   display: flex;
   flex-direction: column;
   max-height: 330px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .emote-picker-header {
@@ -1531,12 +1612,12 @@ body {
   gap: 8px;
   padding: 8px 10px;
   border-bottom: 1px solid var(--border-strong);
-  background: rgba(30, 27, 25, 0.95);
+  background: var(--bg-panel-header);
 }
 
 .emote-search-input {
   flex: 1;
-  background: rgba(10, 9, 8, 0.9);
+  background: var(--bg-input);
   border: 1px solid var(--border-strong);
   color: var(--color-base-900);
   font-family: var(--font-mono);
@@ -1546,7 +1627,7 @@ body {
 }
 
 .emote-search-input:focus {
-  border-color: #34d399;
+  border-color: var(--color-amber);
 }
 
 .emote-picker-count {
@@ -1581,7 +1662,7 @@ body {
 
 .emote-picker-item:hover {
   background: rgba(50, 45, 42, 0.95);
-  border-color: #34d399;
+  border-color: var(--color-amber);
   transform: scale(1.18);
   z-index: 2;
 }
@@ -1628,8 +1709,7 @@ body {
 .site-footer {
   margin-top: auto;
   border-top: 2px solid var(--border-strong);
-  background: rgba(14, 13, 12, 0.92);
-  backdrop-filter: blur(12px);
+  background: var(--bg-footer);
   padding: 18px 24px;
 }
 
@@ -1954,9 +2034,9 @@ body {
   max-width: 520px;
   width: 100%;
   max-height: min(85vh, 580px);
-  background: rgba(22, 20, 19, 0.98);
+  background: var(--bg-modal);
   border: 2px solid var(--border-strong);
-  box-shadow: var(--shadow-brutal), 0 0 30px rgba(0, 0, 0, 0.9);
+  box-shadow: var(--shadow-brutal);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1968,7 +2048,7 @@ body {
   align-items: center;
   padding: 12px 18px;
   border-bottom: 2px solid var(--border-strong);
-  background: rgba(38, 35, 33, 0.7);
+  background: var(--bg-panel-header);
   flex-shrink: 0;
 }
 
@@ -2053,7 +2133,7 @@ body {
   display: flex;
   justify-content: flex-end;
   border-top: 1px solid var(--border);
-  background: rgba(28, 26, 25, 0.85);
+  background: var(--bg-panel-header);
   flex-shrink: 0;
 }
 
@@ -2106,10 +2186,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(18, 17, 16, 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
+  background: var(--bg-header);
+  border-bottom: 2px solid var(--border-strong);
   padding: 6px 20px;
   font-family: var(--font-mono);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
@@ -2142,11 +2220,9 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: rgba(18, 17, 16, 0.96);
+  background: var(--bg-gramophone);
   border: 2px solid var(--border-strong);
   box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   padding: 10px 14px;
   max-width: 350px;
   font-family: var(--font-mono);
@@ -2245,7 +2321,7 @@ body {
   height: 38px;
   border-radius: 50%;
   border: 2px solid var(--color-amber);
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5), inset 0 0 3px rgba(0, 0, 0, 0.9);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.9), 1px 1px 2px rgba(0, 0, 0, 0.7);
   overflow: hidden;
   z-index: 2;
   background: #1c1917;
@@ -2300,7 +2376,6 @@ body {
   height: 10px;
   background: var(--color-amber);
   border-radius: 1px;
-  box-shadow: 0 0 3px rgba(245, 158, 11, 0.6);
 }
 
 @keyframes spinVinyl {
@@ -2349,7 +2424,6 @@ body {
   height: 6px;
   border-radius: 50%;
   background: var(--color-amber);
-  box-shadow: 0 0 6px var(--color-amber);
   animation: gramophoneDotPulse 1.5s infinite ease-in-out;
 }
 
@@ -2440,7 +2514,7 @@ body {
   padding: 6px;
   background: rgba(18, 17, 16, 0.94);
   border-radius: 50%;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 0 12px rgba(245, 158, 11, 0.25);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.85);
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -2448,7 +2522,7 @@ body {
 .floating-gramophone.is-minimized:hover {
   transform: scale(1.06);
   border-color: var(--color-amber);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.9), 0 0 18px rgba(245, 158, 11, 0.45);
+  box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.95);
 }
 
 .floating-gramophone.is-minimized .gramophone-body {
@@ -2500,7 +2574,7 @@ body {
 
 @keyframes musicPulse {
   0%, 100% { transform: scale(1); opacity: 0.85; }
-  50% { transform: scale(1.18); opacity: 1; filter: drop-shadow(0 0 4px var(--color-amber)); }
+  50% { transform: scale(1.15); opacity: 1; }
 }
 
 .music-tag {
@@ -2542,8 +2616,8 @@ body {
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--color-amber);
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(217, 119, 6, 0.12);
+  border: 1px solid rgba(217, 119, 6, 0.35);
   padding: 2px 8px;
   min-width: 58px;
   text-align: center;
@@ -2579,7 +2653,7 @@ body {
   align-items: center;
   gap: 7px;
   background: var(--color-amber);
-  color: var(--color-base-100);
+  color: #121110;
   border: 1px solid var(--color-amber);
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -2589,13 +2663,7 @@ body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   transition: all 0.15s;
-  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.6);
-  animation: enableMusicGlow 2s infinite ease-in-out;
-}
-
-@keyframes enableMusicGlow {
-  0%, 100% { box-shadow: 0 0 2px rgba(245, 158, 11, 0.3); }
-  50% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.85); }
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.7);
 }
 
 .btn-music-enable:hover {
@@ -3015,7 +3083,7 @@ body {
 .chat-autocomplete-tag {
   font-size: 0.68rem;
   font-weight: 800;
-  color: #10b981;
+  color: var(--color-green);
   letter-spacing: 0.08em;
 }
 
@@ -3050,8 +3118,8 @@ body {
 
 .chat-autocomplete-item:hover,
 .chat-autocomplete-item.is-selected {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(22, 163, 74, 0.15);
+  border-color: rgba(22, 163, 74, 0.45);
 }
 
 .chat-autocomplete-item.is-emote:hover,
@@ -3071,8 +3139,8 @@ body {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  background: rgba(22, 163, 74, 0.2);
+  color: var(--color-green);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3103,13 +3171,13 @@ body {
   margin-left: auto;
 }
 
-/* ── Zelený Mention hráče (@jméno) ──────────────────────────────────────── */
+/* ── Retro Mention hráče (@jméno) ──────────────────────────────────────── */
 .chat-mention {
   display: inline-block;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.16);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  border-radius: 3px;
+  color: var(--color-amber);
+  background: rgba(217, 119, 6, 0.14);
+  border: 1px solid rgba(217, 119, 6, 0.4);
+  border-radius: 2px;
   padding: 0 5px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -3119,20 +3187,19 @@ body {
 }
 
 .chat-mention:hover {
-  background: rgba(16, 185, 129, 0.26);
-  border-color: rgba(16, 185, 129, 0.7);
+  background: rgba(217, 119, 6, 0.24);
+  border-color: rgba(217, 119, 6, 0.7);
 }
 
 .chat-mention.is-me {
-  background: rgba(16, 185, 129, 0.28);
-  border-color: #10b981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+  background: rgba(217, 119, 6, 0.25);
+  border-color: var(--color-amber);
   font-weight: 800;
 }
 
 .chat-msg.has-mention {
-  border-left: 2px solid #10b981;
-  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid var(--color-amber);
+  background: rgba(217, 119, 6, 0.08);
 }
 
 /* ── Admin Badge ────────────────────────────────────────────────────────── */
@@ -3180,12 +3247,12 @@ body {
   background: var(--color-amber);
   color: #121110;
   border: 1px solid var(--color-amber);
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
 }
 
 .chat-confirm-yes:hover {
   background: #fbbf24;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.6);
   transform: translateY(-1px);
 }
 
@@ -3238,9 +3305,9 @@ body {
   font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 800;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: var(--color-amber);
+  background: rgba(217, 119, 6, 0.12);
+  border: 1px solid rgba(217, 119, 6, 0.4);
   padding: 3px 7px;
   border-radius: 2px;
   letter-spacing: 0.06em;
@@ -3250,8 +3317,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
+  background: var(--color-amber);
   animation: pulse-live 1.6s infinite;
 }
 
@@ -3260,9 +3326,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.5);
+  background: rgba(217, 119, 6, 0.12);
+  color: var(--color-amber);
+  border: 1px solid rgba(217, 119, 6, 0.5);
   padding: 4px 8px;
   font-family: var(--font-mono);
   font-size: 0.68rem;
@@ -3276,9 +3342,9 @@ body {
 
 .btn-subtle-top50:hover,
 .btn-spectator-top50:hover {
-  background: #f59e0b;
+  background: var(--color-amber);
   color: #121110;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
 }
 
 .modal-card-top50 {
@@ -3334,8 +3400,8 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 7px 12px;
-  background: rgba(18, 16, 15, 0.8);
-  border: 1px solid rgba(250, 248, 245, 0.12);
+  background: var(--bg-panel-header);
+  border: 1px solid var(--border);
   font-family: var(--font-mono);
   overflow: hidden;
   transition: transform 0.15s ease, border-color 0.15s ease;
@@ -3343,7 +3409,7 @@ body {
 
 .top50-item:hover {
   transform: translateX(2px);
-  border-color: rgba(250, 248, 245, 0.3);
+  border-color: var(--border-strong);
 }
 
 .top50-item-bg {
@@ -3358,9 +3424,9 @@ body {
 }
 
 .top50-item.is-mine {
-  border-color: rgba(34, 197, 94, 0.6);
-  background: rgba(34, 197, 94, 0.08);
-  box-shadow: inset 0 0 8px rgba(34, 197, 94, 0.15);
+  border-color: var(--color-green);
+  background: rgba(34, 134, 58, 0.14);
+  box-shadow: none;
 }
 
 .top50-item-left {
@@ -3439,8 +3505,7 @@ body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #f59e0b;
-  box-shadow: 0 0 6px #f59e0b;
+  background: var(--color-amber);
   animation: pulseDot 1.5s infinite;
 }
 
@@ -3448,7 +3513,7 @@ body {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 800;
-  color: #f59e0b;
+  color: var(--color-amber);
   letter-spacing: 0.08em;
 }
 
@@ -3507,8 +3572,8 @@ body {
   top: 0;
   left: 0;
   bottom: 0;
-  background: rgba(245, 158, 11, 0.25);
-  border-right: 2px solid rgba(245, 158, 11, 0.7);
+  background: rgba(217, 119, 6, 0.25);
+  border-right: 2px solid rgba(217, 119, 6, 0.7);
   transition: width 0.35s ease;
   z-index: 1;
   pointer-events: none;
@@ -3516,7 +3581,7 @@ body {
 
 .poll-option-btn.is-voted {
   border-color: var(--color-amber);
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
 }
 
 .poll-option-btn.is-voted .poll-option-bar {
@@ -3564,20 +3629,25 @@ body {
 }
 
 /* ==========================================================================
-   KOMPLETNÍ LIGHT MÓD (Světlé Grunge Brutální téma)
+   KOMPLETNÍ LIGHT MÓD (Retro nažloutlý styl starého plastu)
    ========================================================================== */
 [data-theme="light"] {
   background-color: var(--color-base-100);
 }
 
 [data-theme="light"] body {
-  background-image: none;
   background-color: var(--color-base-100);
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255, 248, 215, 0.55) 0%, transparent 80%),
+    linear-gradient(to right, rgba(80, 68, 30, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(80, 68, 30, 0.07) 1px, transparent 1px);
+  background-size: 100% 100%, 28px 28px, 28px 28px;
+  background-attachment: fixed;
   color: var(--color-base-900);
 }
 
 [data-theme="light"] .noise-overlay {
-  opacity: 0.08;
+  opacity: 0.035;
 }
 
 /* Inverze bílých SVG dekorací na černou ve světlém módu */
@@ -3603,7 +3673,7 @@ body {
 }
 
 [data-theme="light"] .mode-tab {
-  background: #FAF8F5;
+  background: var(--bg-panel);
   border: 2px solid var(--border);
   color: var(--color-base-700);
 }
@@ -3611,14 +3681,14 @@ body {
 [data-theme="light"] .mode-tab:hover {
   border-color: var(--border-strong);
   color: var(--color-base-900);
-  background: #F0ECE1;
+  background: var(--bg-panel-header);
 }
 
 [data-theme="light"] .mode-tab.active {
   border-color: var(--color-accent);
-  background: rgba(220, 38, 38, 0.08);
+  background: rgba(214, 48, 49, 0.12);
   color: var(--color-base-900);
-  box-shadow: 2px 2px 0px rgba(220, 38, 38, 0.25);
+  box-shadow: 2px 2px 0px rgba(214, 48, 49, 0.35);
 }
 
 [data-theme="light"] .mode-tab.active .mode-tab-tag {
@@ -3629,23 +3699,38 @@ body {
   color: inherit;
 }
 
-[data-theme="light"] .btn-theme-toggle {
-  background: #EAE5D8;
-  border-color: #141312;
-  color: #141312;
+[data-theme="light"] .btn-theme-toggle,
+[data-theme="light"] .btn-sound-toggle {
+  background: var(--bg-panel-header);
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+  box-shadow: 2px 2px 0px rgba(24, 21, 10, 0.5);
 }
 
-[data-theme="light"] .btn-theme-toggle:hover {
-  background: #141312;
-  color: #FAF8F5;
+[data-theme="light"] .btn-theme-toggle:hover,
+[data-theme="light"] .btn-sound-toggle:hover {
+  background: var(--color-base-900);
+  color: var(--bg-panel);
 }
 
-/* Karty, panely a rámy */
+[data-theme="light"] .last-guess-bar-bg,
+[data-theme="light"] .guess-card-bar-bg {
+  border-right-color: rgba(24, 21, 10, 0.4);
+}
+
+[data-theme="light"] .chat-unread-badge {
+  background: var(--color-base-900);
+  color: var(--bg-panel);
+  border-color: var(--border-strong);
+  box-shadow: 2px 2px 0px rgba(24, 21, 10, 0.6);
+}
+
+/* Karty, panely a rámy – starý nažloutlý plast */
 [data-theme="light"] .card,
 [data-theme="light"] .panel {
   background: var(--bg-panel);
   border-color: var(--border-strong);
-  box-shadow: 4px 4px 0px rgba(20, 19, 18, 0.7);
+  box-shadow: var(--shadow-brutal);
 }
 
 [data-theme="light"] .card-header-bar,
@@ -3660,7 +3745,7 @@ body {
 }
 
 [data-theme="light"] .field-label {
-  color: var(--color-base-700);
+  color: var(--color-base-600);
 }
 
 [data-theme="light"] .input {
@@ -3683,19 +3768,19 @@ body {
 
 [data-theme="light"] .btn:hover:not(:disabled) {
   background: var(--color-base-900);
-  color: #FAF8F5;
-  box-shadow: 2px 2px 0px rgba(20, 19, 18, 0.35);
+  color: var(--bg-panel);
+  box-shadow: 2px 2px 0px rgba(24, 21, 10, 0.4);
 }
 
 [data-theme="light"] .btn-primary {
-  background: transparent;
+  background: var(--bg-panel);
   border: 2px solid var(--border-strong);
   color: var(--color-base-900);
 }
 
 [data-theme="light"] .btn-primary:hover:not(:disabled) {
   background: var(--color-base-900);
-  color: #FAF8F5;
+  color: var(--bg-panel);
 }
 
 [data-theme="light"] .btn-outline {
@@ -3706,7 +3791,19 @@ body {
 
 [data-theme="light"] .btn-outline:hover:not(:disabled) {
   background: var(--color-base-900);
-  color: #FAF8F5;
+  color: var(--bg-panel);
+}
+
+[data-theme="light"] .btn-ghost {
+  border: 1px dashed var(--color-base-600);
+  color: var(--color-base-700);
+  background: transparent;
+}
+
+[data-theme="light"] .btn-ghost:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(214, 48, 49, 0.12);
 }
 
 /* Herní lišta a stav */
@@ -3721,7 +3818,7 @@ body {
 }
 
 [data-theme="light"] .room-badge-label {
-  color: var(--color-base-700);
+  color: var(--color-base-600);
 }
 
 [data-theme="light"] .room-badge-code {
@@ -3730,14 +3827,14 @@ body {
 
 [data-theme="light"] .meta-chip {
   background: var(--bg-panel-header);
-  border-color: rgba(20, 19, 18, 0.2);
+  border-color: var(--border);
   color: var(--color-base-900);
 }
 
 [data-theme="light"] .secret-word-card {
-  background: #FFFFFF;
+  background: var(--bg-panel);
   border-color: var(--color-accent);
-  box-shadow: 4px 4px 0px rgba(220, 38, 38, 0.35);
+  box-shadow: 4px 4px 0px rgba(214, 48, 49, 0.35);
 }
 
 [data-theme="light"] .secret-word-text {
@@ -3756,28 +3853,86 @@ body {
 [data-theme="light"] .btn-hint {
   border-color: var(--border-strong);
   color: var(--color-base-900);
-  background: #FFFFFF;
+  background: var(--bg-panel);
 }
 
 [data-theme="light"] .btn-hint:hover {
   background: var(--color-base-900);
-  color: #FAF8F5;
+  color: var(--bg-panel);
+}
+
+/* Střední panel – hádání a odhalená slova (konec šedých ploch!) */
+[data-theme="light"] .guess-bar {
+  background: var(--bg-panel-header);
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .input-guess {
+  background: var(--bg-input);
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .guess-feedback {
+  color: var(--color-base-700);
+  border-bottom-color: var(--border);
+}
+
+[data-theme="light"] .guesses-header {
+  background: var(--bg-panel-header);
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="light"] .guesses-title {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .guesses-count {
+  color: var(--color-base-600);
+}
+
+[data-theme="light"] .guesses-filter-tabs {
+  background: var(--bg-panel-header);
+  border-color: var(--border);
+}
+
+[data-theme="light"] .spectator-toolbar {
+  background: var(--bg-panel-header);
+}
+
+[data-theme="light"] .vote-bar {
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .vote-tag {
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .vote-desc {
+  color: var(--color-base-600);
+}
+
+[data-theme="light"] .btn-vote {
+  background: var(--bg-panel-header);
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
 }
 
 /* Hráči v levém panelu */
 [data-theme="light"] .player-item {
-  background: #FAF8F5;
-  border: 1px solid rgba(20, 19, 18, 0.18);
+  background: var(--bg-panel);
+  border: 1px solid rgba(24, 21, 10, 0.2);
   color: var(--color-base-900);
 }
 
 [data-theme="light"] .player-item:hover {
-  background: #F0ECE1;
-  border-color: rgba(20, 19, 18, 0.35);
+  background: var(--bg-panel-header);
+  border-color: rgba(24, 21, 10, 0.4);
 }
 
 [data-theme="light"] .player-item.is-me {
-  background: #EAE5D8;
+  background: var(--bg-panel-header);
   border: 1px solid var(--border-strong);
   box-shadow: inset 3px 0 0 var(--border-strong);
 }
@@ -3788,7 +3943,7 @@ body {
 }
 
 [data-theme="light"] .player-item.gave-up {
-  border-color: rgba(20, 19, 18, 0.12);
+  border-color: rgba(24, 21, 10, 0.15);
   opacity: 0.6;
 }
 
@@ -3798,10 +3953,10 @@ body {
 }
 
 [data-theme="light"] .player-name {
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
-/* Contexto progress bary v bílém módu (OPRAVA ČERNÝCH PRUHŮ) */
+/* Contexto progress bary v kazetovém/plastovém módu */
 [data-theme="light"] .guess-card {
   background: var(--bg-guess-card);
   border-color: var(--border-guess-card);
@@ -3818,16 +3973,16 @@ body {
 
 [data-theme="light"] .guess-card.is-last-guess {
   border-color: var(--border-strong);
-  box-shadow: 0 0 10px rgba(20, 19, 18, 0.2), var(--shadow-brutal);
+  box-shadow: var(--shadow-brutal);
 }
 
 [data-theme="light"] .guess-card-word {
-  color: #141312;
+  color: var(--color-base-900);
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
 [data-theme="light"] .last-guess-word {
-  color: #141312;
+  color: var(--color-base-900);
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
@@ -3837,16 +3992,16 @@ body {
 }
 
 [data-theme="light"] .guess-card-who {
-  color: rgba(20, 19, 18, 0.75);
+  color: rgba(24, 21, 10, 0.75);
   text-shadow: none;
 }
 
 [data-theme="light"] .guess-card-who .badge-you {
-  color: #141312;
+  color: var(--color-base-900);
 }
 
 [data-theme="light"] .guess-card-rank {
-  color: #141312;
+  color: var(--color-base-900);
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
@@ -3863,11 +4018,11 @@ body {
 [data-theme="light"] .last-guess-row {
   background: var(--bg-last-guess);
   border-color: var(--border-strong);
-  box-shadow: 0 0 10px rgba(20, 19, 18, 0.2), var(--shadow-brutal);
+  box-shadow: var(--shadow-brutal);
 }
 
 [data-theme="light"] .last-guess-rank {
-  color: #141312;
+  color: var(--color-base-900);
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
@@ -3877,7 +4032,7 @@ body {
 
 /* Chat a zprávy */
 [data-theme="light"] .chat-messages {
-  background: #FFFFFF;
+  background: var(--bg-panel);
 }
 
 [data-theme="light"] .chat-msg-text {
@@ -3888,14 +4043,23 @@ body {
   color: var(--color-base-600);
 }
 
+/* Vlastní zprávy bez ohraničení a bez zvýraznění v obou módech */
+.chat-msg.is-me,
 [data-theme="light"] .chat-msg.is-me {
-  background: #F3EFE6;
-  border-left-color: var(--color-base-900);
+  background: transparent !important;
+  border-left: 2px solid transparent !important;
+  box-shadow: none !important;
+}
+
+/* Zvýraznění pouze při mentionu (označení hráče @jméno) – stejné v obou módech */
+.chat-msg.has-mention {
+  border-left: 3px solid var(--color-amber) !important;
+  background: rgba(217, 119, 6, 0.12) !important;
 }
 
 [data-theme="light"] .chat-msg.has-mention {
-  background: rgba(245, 158, 11, 0.12);
-  border-left-color: var(--color-amber);
+  border-left: 3px solid var(--color-amber) !important;
+  background: rgba(217, 119, 6, 0.14) !important;
 }
 
 [data-theme="light"] .chat-form {
@@ -3905,34 +4069,34 @@ body {
 
 [data-theme="light"] .btn-emote-toggle {
   border-right-color: var(--border-strong);
-  color: var(--color-base-700);
+  color: var(--color-base-600);
 }
 
 [data-theme="light"] .btn-emote-toggle:hover,
 [data-theme="light"] .btn-emote-toggle.is-active {
   color: var(--color-green);
-  background: rgba(20, 19, 18, 0.08);
+  background: rgba(24, 21, 10, 0.08);
 }
 
 [data-theme="light"] .chat-commands-popover,
 [data-theme="light"] .chat-autocomplete-popover,
 [data-theme="light"] .emote-picker {
-  background: rgba(250, 248, 245, 0.98);
+  background: var(--bg-panel);
   border-color: var(--border-strong);
-  box-shadow: 0 -8px 24px rgba(20, 19, 18, 0.25);
+  box-shadow: 0 -8px 24px rgba(24, 21, 10, 0.25);
 }
 
 [data-theme="light"] .chat-commands-header,
 [data-theme="light"] .chat-autocomplete-header,
 [data-theme="light"] .emote-picker-header {
-  background: #EAE5D8;
+  background: var(--bg-panel-header);
   border-bottom-color: var(--border-strong);
 }
 
 [data-theme="light"] .emote-search-input {
-  background: #FFFFFF;
+  background: var(--bg-input);
   border-color: var(--border-strong);
-  color: #141312;
+  color: var(--color-base-900);
 }
 
 [data-theme="light"] .emote-picker-count {
@@ -3940,12 +4104,12 @@ body {
 }
 
 [data-theme="light"] .emote-picker-item {
-  background: #EAE5D8;
-  border-color: rgba(20, 19, 18, 0.15);
+  background: var(--bg-panel-header);
+  border-color: rgba(24, 21, 10, 0.15);
 }
 
 [data-theme="light"] .emote-picker-item:hover {
-  background: #DED8C8;
+  background: var(--color-base-300);
   border-color: var(--color-green);
 }
 
@@ -3956,12 +4120,12 @@ body {
 
 [data-theme="light"] .chat-command-item:hover,
 [data-theme="light"] .chat-autocomplete-item.is-selected {
-  background: #E4DFD3;
+  background: var(--color-base-200);
 }
 
 [data-theme="light"] .chat-poll-widget {
-  background: #F4F0E6;
-  border-bottom-color: rgba(20, 19, 18, 0.2);
+  background: var(--color-base-100);
+  border-bottom-color: rgba(24, 21, 10, 0.2);
 }
 
 [data-theme="light"] .poll-question {
@@ -3969,25 +4133,26 @@ body {
 }
 
 [data-theme="light"] .poll-option-btn {
-  background: #FFFFFF;
-  border-color: rgba(20, 19, 18, 0.3);
+  background: var(--bg-panel);
+  border-color: rgba(24, 21, 10, 0.3);
   color: var(--color-base-900);
 }
 
 [data-theme="light"] .poll-option-btn:hover:not(:disabled) {
   border-color: var(--color-amber);
+  background: var(--bg-panel-header);
 }
 
 /* Modály a vyskakovací okna */
 [data-theme="light"] .modal-card {
-  background: #FAF8F5;
+  background: var(--bg-panel);
   border-color: var(--border-strong);
   color: var(--color-base-900);
-  box-shadow: 6px 6px 0px rgba(20, 19, 18, 0.7);
+  box-shadow: 6px 6px 0px rgba(24, 21, 10, 0.75);
 }
 
 [data-theme="light"] .modal-header {
-  background: #EAE5D8;
+  background: var(--bg-panel-header);
   border-bottom-color: var(--border-strong);
 }
 
@@ -4000,18 +4165,18 @@ body {
 }
 
 [data-theme="light"] .whats-new-list li {
-  color: #2B261C;
-  border-bottom-color: rgba(20, 19, 18, 0.12);
+  color: var(--color-base-800);
+  border-bottom-color: rgba(24, 21, 10, 0.12);
 }
 
 [data-theme="light"] .modal-footer {
-  background: #EAE5D8;
+  background: var(--bg-panel-header);
   border-top-color: var(--border-strong);
 }
 
 [data-theme="light"] .top50-item {
-  background: #EAE5D8;
-  border-color: rgba(20, 19, 18, 0.15);
+  background: var(--bg-panel-header);
+  border-color: rgba(24, 21, 10, 0.15);
 }
 
 [data-theme="light"] .top50-word {
@@ -4020,9 +4185,9 @@ body {
 
 /* Plovoucí gramofon vlevo dole & notifikace */
 [data-theme="light"] .floating-gramophone {
-  background: rgba(244, 240, 230, 0.96);
+  background: var(--bg-gramophone);
   border-color: var(--border-strong);
-  box-shadow: 4px 4px 0px rgba(20, 19, 18, 0.6), 0 8px 24px rgba(20, 19, 18, 0.2);
+  box-shadow: 4px 4px 0px rgba(24, 21, 10, 0.6), 0 8px 24px rgba(24, 21, 10, 0.2);
 }
 
 [data-theme="light"] .gramophone-title {
@@ -4036,15 +4201,15 @@ body {
 }
 
 [data-theme="light"] .toast {
-  background: #FAF8F5;
+  background: var(--bg-panel);
   border-color: var(--border-strong);
   color: var(--color-base-900);
-  box-shadow: 4px 4px 0px rgba(20, 19, 18, 0.75);
+  box-shadow: 4px 4px 0px rgba(24, 21, 10, 0.75);
 }
 
 /* Hudební přehrávač v záhlaví */
 [data-theme="light"] .music-bar {
-  background: #EAE5D8;
+  background: var(--bg-panel-header);
   border-bottom-color: var(--border-strong);
 }
 
@@ -4053,33 +4218,33 @@ body {
 }
 
 [data-theme="light"] .music-bar-tag {
-  color: var(--color-base-700);
+  color: var(--color-base-600);
 }
 
 [data-theme="light"] .music-btn {
   border-color: var(--border-strong);
   color: var(--color-base-900);
-  background: #FFFFFF;
+  background: var(--bg-panel);
 }
 
 [data-theme="light"] .music-btn:hover {
   background: var(--color-base-900);
-  color: #FFFFFF;
+  color: var(--bg-panel);
 }
 
 [data-theme="light"] .music-queue-popover {
-  background: #FAF8F5;
+  background: var(--bg-panel);
   border-color: var(--border-strong);
   color: var(--color-base-900);
 }
 
 [data-theme="light"] .music-queue-header {
-  background: #EAE5D8;
+  background: var(--bg-panel-header);
   border-bottom-color: var(--border-strong);
 }
 
 [data-theme="light"] .music-queue-item {
-  border-bottom-color: rgba(20, 19, 18, 0.12);
+  border-bottom-color: rgba(24, 21, 10, 0.12);
 }
 
 [data-theme="light"] .music-queue-item-title {
@@ -4088,74 +4253,74 @@ body {
 
 /* Lobby a výběr z 8 barev */
 [data-theme="light"] .lobby-card {
-  background: #FFFFFF;
+  background: var(--bg-panel);
   border-color: var(--border-strong);
-  box-shadow: 6px 6px 0px rgba(20, 19, 18, 0.7);
+  box-shadow: 6px 6px 0px rgba(24, 21, 10, 0.75);
 }
 
 [data-theme="light"] .lobby-mode-pill {
-  background: #FAF8F5;
-  border: 1px solid rgba(20, 19, 18, 0.18);
-  color: var(--color-base-700);
+  background: var(--bg-panel);
+  border: 1px solid rgba(24, 21, 10, 0.2);
+  color: var(--color-base-600);
 }
 
 [data-theme="light"] .lobby-mode-pill:hover {
-  background: #F0ECE1;
+  background: var(--bg-panel-header);
   color: var(--color-base-900);
-  border-color: rgba(20, 19, 18, 0.35);
+  border-color: rgba(24, 21, 10, 0.4);
 }
 
 [data-theme="light"] .lobby-mode-pill.is-current {
-  background: rgba(217, 119, 6, 0.08);
-  border: 1.5px solid var(--color-amber, #d97706);
+  background: rgba(217, 119, 6, 0.12);
+  border: 1.5px solid var(--color-amber);
   color: var(--color-base-900);
-  box-shadow: 0 0 8px rgba(217, 119, 6, 0.2);
+  box-shadow: 2px 2px 0px rgba(24, 21, 10, 0.4);
 }
 
 [data-theme="light"] .lobby-mode-pill.is-current .mode-pill-count strong {
-  color: var(--color-amber, #d97706);
+  color: var(--color-amber);
 }
 
 [data-theme="light"] .lobby-yesterday-recap {
-  background: #EAE5D8;
+  background: var(--bg-panel-header);
   border-color: var(--color-amber);
   color: var(--color-base-900);
 }
 
 [data-theme="light"] .color-picker-popover {
-  background: #FAF8F5;
+  background: var(--bg-panel);
   border-color: var(--border-strong);
-  box-shadow: 0 4px 16px rgba(20, 19, 18, 0.2);
+  box-shadow: 0 4px 16px rgba(24, 21, 10, 0.2);
 }
 
 [data-theme="light"] .color-picker-popover-title {
-  color: var(--color-base-700);
+  color: var(--color-base-600);
 }
 
 [data-theme="light"] .color-swatch-btn {
-  border: 2px solid rgba(20, 19, 18, 0.2);
+  border: 2px solid rgba(24, 21, 10, 0.2);
 }
 
 [data-theme="light"] .color-swatch-btn.is-selected {
-  border-color: #141312;
-  box-shadow: 0 0 10px var(--swatch-color), inset 0 0 0 2px #FFFFFF;
+  border-color: #18150A;
+  box-shadow: 3px 3px 0px rgba(24, 21, 10, 0.5), inset 0 0 0 2px var(--bg-panel);
 }
 
 /* Divácký režim */
 [data-theme="light"] .spectator-tag-pill {
   background: var(--color-base-900);
-  color: #FAF8F5;
+  color: var(--bg-panel);
 }
 
 [data-theme="light"] .btn-filter-tab {
-  background: #FFFFFF;
-  border-color: rgba(20, 19, 18, 0.3);
-  color: var(--color-base-700);
+  background: var(--bg-panel);
+  border-color: rgba(24, 21, 10, 0.3);
+  color: var(--color-base-600);
 }
 
 [data-theme="light"] .btn-filter-tab.is-active {
   background: var(--color-base-900);
-  color: #FAF8F5;
+  color: var(--bg-panel);
   border-color: var(--border-strong);
 }
 
@@ -4166,13 +4331,13 @@ body {
 
 /* Spodní lišta a patička */
 [data-theme="light"] .game-bottom-bar {
-  background: #EAE5D8;
+  background: var(--bg-panel-header);
   border-color: var(--border-strong);
-  color: var(--color-base-700);
+  color: var(--color-base-600);
 }
 
 [data-theme="light"] .site-footer {
-  background: #EAE5D8;
+  background: var(--bg-panel-header);
   border-top-color: var(--border-strong);
 }
 
@@ -4181,8 +4346,701 @@ body {
 }
 
 [data-theme="light"] .footer-meta {
+  color: var(--color-base-600);
+}
+
+/* ==========================================================================
+   NOVÉ RETRO FUNKCE: Páskové počítadlo, Telegraph, Průkaz, Kazetový přehrávač
+   ========================================================================== */
+
+/* ── 1. Mechanické páskové počítadlo (Tape Counter / Odometer) ───────────── */
+.tape-counter-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  padding: 3px 8px;
+  box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.6);
+  user-select: none;
+}
+
+.tape-counter-tag {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--color-base-600);
+}
+
+.tape-counter-bezel {
+  display: inline-flex;
+  background: #000000;
+  border: 1px solid rgba(250, 248, 245, 0.25);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+  padding: 2px 4px;
+  gap: 2px;
+}
+
+.counter-digit {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #FAF7F2;
+  background: #141312;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 2px 4px;
+  min-width: 14px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+  overflow: hidden;
+}
+
+.counter-digit.is-rolling {
+  animation: digitRoll 0.25s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+}
+
+@keyframes digitRoll {
+  0% { transform: translateY(-30%); opacity: 0.4; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.guesses-count-subtle {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-base-700);
+  margin-left: 2px;
+}
+
+/* ── 2. Bleskový zásah (Telegraph chat zpráva pro TOP 10) ─────────────────── */
+.chat-msg.is-telegraph {
+  background: rgba(217, 119, 6, 0.14) !important;
+  border-left: 3px dashed var(--color-amber) !important;
+  border-right: 1px solid rgba(217, 119, 6, 0.3);
+  padding: 6px 10px !important;
+  margin: 4px 0;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4);
+}
+
+.chat-msg.is-telegraph .chat-msg-author {
+  color: var(--color-amber) !important;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.chat-msg.is-telegraph .chat-msg-text {
+  color: #FAF7F2;
+  font-weight: 700;
+}
+
+/* ── 3. Děrný štítek / Legitimace hráče (Stats Modal) ────────────────────── */
+.modal-card-stats {
+  max-width: 540px;
+  width: 95%;
+}
+
+.stats-id-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  background: var(--color-amber);
+  color: #121110;
+  border: 1px solid var(--color-amber);
+}
+
+.punched-card-wrap {
+  border: 2px solid var(--border-strong);
+  background: var(--bg-panel);
+  padding: 16px;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(250, 248, 245, 0.1);
+}
+
+/* Faux děrné otvory po straně štítku */
+.punched-card-wrap::before {
+  content: '• • • • • • • • • •';
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 1.1em;
+  color: var(--color-base-500);
+  opacity: 0.4;
+  overflow: hidden;
+  height: 12px;
+  user-select: none;
+}
+
+.punched-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--border-strong);
+  padding: 8px 0 12px 0;
+  margin-top: 6px;
+  margin-bottom: 16px;
+}
+
+.punched-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--color-base-900);
+}
+
+.punched-serial {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-amber);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-box {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-base-600);
+  text-transform: uppercase;
+}
+
+.stat-val {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--color-base-900);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-val-green {
+  color: var(--color-green);
+}
+
+.stat-val-amber {
+  color: var(--color-amber);
+}
+
+.stat-val-best {
+  font-size: 1.05rem;
+}
+
+.punched-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.punched-stamp {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-base-700);
+  border: 1px dashed var(--color-base-600);
+  padding: 3px 6px;
+  letter-spacing: 0.06em;
+}
+
+.punched-barcode {
+  height: 24px;
+  width: auto;
+  opacity: 0.8;
+}
+
+/* ── 4. Dvoušpulkový kazetový kazeťák (Cassette Deck) ─────────────────────── */
+.btn-deck-switch {
+  background: rgba(250, 248, 245, 0.08);
+  border: 1px solid var(--border-strong);
+  color: var(--color-base-900);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.12s;
+  border-radius: 0;
+}
+
+.btn-deck-switch:hover {
+  background: var(--color-amber);
+  color: #121110;
+  border-color: var(--color-amber);
+}
+
+.cassette-deck-wrap {
+  width: 96px;
+  height: 64px;
+  cursor: pointer;
+  perspective: 400px;
+}
+
+.cassette-tape-body {
+  width: 100%;
+  height: 100%;
+  background: #1c1a19;
+  border: 2px solid var(--border-strong);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.7);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3px 4px;
+  box-sizing: border-box;
+}
+
+.cassette-screw {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #736b63;
+  border-radius: 50%;
+}
+.screw-tl { top: 2px; left: 2px; }
+.screw-tr { top: 2px; right: 2px; }
+.screw-bl { bottom: 2px; left: 2px; }
+.screw-br { bottom: 2px; right: 2px; }
+
+.cassette-label-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 800;
+  color: var(--color-base-600);
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.cassette-window-frame {
+  flex: 1;
+  margin: 2px 0;
+  background: #0c0b0a;
+  border: 1px solid rgba(250, 248, 245, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cassette-tape-bridge {
+  position: absolute;
+  top: 50%;
+  left: 20%;
+  right: 20%;
+  height: 4px;
+  transform: translateY(-50%);
+  background: #3e2723;
+  border-top: 1px solid #5d4037;
+  border-bottom: 1px solid #1b0000;
+  z-index: 1;
+}
+
+.cassette-reel {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.reel-spool-tape {
+  position: absolute;
+  border-radius: 50%;
+  background: #4e342e;
+  border: 1px solid #3e2723;
+}
+
+.tape-full {
+  width: 22px;
+  height: 22px;
+}
+
+.tape-empty {
+  width: 14px;
+  height: 14px;
+}
+
+.reel-center-hub {
+  width: 12px;
+  height: 12px;
+  background: #FAF7F2;
+  border-radius: 50%;
+  position: relative;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+.is-playing .reel-center-hub {
+  animation: spinReel 1.4s infinite linear;
+}
+
+@keyframes spinReel {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.hub-spoke {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 2px;
+  background: #141312;
+  margin-top: -1px;
+  margin-left: -6px;
+}
+.spoke-1 { transform: rotate(0deg); }
+.spoke-2 { transform: rotate(60deg); }
+.spoke-3 { transform: rotate(120deg); }
+
+.cassette-label-footer {
+  display: flex;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 800;
+  color: var(--color-amber);
+  line-height: 1;
+}
+
+/* ── Light Mode přizpůsobení pro nové komponenty ─────────────────────────── */
+[data-theme="light"] .tape-counter-wrap {
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
+  box-shadow: inset 1px 1px 2px rgba(24, 21, 10, 0.3);
+}
+
+[data-theme="light"] .tape-counter-bezel {
+  background: #18150A;
+  border-color: rgba(24, 21, 10, 0.4);
+}
+
+[data-theme="light"] .counter-digit {
+  color: #18150A;
+  background: #EFE4BA;
+  border-color: rgba(24, 21, 10, 0.2);
+}
+
+[data-theme="light"] .chat-msg.is-telegraph {
+  background: rgba(217, 119, 6, 0.16) !important;
+  border-left: 3px dashed #b45309 !important;
+  border-right: 1px solid rgba(217, 119, 6, 0.4);
+}
+
+[data-theme="light"] .chat-msg.is-telegraph .chat-msg-text {
+  color: #18150A;
+}
+
+[data-theme="light"] .punched-card-wrap {
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .stat-box {
+  background: var(--bg-input);
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .cassette-tape-body {
+  background: #EFE4BA;
+  border-color: var(--border-strong);
+  box-shadow: 2px 2px 0px rgba(24, 21, 10, 0.6);
+}
+
+[data-theme="light"] .cassette-window-frame {
+  background: #D6C898;
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .reel-center-hub {
+  background: #18150A;
+}
+
+[data-theme="light"] .hub-spoke {
+  background: #EFE4BA;
+}
+
+[data-theme="light"] .btn-deck-switch {
+  background: var(--bg-panel-header);
+  border-color: var(--border-strong);
+  color: var(--color-base-900);
+}
+
+[data-theme="light"] .btn-deck-switch:hover {
+  background: var(--color-base-900);
+  color: var(--bg-panel);
+}
+
+/* ==========================================================================
+   DVOJITÉ ZÁLOŽKY CHATU (MÍSTNOST VS GLOBÁL)
+   ========================================================================== */
+.chat-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chat-header-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-input);
+  padding: 2px;
+  border: 1px solid var(--border-strong);
+}
+
+.btn-chat-tab {
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-base-600);
+  padding: 4px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.btn-chat-tab:hover {
+  color: var(--color-base-900);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btn-chat-tab.is-active {
+  background: var(--bg-panel);
+  color: var(--color-base-900);
+  box-shadow: 1px 1px 0px var(--border-strong);
+}
+
+.chat-tab-unread-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+  animation: pulseUnread 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseUnread {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.chat-msg-badge-global {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 4px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  margin-right: 4px;
+}
+
+/* ==========================================================================
+   VLASTNÍ ARÉNA (CUSTOM ROOMS) - LOBBY & GAME HEADER
+   ========================================================================== */
+.custom-room-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  margin-bottom: 14px;
+  padding: 14px;
+  background: var(--bg-input);
+  border: 2px dashed var(--border-strong);
+}
+
+.custom-card-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.custom-box-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   color: var(--color-base-700);
 }
+
+.custom-word-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.custom-word-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-base-800);
+  cursor: pointer;
+}
+
+.custom-word-radio input[type="radio"] {
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.custom-word-radio small {
+  color: var(--color-base-600);
+  font-size: 0.75rem;
+}
+
+.btn-create-room {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-panel-header);
+  color: var(--color-base-900);
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--border-strong);
+  transition: all 0.15s ease;
+}
+
+.btn-create-room:hover {
+  background: var(--color-base-900);
+  color: var(--bg-panel);
+}
+
+.custom-room-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-base-600);
+  margin: 4px 0;
+}
+
+.custom-room-divider::before,
+.custom-room-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.custom-room-divider span {
+  padding: 0 10px;
+}
+
+.custom-code-input-wrap {
+  width: 100%;
+}
+
+.input-custom-code {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-align: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid var(--border-strong);
+  background: var(--bg-panel);
+  color: var(--color-base-900);
+}
+
+.input-custom-code:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+}
+
+/* Game header custom room share badge */
+.custom-share-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  box-shadow: 1px 1px 0px var(--border-strong);
+}
+
+.custom-badge-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-base-600);
+}
+
+.custom-badge-code {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #38bdf8;
+}
+
+.btn-copy-link {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  background: var(--bg-panel-header);
+  border: 1px solid var(--border-strong);
+  color: var(--color-base-900);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-copy-link:hover {
+  background: var(--color-base-900);
+  color: var(--bg-panel);
+}
+
 
 
 

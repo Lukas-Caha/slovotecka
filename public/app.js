@@ -34,14 +34,242 @@ applyTheme(currentTheme);
 
 if (btnThemeToggle) {
   btnThemeToggle.addEventListener('click', () => {
+    SoundFx.playKeyClick();
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
     applyTheme(currentTheme);
   });
 }
 
-// Detekce režimu podle URL adresy
+// ── Retro Audio Synthesizer (Zero-latency Web Audio API) ─────────────────
+const SoundFx = (() => {
+  let ctx = null;
+  let enabled = localStorage.getItem('slovotecka_sound') !== 'false'; // default zapnuto
+
+  function getCtx() {
+    if (!ctx && typeof window !== 'undefined') {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        ctx = new AudioCtx();
+      }
+    }
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    return ctx;
+  }
+
+  function isEnabled() {
+    return enabled;
+  }
+
+  function toggle() {
+    enabled = !enabled;
+    try {
+      localStorage.setItem('slovotecka_sound', enabled ? 'true' : 'false');
+    } catch (e) {}
+    if (enabled) {
+      playKeyClick();
+    }
+    return enabled;
+  }
+
+  // 1. Mechanické cvaknutí klávesy / tlačítka
+  function playKeyClick() {
+    if (!enabled) return;
+    const c = getCtx();
+    if (!c) return;
+    try {
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      const t = c.currentTime;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1400, t);
+      osc.frequency.exponentialRampToValueAtTime(300, t + 0.015);
+      gain.gain.setValueAtTime(0.06, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.015);
+    } catch (e) {}
+  }
+
+  // 2. Odeslání tipu – mechanické relé
+  function playSubmit() {
+    if (!enabled) return;
+    const c = getCtx();
+    if (!c) return;
+    try {
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      const t = c.currentTime;
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(180, t);
+      osc.frequency.exponentialRampToValueAtTime(45, t + 0.035);
+      gain.gain.setValueAtTime(0.07, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.035);
+    } catch (e) {}
+  }
+
+  // 3. Zelená zóna (# <= 300) – teplý retro akord
+  function playHot() {
+    if (!enabled) return;
+    const c = getCtx();
+    if (!c) return;
+    try {
+      const t = c.currentTime;
+      [659.25, 987.77].forEach((freq, i) => { // E5 + B5
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + i * 0.03);
+        gain.gain.setValueAtTime(0.09, t + i * 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(t + i * 0.03);
+        osc.stop(t + 0.35);
+      });
+    } catch (e) {}
+  }
+
+  // 4. Jantarová zóna (# <= 1500) – analogový tón
+  function playWarm() {
+    if (!enabled) return;
+    const c = getCtx();
+    if (!c) return;
+    try {
+      const t = c.currentTime;
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, t); // A4 -> E5
+      osc.frequency.exponentialRampToValueAtTime(659.25, t + 0.1);
+      gain.gain.setValueAtTime(0.08, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.16);
+    } catch (e) {}
+  }
+
+  // 5. Červená / studená zóna (# > 1500) – nízký tape thud
+  function playCold() {
+    if (!enabled) return;
+    const c = getCtx();
+    if (!c) return;
+    try {
+      const t = c.currentTime;
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(110, t);
+      osc.frequency.exponentialRampToValueAtTime(55, t + 0.1);
+      gain.gain.setValueAtTime(0.07, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.1);
+    } catch (e) {}
+  }
+
+  // 6. Vítězství (#1) – triumfální retro arpeggio
+  function playWin() {
+    if (!enabled) return;
+    const c = getCtx();
+    if (!c) return;
+    try {
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      notes.forEach((freq, idx) => {
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        const t = c.currentTime + idx * 0.08;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0.12, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(t);
+        osc.stop(t + 0.45);
+      });
+    } catch (e) {}
+  }
+
+  // 7. Chyba / Neznámé slovo – cvaknutí pásky
+  function playError() {
+    if (!enabled) return;
+    const c = getCtx();
+    if (!c) return;
+    try {
+      [0, 0.06].forEach((delay) => {
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        const t = c.currentTime + delay;
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(130, t);
+        gain.gain.setValueAtTime(0.07, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(t);
+        osc.stop(t + 0.04);
+      });
+    } catch (e) {}
+  }
+
+  return {
+    isEnabled,
+    toggle,
+    playKeyClick,
+    playSubmit,
+    playHot,
+    playWarm,
+    playCold,
+    playWin,
+    playError
+  };
+})();
+
+// DOM – Přepínač zvuku
+const btnSoundToggle = document.getElementById('btn-sound-toggle');
+const soundToggleIcon = document.getElementById('sound-toggle-icon');
+const soundToggleText = document.getElementById('sound-toggle-text');
+
+function updateSoundUI() {
+  const on = SoundFx.isEnabled();
+  if (soundToggleIcon) soundToggleIcon.textContent = on ? '🔊' : '🔇';
+  if (soundToggleText) soundToggleText.textContent = on ? 'ZVUK' : 'TICHO';
+  if (btnSoundToggle) {
+    btnSoundToggle.title = on ? 'Zvukové efekty zapnuty (kliknutím ztlumíš)' : 'Zvukové efekty ztlumeny (kliknutím zapneš)';
+    btnSoundToggle.classList.toggle('is-muted', !on);
+  }
+}
+updateSoundUI();
+
+if (btnSoundToggle) {
+  btnSoundToggle.addEventListener('click', () => {
+    SoundFx.toggle();
+    updateSoundUI();
+  });
+}
+
+// Detekce režimu podle URL adresy a parametrů
+const urlParams = new URLSearchParams(window.location.search);
+const roomParam = urlParams.get('room') || urlParams.get('custom');
+const customPathMatch = window.location.pathname.match(/^\/(?:custom|room)\/([a-zA-Z0-9_-]+)/i);
+const urlCustomCode = (roomParam || (customPathMatch ? customPathMatch[1] : '')).toUpperCase().trim();
+
 const isUnlimited = window.location.pathname.startsWith('/unlimited');
-const currentMode = isUnlimited ? 'unlimited' : 'daily';
+const isInitialCustom = Boolean(urlCustomCode);
+let currentMode = isUnlimited ? 'unlimited' : (isInitialCustom ? `custom_${urlCustomCode}` : 'daily');
+let selectedLobbyMode = isUnlimited ? 'unlimited' : (isInitialCustom ? 'custom' : 'daily');
 
 // Globální stav
 let myPlayerName = localStorage.getItem('slovotecka_nickname') || '';
@@ -49,13 +277,7 @@ let myPlayerName = localStorage.getItem('slovotecka_nickname') || '';
 // DOM – Navigace
 const tabDaily = document.getElementById('tab-daily');
 const tabUnlimited = document.getElementById('tab-unlimited');
-if (isUnlimited) {
-  if (tabUnlimited) tabUnlimited.classList.add('active');
-  if (tabDaily) tabDaily.classList.remove('active');
-} else {
-  if (tabDaily) tabDaily.classList.add('active');
-  if (tabUnlimited) tabUnlimited.classList.remove('active');
-}
+const tabCustom = document.getElementById('tab-custom');
 
 // DOM – Lobby
 const lobbySection = document.getElementById('lobby-section');
@@ -66,27 +288,144 @@ const lobbyTag = document.getElementById('lobby-tag');
 const lobbyTitle = document.getElementById('lobby-title');
 const lobbyDesc = document.getElementById('lobby-desc');
 
-if (isUnlimited) {
-  if (lobbyTag) lobbyTag.textContent = '[ 01. UNLIMITED ARÉNA ]';
-  if (lobbyTitle) lobbyTitle.textContent = 'NEOMEZENÁ ARCHIVNÍ ARÉNA';
-  if (lobbyDesc) lobbyDesc.textContent = 'Hrajte společně se slovy z předchozích dnů. Hráči v místnosti mohou společným hlasováním (např. 2 ze 3) kdykoliv vylosovat nové slovo!';
-}
-
 // DOM – Přehled hráčů v aréně (Lobby)
 const arenaLiveTotal = document.getElementById('arena-live-total');
 const countDaily = document.getElementById('count-daily');
 const unitDaily = document.getElementById('unit-daily');
 const countUnlimited = document.getElementById('count-unlimited');
 const unitUnlimited = document.getElementById('unit-unlimited');
+const countCustom = document.getElementById('count-custom');
+const unitCustom = document.getElementById('unit-custom');
 const cardModeDaily = document.getElementById('card-mode-daily');
 const cardModeUnlimited = document.getElementById('card-mode-unlimited');
+const cardModeCustom = document.getElementById('card-mode-custom');
 
-if (isUnlimited) {
-  if (cardModeUnlimited) cardModeUnlimited.classList.add('is-current');
-  if (cardModeDaily) cardModeDaily.classList.remove('is-current');
-} else {
-  if (cardModeDaily) cardModeDaily.classList.add('is-current');
-  if (cardModeUnlimited) cardModeUnlimited.classList.remove('is-current');
+// DOM – Prvky Vlastní arény v lobby i ve hře
+const customRoomPanel = document.getElementById('custom-room-panel');
+const customCodeInput = document.getElementById('custom-code-input');
+const btnCreateCustomRoom = document.getElementById('btn-create-custom-room');
+const customShareBadge = document.getElementById('custom-share-badge');
+const displayCustomCode = document.getElementById('display-custom-code');
+const btnCopyRoomLink = document.getElementById('btn-copy-room-link');
+
+function setLobbyMode(mode) {
+  selectedLobbyMode = mode;
+  if (mode === 'daily') {
+    currentMode = 'daily';
+    if (tabDaily) tabDaily.classList.add('active');
+    if (tabUnlimited) tabUnlimited.classList.remove('active');
+    if (tabCustom) tabCustom.classList.remove('active');
+    if (cardModeDaily) cardModeDaily.classList.add('is-current');
+    if (cardModeUnlimited) cardModeUnlimited.classList.remove('is-current');
+    if (cardModeCustom) cardModeCustom.classList.remove('is-current');
+    if (customRoomPanel) customRoomPanel.style.display = 'none';
+    if (lobbyTag) lobbyTag.textContent = '[ 01. REGISTRACE DO HRY ]';
+    if (lobbyTitle) lobbyTitle.textContent = 'DNEŠNÍ SPOLEČNÁ VÝZVA';
+    if (lobbyDesc) lobbyDesc.textContent = 'Zadej své jméno nebo přezdívku a zapoj se do společného hádání se všemi, kdo jsou právě v aréně.';
+  } else if (mode === 'unlimited') {
+    currentMode = 'unlimited';
+    if (tabUnlimited) tabUnlimited.classList.add('active');
+    if (tabDaily) tabDaily.classList.remove('active');
+    if (tabCustom) tabCustom.classList.remove('active');
+    if (cardModeUnlimited) cardModeUnlimited.classList.add('is-current');
+    if (cardModeDaily) cardModeDaily.classList.remove('is-current');
+    if (cardModeCustom) cardModeCustom.classList.remove('is-current');
+    if (customRoomPanel) customRoomPanel.style.display = 'none';
+    if (lobbyTag) lobbyTag.textContent = '[ 01. UNLIMITED ARÉNA ]';
+    if (lobbyTitle) lobbyTitle.textContent = 'NEOMEZENÁ ARCHIVNÍ ARÉNA';
+    if (lobbyDesc) lobbyDesc.textContent = 'Hrajte společně se slovy z předchozích dnů. Hráči v místnosti mohou společným hlasováním kdykoliv vylosovat nové slovo!';
+  } else if (mode === 'custom') {
+    if (tabCustom) tabCustom.classList.add('active');
+    if (tabDaily) tabDaily.classList.remove('active');
+    if (tabUnlimited) tabUnlimited.classList.remove('active');
+    if (cardModeCustom) cardModeCustom.classList.add('is-current');
+    if (cardModeDaily) cardModeDaily.classList.remove('is-current');
+    if (cardModeUnlimited) cardModeUnlimited.classList.remove('is-current');
+    if (customRoomPanel) customRoomPanel.style.display = 'flex';
+    if (lobbyTag) lobbyTag.textContent = '[ 01. VLASTNÍ ARÉNA ]';
+    if (lobbyTitle) lobbyTitle.textContent = 'VLASTNÍ PRIVÁTNÍ MÍSTNOST';
+    if (lobbyDesc) lobbyDesc.textContent = 'Vytvoř si vlastní místnost s odkazem pro přátele. Můžete hrát dnešní slovo i archivní slova a pouštět si hudbu!';
+  }
+}
+
+// Inicializace počátečního režimu
+setLobbyMode(selectedLobbyMode);
+
+if (urlCustomCode && customCodeInput) {
+  customCodeInput.value = urlCustomCode;
+}
+
+if (cardModeDaily) {
+  cardModeDaily.addEventListener('click', (e) => {
+    if (window.location.pathname.startsWith('/unlimited') || urlCustomCode) {
+      return; // Necháme standardní navigaci
+    }
+    e.preventDefault();
+    SoundFx.playKeyClick();
+    setLobbyMode('daily');
+  });
+}
+
+if (cardModeUnlimited) {
+  cardModeUnlimited.addEventListener('click', (e) => {
+    if (!window.location.pathname.startsWith('/unlimited')) {
+      return; // Necháme přechod na /unlimited
+    }
+    e.preventDefault();
+    SoundFx.playKeyClick();
+    setLobbyMode('unlimited');
+  });
+}
+
+if (cardModeCustom) {
+  cardModeCustom.addEventListener('click', (e) => {
+    e.preventDefault();
+    SoundFx.playKeyClick();
+    setLobbyMode('custom');
+  });
+}
+
+if (tabCustom) {
+  tabCustom.addEventListener('click', (e) => {
+    e.preventDefault();
+    SoundFx.playKeyClick();
+    setLobbyMode('custom');
+  });
+}
+
+if (btnCreateCustomRoom) {
+  btnCreateCustomRoom.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    const sourceRadio = document.querySelector('input[name="custom-word-source"]:checked');
+    const wordSource = sourceRadio ? sourceRadio.value : 'daily';
+    socket.emit('create_custom_room', { wordSource });
+  });
+}
+
+socket.on('custom_room_created', (data) => {
+  if (customCodeInput) {
+    customCodeInput.value = data.roomCode;
+  }
+  currentMode = data.mode;
+  showToast(`✨ Vytvořena aréna ${data.roomCode}! Nyní klikni na Vstoupit do arény.`);
+  if (playerNameInput) playerNameInput.focus();
+});
+
+if (btnCopyRoomLink) {
+  btnCopyRoomLink.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    const code = displayCustomCode ? displayCustomCode.textContent.trim() : '';
+    const shareUrl = `${window.location.origin}/?room=${code}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        showToast(`📋 Odkaz na arénu ${code} byl zkopírován do schránky!`);
+      }).catch(() => {
+        prompt('Zkopíruj si odkaz na arénu:', shareUrl);
+      });
+    } else {
+      prompt('Zkopíruj si odkaz na arénu:', shareUrl);
+    }
+  });
 }
 
 // DOM – Výběr barvy hráče (přes ozubené kolo)
@@ -109,12 +448,15 @@ function updateLobbyArenaStats(counts) {
   if (!counts) return;
   const d = counts.daily || 0;
   const u = counts.unlimited || 0;
-  const tot = d + u;
+  const c = counts.customRooms || 0;
+  const tot = d + u + (counts.customPlayers || 0);
 
   if (countDaily) countDaily.textContent = d;
   if (unitDaily) unitDaily.textContent = getPlayerPlural(d);
   if (countUnlimited) countUnlimited.textContent = u;
   if (unitUnlimited) unitUnlimited.textContent = getPlayerPlural(u);
+  if (countCustom) countCustom.textContent = c;
+  if (unitCustom) unitCustom.textContent = c === 1 ? 'aréna' : (c >= 2 && c <= 4 ? 'arény' : 'arén');
   if (arenaLiveTotal) {
     arenaLiveTotal.textContent = `${tot} ${getPlayerPlural(tot).toUpperCase()} ONLINE`;
   }
@@ -379,6 +721,196 @@ if (top50Modal) {
   });
 }
 
+// ── DOM & Logika: Osobní profil & retro pas hráče (Stats Modal) ─────────
+const statsModal = document.getElementById('stats-modal');
+const btnOpenStats = document.getElementById('btn-open-stats');
+const btnCloseStats = document.getElementById('btn-close-stats');
+const btnAckStats = document.getElementById('btn-ack-stats');
+
+const PlayerStats = (() => {
+  function getStorageKey() {
+    const name = (myPlayerName || '').trim().toLowerCase();
+    return name ? `slovotecka_player_stats_${name}` : 'slovotecka_player_stats';
+  }
+
+  function getStats() {
+    const key = getStorageKey();
+    try {
+      const data = localStorage.getItem(key) || (key !== 'slovotecka_player_stats' ? localStorage.getItem('slovotecka_player_stats') : null);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } catch (e) {}
+    return {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      currentStreak: 0,
+      maxStreak: 0,
+      lastWinDate: null,
+      totalWinningGuesses: 0,
+      bestScore: null,
+      recordedPlayedGames: [],
+      recordedWonGames: []
+    };
+  }
+
+  function saveStats(stats) {
+    try {
+      localStorage.setItem(getStorageKey(), JSON.stringify(stats));
+    } catch (e) {}
+  }
+
+  function recordGameEntry(gameId) {
+    if (!gameId) return;
+    const stats = getStats();
+    if (!stats.recordedPlayedGames) stats.recordedPlayedGames = [];
+    if (!stats.recordedPlayedGames.includes(gameId)) {
+      stats.recordedPlayedGames.push(gameId);
+      if (stats.recordedPlayedGames.length > 100) stats.recordedPlayedGames.shift();
+      stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+      saveStats(stats);
+    }
+  }
+
+  function recordGameWin(gameId, guessesCount) {
+    if (!gameId) return;
+    const stats = getStats();
+    if (!stats.recordedWonGames) stats.recordedWonGames = [];
+    if (stats.recordedWonGames.includes(gameId)) {
+      return; // Výhra v této konkrétní hře již byla zaznamenána
+    }
+    stats.recordedWonGames.push(gameId);
+    if (stats.recordedWonGames.length > 100) stats.recordedWonGames.shift();
+
+    stats.gamesWon = (stats.gamesWon || 0) + 1;
+
+    // Denní série (streak) podle kalendářních dnů (započítává se i z custom roomek hrajících denní slovo)
+    const isDaily = gameId.startsWith('daily_') || gameId.startsWith('custom_daily_');
+    if (isDaily) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (stats.lastWinDate) {
+        const prevDate = new Date(stats.lastWinDate);
+        const currDate = new Date(today);
+        const diffMs = currDate - prevDate;
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          stats.currentStreak = (stats.currentStreak || 0) + 1;
+        } else if (diffDays === 0) {
+          // Více výher v jeden den zachová streak
+        } else {
+          stats.currentStreak = 1;
+        }
+      } else {
+        stats.currentStreak = 1;
+      }
+      stats.lastWinDate = today;
+      stats.maxStreak = Math.max(stats.maxStreak || 0, stats.currentStreak);
+    }
+
+    if (typeof guessesCount === 'number' && guessesCount > 0) {
+      stats.totalWinningGuesses = (stats.totalWinningGuesses || 0) + guessesCount;
+      if (stats.bestScore === null || guessesCount < stats.bestScore) {
+        stats.bestScore = guessesCount;
+      }
+    }
+
+    saveStats(stats);
+  }
+
+  function updateModalUI() {
+    const stats = getStats();
+    const badgeEl = document.getElementById('stats-player-badge');
+    const serialEl = document.getElementById('stats-card-serial');
+    const playedEl = document.getElementById('stat-games-played');
+    const wonEl = document.getElementById('stat-games-won');
+    const streakEl = document.getElementById('stat-current-streak');
+    const maxStreakEl = document.getElementById('stat-max-streak');
+    const avgEl = document.getElementById('stat-avg-guesses');
+    const bestEl = document.getElementById('stat-best-score');
+    const stampEl = document.getElementById('punched-stamp');
+
+    const name = myPlayerName || 'HRÁČ';
+    if (badgeEl) badgeEl.textContent = name.toUpperCase();
+
+    if (serialEl) {
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = ((hash << 5) - hash) + name.charCodeAt(i);
+      }
+      const num = String(Math.abs(hash) % 9000 + 1000).padStart(4, '0');
+      serialEl.textContent = `SER: #${num}`;
+    }
+
+    // Výpočet efektivního streaku (pokud včerejšek nebyl odehrán, streak vypršel)
+    const today = new Date().toISOString().slice(0, 10);
+    let effectiveStreak = stats.currentStreak || 0;
+    if (stats.lastWinDate) {
+      const prevDate = new Date(stats.lastWinDate);
+      const currDate = new Date(today);
+      const diffDays = Math.round((currDate - prevDate) / (1000 * 60 * 60 * 24));
+      if (diffDays > 1) {
+        effectiveStreak = 0;
+      }
+    }
+
+    if (playedEl) playedEl.textContent = stats.gamesPlayed || 0;
+    if (wonEl) wonEl.textContent = stats.gamesWon || 0;
+    if (streakEl) streakEl.textContent = `${effectiveStreak} 🔥`;
+    if (maxStreakEl) maxStreakEl.textContent = `${stats.maxStreak || 0} dní`;
+
+    if (avgEl) {
+      if (stats.gamesWon > 0 && stats.totalWinningGuesses > 0) {
+        avgEl.textContent = (stats.totalWinningGuesses / stats.gamesWon).toFixed(1);
+      } else {
+        avgEl.textContent = '-';
+      }
+    }
+
+    if (bestEl) {
+      bestEl.textContent = stats.bestScore
+        ? `${stats.bestScore} ${stats.bestScore === 1 ? 'tip' : stats.bestScore < 5 ? 'tipy' : 'tipů'}`
+        : '-';
+    }
+
+    if (stampEl) {
+      if (stats.gamesWon >= 10) {
+        stampEl.textContent = '[ ELITNÍ LÉXIKOGRAF ARÉNY ]';
+      } else if (stats.gamesWon >= 3) {
+        stampEl.textContent = '[ ZKUŠENÝ LUŠTITEL ARÉNY ]';
+      } else {
+        stampEl.textContent = '[ REGISTROVANÝ HRÁČ ARÉNY ]';
+      }
+    }
+  }
+
+  return {
+    getStats,
+    recordGameEntry,
+    recordGameWin,
+    updateModalUI
+  };
+})();
+
+function showStatsModal() {
+  PlayerStats.updateModalUI();
+  if (statsModal) statsModal.style.display = 'flex';
+  SoundFx.playKeyClick();
+}
+
+function hideStatsModal() {
+  if (statsModal) statsModal.style.display = 'none';
+  SoundFx.playKeyClick();
+}
+
+if (btnOpenStats) btnOpenStats.addEventListener('click', showStatsModal);
+if (btnCloseStats) btnCloseStats.addEventListener('click', hideStatsModal);
+if (btnAckStats) btnAckStats.addEventListener('click', hideStatsModal);
+if (statsModal) {
+  statsModal.addEventListener('click', (e) => {
+    if (e.target === statsModal) hideStatsModal();
+  });
+}
+
 function renderTop50Modal(data) {
   if (!top50Grid) return;
   top50Grid.innerHTML = '';
@@ -545,9 +1077,30 @@ const musicQueueBody = document.getElementById('music-queue-body');
 const btnCloseQueue = document.getElementById('btn-close-queue');
 const btnMusicEnable = document.getElementById('btn-music-enable');
 const musicControlsActive = document.getElementById('music-controls-active');
-// DOM – Plovoucí gramofon v rohu (Větší vinyl 84px)
+
+// ── YouTube Hudební přehrávač (Sync State) ──────────────────
+let ytPlayer = null;
+let isYtReady = false;
+let pendingTrack = null;
+let activeTrack = null;
+let musicTicker = null;
+let isLocalPaused = false;
+let isLocalMuted = false;
+let needSeekToZero = false;
+let pendingSyncTarget = null;
+let serverClockOffset = 0;
+const failedTrackKeys = new Set();
+let musicAllowed = false;
+try {
+  musicAllowed = sessionStorage.getItem('slovotecka_music_allowed') === 'true';
+} catch (err) {}
+
+// DOM – Plovoucí gramofon v rohu (Větší vinyl 84px) & Kazetový kazeťák
 const floatingGramophone = document.getElementById('floating-gramophone');
 const vinylRecordWrap = document.getElementById('vinyl-record-wrap');
+const cassetteDeckWrap = document.getElementById('cassette-deck-wrap');
+const btnSwitchDeck = document.getElementById('btn-switch-deck');
+const playerDeckLabel = document.getElementById('player-deck-label');
 const vinylDisc = document.getElementById('vinyl-disc');
 const vinylThumb = document.getElementById('vinyl-thumb');
 const gramophoneTitle = document.getElementById('gramophone-title');
@@ -562,18 +1115,56 @@ if (floatingGramophone) {
   floatingGramophone.classList.add('is-minimized');
 }
 
+let currentDeckMode = 'cassette';
+try {
+  const savedDeck = localStorage.getItem('slovotecka_deck_mode');
+  if (savedDeck === 'cassette' || savedDeck === 'vinyl') {
+    currentDeckMode = savedDeck;
+  }
+} catch (e) {}
+
+function applyDeckMode(mode) {
+  currentDeckMode = mode === 'cassette' ? 'cassette' : 'vinyl';
+  try {
+    localStorage.setItem('slovotecka_deck_mode', currentDeckMode);
+  } catch (e) {}
+
+  if (currentDeckMode === 'cassette') {
+    if (vinylRecordWrap) vinylRecordWrap.style.display = 'none';
+    if (cassetteDeckWrap) cassetteDeckWrap.style.display = 'block';
+    if (playerDeckLabel) playerDeckLabel.textContent = '[ HRAJE KAZETA ]';
+    if (btnSwitchDeck) {
+      btnSwitchDeck.textContent = '💿 GRAMOFON';
+      btnSwitchDeck.title = 'Přepnout na gramofonový vinyl';
+    }
+  } else {
+    if (vinylRecordWrap) vinylRecordWrap.style.display = 'block';
+    if (cassetteDeckWrap) cassetteDeckWrap.style.display = 'none';
+    if (playerDeckLabel) playerDeckLabel.textContent = '[ HRAJE GRAMOFON ]';
+    if (btnSwitchDeck) {
+      btnSwitchDeck.textContent = '📼 KAZETA';
+      btnSwitchDeck.title = 'Přepnout na kazetový magnetofon';
+    }
+  }
+  updateGramophoneTooltips();
+}
+
 function updateGramophoneTooltips() {
   if (!floatingGramophone) return;
   const isMin = floatingGramophone.classList.contains('is-minimized');
   const trackObj = (typeof activeTrack !== 'undefined' && activeTrack) ? activeTrack : null;
   const currentTitle = trackObj ? (trackObj.title || 'Skladba') : '';
+  const deckName = currentDeckMode === 'cassette' ? 'magnetofon' : 'vinyl';
 
   if (isMin) {
     const tip = currentTitle ? `Hraje: ${currentTitle} (kliknutím rozbalíš podrobnosti)` : 'Kliknutím zobrazíš podrobnosti skladby';
     if (vinylRecordWrap) vinylRecordWrap.title = tip;
+    if (cassetteDeckWrap) cassetteDeckWrap.title = tip;
     floatingGramophone.title = tip;
   } else {
-    if (vinylRecordWrap) vinylRecordWrap.title = 'Kliknutím sbalíš na samotný vinyl';
+    const sbalTip = `Kliknutím sbalíš na samotný ${deckName}`;
+    if (vinylRecordWrap) vinylRecordWrap.title = sbalTip;
+    if (cassetteDeckWrap) cassetteDeckWrap.title = sbalTip;
     floatingGramophone.title = '';
   }
 }
@@ -622,6 +1213,18 @@ function updateVinylState(isPlaying, isPaused, videoId) {
     }
   }
 
+  if (cassetteDeckWrap) {
+    if (isPlaying) {
+      cassetteDeckWrap.classList.add('is-playing');
+      cassetteDeckWrap.classList.remove('is-paused');
+    } else if (isPaused) {
+      cassetteDeckWrap.classList.remove('is-playing');
+      cassetteDeckWrap.classList.add('is-paused');
+    } else {
+      cassetteDeckWrap.classList.remove('is-playing', 'is-paused');
+    }
+  }
+
   if (floatingGramophone) {
     if (isPlaying || isPaused || trackObj || videoId) {
       floatingGramophone.style.display = 'flex';
@@ -647,6 +1250,8 @@ function updateVinylState(isPlaying, isPaused, videoId) {
   updateGramophoneTooltips();
 }
 
+applyDeckMode(currentDeckMode);
+
 if (floatingGramophone) {
   floatingGramophone.addEventListener('click', () => {
     if (floatingGramophone.classList.contains('is-minimized')) {
@@ -659,6 +1264,21 @@ if (vinylRecordWrap) {
   vinylRecordWrap.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleGramophoneDetails();
+  });
+}
+
+if (cassetteDeckWrap) {
+  cassetteDeckWrap.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleGramophoneDetails();
+  });
+}
+
+if (btnSwitchDeck) {
+  btnSwitchDeck.addEventListener('click', (e) => {
+    e.stopPropagation();
+    SoundFx.playKeyClick();
+    applyDeckMode(currentDeckMode === 'vinyl' ? 'cassette' : 'vinyl');
   });
 }
 
@@ -747,20 +1367,94 @@ function rankClass(rank) {
   return 'rank-cool';
 }
 
-// Výpočet šířky a barvy baru dle vzoru Contexto
+// Výpočet šířky a barvy baru dle vzoru Contexto (používá retro analogové proměnné tématu)
 function getBarStyles(rank) {
   if (rank === 1) {
-    return { width: '100%', bg: '#10b981' };
+    return { width: '100%', bg: 'var(--color-green)' };
   }
   if (rank <= 300) {
-    const pct = Math.round(98 - ((rank - 2) / 298) * 38);
-    return { width: `${pct}%`, bg: '#10b981' };
+    const pct = Math.round(98 - ((rank - 2) / 298) * 40); // 98% -> 58%
+    return { width: `${pct}%`, bg: 'var(--color-green)' };
   }
   if (rank <= 1500) {
-    const pct = Math.round(58 - ((rank - 301) / 1199) * 38);
-    return { width: `${pct}%`, bg: '#f97316' };
+    const pct = Math.round(56 - ((rank - 301) / 1199) * 32); // 56% -> 24%
+    return { width: `${pct}%`, bg: 'var(--color-amber)' };
   }
-  return { width: '8px', bg: '#f43f5e' };
+  // Hladké logaritmické škálování pro studená slova (1501 až 50 000+) – místo statických 8px
+  const coldRatio = Math.min(1, Math.max(0, Math.log(rank / 1500) / Math.log(50000 / 1500)));
+  const pct = Math.max(5, Math.round(22 - coldRatio * 17)); // 22% -> 5%
+  return { width: `${pct}%`, bg: 'var(--color-accent)' };
+}
+
+// ── Stav historie tipů a řazení ───────────────────────
+let myGuessHistory = [];
+let historyIndex = -1;
+let currentDraft = '';
+let guessSortMode = localStorage.getItem('slovotecka_guess_sort') || 'rank'; // 'rank' nebo 'time'
+let previousLastGuessId = null;
+let initialGameStateRendered = false;
+
+// DOM – Řazení odhalených slov
+const btnSortRank = document.getElementById('btn-sort-rank');
+const btnSortTime = document.getElementById('btn-sort-time');
+
+function updateSortTabsUI() {
+  if (btnSortRank) btnSortRank.classList.toggle('is-active', guessSortMode === 'rank');
+  if (btnSortTime) btnSortTime.classList.toggle('is-active', guessSortMode === 'time');
+}
+updateSortTabsUI();
+
+if (btnSortRank) {
+  btnSortRank.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    guessSortMode = 'rank';
+    try { localStorage.setItem('slovotecka_guess_sort', 'rank'); } catch (e) {}
+    updateSortTabsUI();
+    if (latestGameState) renderGameState(latestGameState);
+  });
+}
+
+if (btnSortTime) {
+  btnSortTime.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    guessSortMode = 'time';
+    try { localStorage.setItem('slovotecka_guess_sort', 'time'); } catch (e) {}
+    updateSortTabsUI();
+    if (latestGameState) renderGameState(latestGameState);
+  });
+}
+
+// ── Mechanické páskové počítadlo (Odometer / Tape Counter) ───
+let lastTapeCount = null;
+function updateTapeCounter(count) {
+  const d100 = document.getElementById('counter-d100');
+  const d10 = document.getElementById('counter-d10');
+  const d1 = document.getElementById('counter-d1');
+  if (!d1 || !d10 || !d100) return;
+
+  const bounded = Math.min(999, Math.max(0, count || 0));
+  const s = String(bounded).padStart(3, '0');
+  const [c100, c10, c1] = [s[0], s[1], s[2]];
+
+  function setDigit(el, val) {
+    if (el.textContent !== val) {
+      el.textContent = val;
+      el.classList.remove('is-rolling');
+      void el.offsetWidth;
+      el.classList.add('is-rolling');
+      setTimeout(() => el.classList.remove('is-rolling'), 250);
+    }
+  }
+
+  const changed = lastTapeCount !== null && lastTapeCount !== bounded;
+  setDigit(d100, c100);
+  setDigit(d10, c10);
+  setDigit(d1, c1);
+
+  if (changed && initialGameStateRendered) {
+    SoundFx.playKeyClick();
+  }
+  lastTapeCount = bounded;
 }
 
 // ── 1. Vstup do hry ───────────────────────────────────
@@ -768,6 +1462,8 @@ joinForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const name = playerNameInput.value.trim();
   if (!name) return showToast('Zadej své jméno nebo přezdívku.', true);
+
+  SoundFx.playKeyClick();
 
   if (name.includes('/admin-perms-456')) {
     try { sessionStorage.setItem('slovotecka_admin_join_name', name); } catch (err) {}
@@ -778,7 +1474,21 @@ joinForm.addEventListener('submit', (e) => {
   myPlayerName = name;
   localStorage.setItem('slovotecka_nickname', name);
 
-  socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor });
+  if (selectedLobbyMode === 'custom') {
+    const rawCode = customCodeInput ? customCodeInput.value.trim().toUpperCase() : '';
+    const sourceRadio = document.querySelector('input[name="custom-word-source"]:checked');
+    const wordSource = sourceRadio ? sourceRadio.value : 'daily';
+    if (!rawCode) {
+      currentMode = 'custom';
+      socket.emit('join_game', { playerName: name, mode: 'custom', color: myPlayerColor, wordSource });
+    } else {
+      currentMode = `custom_${rawCode}`;
+      socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor, customCode: rawCode, wordSource });
+    }
+  } else {
+    currentMode = selectedLobbyMode;
+    socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor });
+  }
 });
 
 // Automatické znovupřipojení při výpadku spojení
@@ -789,36 +1499,123 @@ socket.on('connect', () => {
     if (adminStored) joinName = adminStored;
   } catch (err) {}
   if (joinName && gameSection.style.display !== 'none') {
-    socket.emit('join_game', { playerName: joinName, mode: currentMode, color: myPlayerColor });
+    const customCode = (currentMode && currentMode.startsWith('custom_')) ? currentMode.replace('custom_', '') : null;
+    socket.emit('join_game', { playerName: joinName, mode: currentMode, color: myPlayerColor, customCode });
   }
 });
+
+function triggerInputShake() {
+  if (!guessInput) return;
+  guessInput.classList.remove('input-shake');
+  void guessInput.offsetWidth; // vynutit reflow
+  guessInput.classList.add('input-shake');
+  setTimeout(() => guessInput?.classList.remove('input-shake'), 400);
+}
 
 // ── 2. Odeslání tipu ──────────────────────────────────
 function submitGuess() {
   const word = guessInput.value.trim();
-  if (!word) return;
+  if (!word) {
+    triggerInputShake();
+    SoundFx.playError();
+    return;
+  }
+
+  // Kontrola duplicitního tipu přímo na klientovi
+  if (latestGameState && latestGameState.guesses) {
+    const norm = word.toLowerCase();
+    const existing = latestGameState.guesses.find(
+      g => g.word.toLowerCase() === norm && (g.isMine || (myPlayerName && g.player.toLowerCase() === myPlayerName.toLowerCase()))
+    );
+    if (existing) {
+      triggerInputShake();
+      SoundFx.playError();
+      setFeedback(`⚠️ Slovo "${word.toUpperCase()}" už jsi v tomto kole zadal(a) (#${existing.rank})!`);
+      const allCards = guessesList.querySelectorAll('.guess-card');
+      allCards.forEach(c => {
+        const wSpan = c.querySelector('.guess-card-word');
+        if (wSpan && wSpan.textContent.trim().toLowerCase() === norm) {
+          c.classList.remove('is-duplicate-flash');
+          void c.offsetWidth;
+          c.classList.add('is-duplicate-flash');
+          c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+      return;
+    }
+  }
+
+  SoundFx.playSubmit();
   setFeedback('Ověřuji slovo…');
   socket.emit('submit_guess', { word });
+
+  // Uložení do historie pro šipky nahoru / dolů
+  if (!myGuessHistory.includes(word)) {
+    myGuessHistory.push(word);
+  }
+  historyIndex = -1;
+  currentDraft = '';
+
   guessInput.value = '';
   guessInput.focus();
 }
 
 btnSubmitGuess.addEventListener('click', submitGuess);
+
 guessInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
     submitGuess();
+  } else if (e.key === 'ArrowUp') {
+    if (myGuessHistory.length === 0) return;
+    e.preventDefault();
+    if (historyIndex === -1) {
+      currentDraft = guessInput.value;
+      historyIndex = myGuessHistory.length - 1;
+    } else if (historyIndex > 0) {
+      historyIndex--;
+    }
+    guessInput.value = myGuessHistory[historyIndex];
+    SoundFx.playKeyClick();
+  } else if (e.key === 'ArrowDown') {
+    if (historyIndex === -1) return;
+    e.preventDefault();
+    if (historyIndex < myGuessHistory.length - 1) {
+      historyIndex++;
+      guessInput.value = myGuessHistory[historyIndex];
+    } else {
+      historyIndex = -1;
+      guessInput.value = currentDraft;
+    }
+    SoundFx.playKeyClick();
+  }
+});
+
+// Globální klávesová zkratka: stisk "/" zaměří pole pro hádání
+document.addEventListener('keydown', (e) => {
+  const activeTag = document.activeElement?.tagName;
+  const isInputActive = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || document.activeElement?.isContentEditable;
+
+  if (e.key === '/' && !isInputActive) {
+    e.preventDefault();
+    if (guessInput && !guessInput.disabled) {
+      guessInput.focus();
+      guessInput.select();
+      SoundFx.playKeyClick();
+    }
   }
 });
 
 // ── 3. Vzdát se a odhalit dnešní slovo ────────────────
 btnRevealWord.addEventListener('click', () => {
+  SoundFx.playKeyClick();
   const ok = confirm('Opravdu se chceš vzdát?\nUvidíš tajné slovo, ale ztratíš možnost dále v tomto kole hádat.');
   if (ok) socket.emit('reveal_word');
 });
 
 // ── 4. Odhalit nápovědu (získá 🤡) ────────────────────
 btnShowHint.addEventListener('click', () => {
+  SoundFx.playKeyClick();
   const ok = confirm('Opravdu chceš odhalit nápovědu?\nPozor: všichni online uvidí vedle tvého jména klauna 🤡!');
   if (ok) socket.emit('use_hint');
 });
@@ -1411,12 +2208,126 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// DOM – Chat záložky (Místnost vs Globál)
+const chatTabRoom = document.getElementById('chat-tab-room');
+const chatTabGlobal = document.getElementById('chat-tab-global');
+const chatMessagesGlobal = document.getElementById('chat-messages-global');
+const globalUnreadDot = document.getElementById('global-unread-dot');
+let activeChatTab = 'room'; // 'room' | 'global'
+
+function switchChatTab(tab) {
+  activeChatTab = tab;
+  if (tab === 'room') {
+    if (chatTabRoom) {
+      chatTabRoom.classList.add('is-active');
+      chatTabRoom.setAttribute('aria-selected', 'true');
+    }
+    if (chatTabGlobal) {
+      chatTabGlobal.classList.remove('is-active');
+      chatTabGlobal.setAttribute('aria-selected', 'false');
+    }
+    if (chatMessages) chatMessages.style.display = 'block';
+    if (chatMessagesGlobal) chatMessagesGlobal.style.display = 'none';
+    if (chatInput) chatInput.placeholder = 'Napiš zprávu do arény... (např. xdd)';
+  } else {
+    if (chatTabGlobal) {
+      chatTabGlobal.classList.add('is-active');
+      chatTabGlobal.setAttribute('aria-selected', 'true');
+    }
+    if (chatTabRoom) {
+      chatTabRoom.classList.remove('is-active');
+      chatTabRoom.setAttribute('aria-selected', 'false');
+    }
+    if (chatMessages) chatMessages.style.display = 'none';
+    if (chatMessagesGlobal) chatMessagesGlobal.style.display = 'block';
+    if (globalUnreadDot) globalUnreadDot.style.display = 'none';
+    if (chatInput) chatInput.placeholder = 'Napiš do globálního chatu pro celou Slovotečku...';
+  }
+}
+
+if (chatTabRoom) {
+  chatTabRoom.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    switchChatTab('room');
+  });
+}
+if (chatTabGlobal) {
+  chatTabGlobal.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    switchChatTab('global');
+  });
+}
+
+function appendGlobalChatMessage(data) {
+  if (!chatMessagesGlobal) return;
+  const empty = chatMessagesGlobal.querySelector('.chat-empty');
+  if (empty) empty.remove();
+
+  const isMe = myPlayerName && data.sender && myPlayerName.toLowerCase() === data.sender.toLowerCase();
+  const div = document.createElement('div');
+  div.className = 'chat-msg' + (isMe ? ' is-me' : '');
+
+  const senderColor = data.color ? escapeHtml(data.color) : '#38bdf8';
+  const adminBadge = data.isAdmin
+    ? ' <span class="badge-admin" title="Administrátor"><span class="badge-admin-crown">👑</span> ADMIN</span>'
+    : '';
+  const parsedHtml = renderMessageWithEmotes(data.message);
+
+  div.innerHTML = `
+    <span class="chat-msg-time">${data.timestamp || ''}</span>
+    <span class="chat-msg-badge-global">[GLOBÁL]</span>
+    <span class="chat-msg-author" style="color: ${senderColor};">${escapeHtml(data.sender)}${adminBadge}${isMe ? ' (ty)' : ''}:</span>
+    <span class="chat-msg-text" data-raw="${escapeHtml(data.message)}">${parsedHtml}</span>
+  `;
+
+  chatMessagesGlobal.appendChild(div);
+
+  if (activeChatTab === 'global' || isMe) {
+    chatMessagesGlobal.scrollTop = chatMessagesGlobal.scrollHeight;
+  } else {
+    if (globalUnreadDot) globalUnreadDot.style.display = 'inline-block';
+  }
+}
+
+socket.on('global_chat_history', (history) => {
+  if (!chatMessagesGlobal || !Array.isArray(history)) return;
+  chatMessagesGlobal.innerHTML = '';
+  if (history.length === 0) {
+    chatMessagesGlobal.innerHTML = '<div class="chat-empty">Zatím žádné globální zprávy. Napiš vzkaz pro všechny v arénách!</div>';
+    return;
+  }
+  history.forEach(item => appendGlobalChatMessage(item));
+});
+
+socket.on('global_chat_message', (data) => {
+  appendGlobalChatMessage(data);
+});
+
 // ── 6. Odeslání zprávy do chatu ───────────────────────
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = chatInput.value.trim();
   if (!text) return;
+
+  if (activeChatTab === 'global') {
+    socket.emit('send_global_chat', { message: text });
+    chatInput.value = '';
+    closeEmotePicker();
+    closeCommandAutocomplete();
+    chatInput.focus();
+    return;
+  }
+
+  const isCustomRoom = Boolean(latestGameState?.isCustomRoom || (currentMode && currentMode.startsWith('custom_')));
   const lowerText = text.toLowerCase().trim();
+
+  if (lowerText.startsWith('!play') || ['!queue', '!fronta', '!skip'].includes(lowerText)) {
+    if (!isCustomRoom) {
+      showToast('Hudební jukebox (!play) je povolen pouze ve Vlastní aréně (Custom Room)!', true);
+      return;
+    }
+  }
+
   if (lowerText.startsWith('!play') || ['ano', 'jo', 'yes', 'y', 'jj', '!ano', '!yes'].includes(lowerText)) {
     musicAllowed = true;
     try {
@@ -1436,6 +2347,7 @@ chatForm.addEventListener('submit', (e) => {
     stopMusicLocal();
     showToast('⏹️ Hudba zastavena pro tebe.');
   }
+
   socket.emit('send_chat', { message: text });
   chatInput.value = '';
   closeEmotePicker();
@@ -1445,8 +2357,10 @@ chatForm.addEventListener('submit', (e) => {
 
 // ── Server události ───────────────────────────────────
 socket.on('error_message', (data) => {
+  triggerInputShake();
+  SoundFx.playError();
   showToast(data.message, true);
-  setFeedback('');
+  setFeedback(data.message);
 });
 
 socket.on('notification', (data) => {
@@ -1468,13 +2382,47 @@ socket.on('kicked', (data) => {
   window.location.reload();
 });
 
+const chatUnreadBadge = document.getElementById('chat-unread-badge');
+
+function isChatScrolledNearBottom() {
+  if (!chatMessages) return true;
+  const threshold = 70; // px od spodního okraje
+  return chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight <= threshold;
+}
+
+if (chatUnreadBadge) {
+  chatUnreadBadge.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    if (chatMessages) {
+      chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+    }
+    chatUnreadBadge.style.display = 'none';
+  });
+}
+
+if (chatMessages) {
+  chatMessages.addEventListener('scroll', () => {
+    if (isChatScrolledNearBottom() && chatUnreadBadge) {
+      chatUnreadBadge.style.display = 'none';
+    }
+  });
+}
+
 function appendChatMessage(data) {
   const emptyMsg = chatMessages.querySelector('.chat-empty');
   if (emptyMsg) emptyMsg.remove();
 
   const isMe = data.player === myPlayerName;
+  const isTelegraph = data.player === '⚡ TELEGRAPH' || (typeof data.player === 'string' && data.player.includes('TELEGRAPH'));
   const div = document.createElement('div');
-  div.className = 'chat-msg' + (isMe ? ' is-me' : '');
+  let msgCls = 'chat-msg';
+  if (isMe) msgCls += ' is-me';
+  if (isTelegraph) msgCls += ' is-telegraph';
+  div.className = msgCls;
+
+  if (isTelegraph) {
+    SoundFx.playHot();
+  }
 
   // Zvýraznění zprávy pouze pokud tě zmíní někdo jiný (@myPlayerName)
   if (myPlayerName && !isMe) {
@@ -1544,8 +2492,16 @@ function appendChatMessage(data) {
     }
   }
 
+  const wasAtBottom = isChatScrolledNearBottom();
+
   chatMessages.appendChild(div);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  if (isMe || wasAtBottom) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    if (chatUnreadBadge) chatUnreadBadge.style.display = 'none';
+  } else {
+    if (chatUnreadBadge) chatUnreadBadge.style.display = 'block';
+  }
 }
 
 // ── Vykreslení stavu denní hry ────────────────────────
@@ -1584,12 +2540,41 @@ function renderGameState(state) {
   lobbySection.style.display = 'none';
   gameSection.style.display = 'block';
 
-  // Přizpůsobení podle režimu (denní vs unlimited)
-  if (state.mode === 'unlimited') {
+  // Přizpůsobení podle režimu (vlastní aréna vs neomezený vs denní)
+  const isCustom = Boolean(state.isCustomRoom || (state.mode && state.mode.startsWith('custom_')));
+  if (isCustom) {
+    if (displayModeLabel) displayModeLabel.textContent = '[ VLASTNÍ ARÉNA ]';
+    if (displayDayTitle) displayDayTitle.textContent = state.isDailyEligible ? 'DENNÍ SLOVO' : `ARCHIV #${state.dayNumber || '?'}`;
+    if (displayMetaText) displayMetaText.textContent = state.isDailyEligible ? 'ZAPOČÍTÁVÁ SE DO STATŮ' : 'ARCHIVNÍ SADA';
+    if (secretLabel) secretLabel.textContent = '[ TAJNÉ SLOVO ARÉNY ]';
+
+    if (customShareBadge) {
+      customShareBadge.style.display = 'inline-flex';
+      if (displayCustomCode) displayCustomCode.textContent = state.roomCode || '-----';
+    }
+
+    if (voteBar) {
+      if (state.wordSource === 'archive' && state.voting) {
+        voteBar.style.display = 'flex';
+        const { votesCount, requiredVotes, hasVoted, totalPlayers } = state.voting;
+        if (voteCountBadge) voteCountBadge.textContent = `${votesCount} / ${requiredVotes} HLASŮ`;
+        if (btnVoteNewWord && btnVoteText) {
+          btnVoteNewWord.classList.toggle('voted', hasVoted);
+          btnVoteText.textContent = hasVoted ? 'ZRUŠIT HLAS PRO NOVÉ SLOVO' : 'HLASOVAT PRO NOVÉ SLOVO';
+        }
+        if (voteDesc) {
+          voteDesc.textContent = `Hlasování o další archivní slovo (${votesCount}/${requiredVotes}).`;
+        }
+      } else {
+        voteBar.style.display = 'none';
+      }
+    }
+  } else if (state.mode === 'unlimited') {
     if (displayModeLabel) displayModeLabel.textContent = '[ UNLIMITED REŽIM ]';
     displayDayTitle.textContent = `ARCHIV #${state.dayNumber || '?'}`;
     if (displayMetaText) displayMetaText.textContent = 'ARCHIVNÍ SADA';
     if (secretLabel) secretLabel.textContent = '[ ARCHIVNÍ TAJNÉ SLOVO ]';
+    if (customShareBadge) customShareBadge.style.display = 'none';
 
     if (voteBar) {
       voteBar.style.display = 'flex';
@@ -1617,6 +2602,7 @@ function renderGameState(state) {
     displayDayTitle.textContent = `Den #${state.dayNumber || '1'}`;
     if (displayMetaText) displayMetaText.textContent = 'RESET O PŮLNOCI';
     if (secretLabel) secretLabel.textContent = '[ DNEŠNÍ TAJNÉ SLOVO ]';
+    if (customShareBadge) customShareBadge.style.display = 'none';
     if (voteBar) voteBar.style.display = 'none';
   }
 
@@ -1698,6 +2684,22 @@ function renderGameState(state) {
   myGuesses.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   const lastGuess = myGuesses[0] || null;
 
+  // Záznam odehrané hry a výhry pro legitimaci hráče
+  if (myPlayerName) {
+    let statGameType = 'daily';
+    if (isCustom) {
+      statGameType = state.isDailyEligible ? 'custom_daily' : 'custom_archive';
+    } else if (state.mode === 'unlimited') {
+      statGameType = 'unlimited';
+    }
+    const currentGameId = `${statGameType}_${state.dayNumber || state.date || state.roomCode || 'round'}`;
+    PlayerStats.recordGameEntry(currentGameId);
+    if (state.myStatus && state.myStatus.solved) {
+      const winGuesses = (typeof state.myStatus.guessCount === 'number') ? state.myStatus.guessCount : myGuesses.length;
+      PlayerStats.recordGameWin(currentGameId, winGuesses);
+    }
+  }
+
   if (lastGuess && lastGuessContainer) {
     lastGuessContainer.style.display = 'block';
     lastGuessWord.textContent = lastGuess.word;
@@ -1706,9 +2708,24 @@ function renderGameState(state) {
     const { width, bg } = getBarStyles(lastGuess.rank);
     lastGuessFill.style.width = width;
     lastGuessFill.style.backgroundColor = bg;
+
+    // Zvukový feedback pouze při novém vlastním tipu
+    if (initialGameStateRendered && lastGuess.id !== previousLastGuessId) {
+      if (lastGuess.rank === 1) {
+        SoundFx.playWin();
+      } else if (lastGuess.rank <= 300) {
+        SoundFx.playHot();
+      } else if (lastGuess.rank <= 1500) {
+        SoundFx.playWarm();
+      } else {
+        SoundFx.playCold();
+      }
+    }
+    previousLastGuessId = lastGuess.id;
   } else if (lastGuessContainer) {
     lastGuessContainer.style.display = 'none';
   }
+  initialGameStateRendered = true;
 
   // Hráči online
   playersList.innerHTML = '';
@@ -1747,10 +2764,25 @@ function renderGameState(state) {
     ? state.guesses.filter(g => g.isMine || (myPlayerName && g.player.toLowerCase() === myPlayerName.toLowerCase()))
     : state.guesses;
 
-  // Tipy seřazené od nejbližšího
-  const sorted = [...displayGuesses].sort((a, b) => a.rank - b.rank || (a.timestamp || 0) - (b.timestamp || 0));
-  const totalGuesses = displayGuesses.length;
-  guessesCount.textContent = `${totalGuesses} ${totalGuesses === 1 ? 'tip' : totalGuesses < 5 ? 'tipy' : 'tipů'}`;
+  // Tipy seřazené dle zvoleného módu: # blízkost vs čas zadání
+  let sorted;
+  if (guessSortMode === 'time') {
+    sorted = [...displayGuesses].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  } else {
+    sorted = [...displayGuesses].sort((a, b) => a.rank - b.rank || (a.timestamp || 0) - (b.timestamp || 0));
+  }
+
+  // Mechanické páskové počítadlo zobrazuje OSOBNÍ počet pokusů hráče (např. 4 i při výhře/divákovi)
+  const myPersonalGuessesCount = (state.myStatus && typeof state.myStatus.guessCount === 'number')
+    ? state.myStatus.guessCount
+    : myGuesses.length;
+
+  if (isSpectator && spectatorFilterMode === 'all') {
+    guessesCount.textContent = `${displayGuesses.length} tipů (${myPersonalGuessesCount} tvých)`;
+  } else {
+    guessesCount.textContent = `${myPersonalGuessesCount} ${myPersonalGuessesCount === 1 ? 'tip' : myPersonalGuessesCount < 5 ? 'tipy' : 'tipů'}`;
+  }
+  updateTapeCounter(myPersonalGuessesCount);
 
   if (sorted.length === 0) {
     if (isSpectator && spectatorFilterMode === 'mine') {
@@ -1772,7 +2804,7 @@ function renderGameState(state) {
       else if (isShared) cls += ' is-shared';
       else if (isOther) cls += ' is-other is-spectator-guess';
 
-      if (isLast) cls += ' is-last-guess';
+      if (isLast) cls += ' is-last-guess is-new-guess';
       if (g.isWinner) cls += ' is-winner';
       card.className = cls;
 
@@ -1813,8 +2845,12 @@ function renderGameState(state) {
     chatLoaded = true;
   }
 
-  // Synchronizace hudby s herním stavem
-  if (state.currentMusic) {
+  // Synchronizace hudby s herním stavem – povolena POUZE ve Vlastní aréně
+  if (!isCustom) {
+    if (floatingGramophone) floatingGramophone.style.display = 'none';
+    if (musicBar) musicBar.style.display = 'none';
+    if (activeTrack) stopMusicLocal();
+  } else if (state.currentMusic) {
     if (state.currentMusic.serverTime) {
       syncServerTime(state.currentMusic.serverTime);
     }
@@ -1848,19 +2884,6 @@ function renderGameState(state) {
   }
 }
 
-// ── YouTube Hudební přehrávač (Sync) ──────────────────
-let ytPlayer = null;
-let isYtReady = false;
-let pendingTrack = null;
-let activeTrack = null;
-let musicTicker = null;
-let isLocalPaused = false;
-let isLocalMuted = false;
-let needSeekToZero = false; // Pojistka pro spuštění nově zařazené skladby vždy od 0:00
-let pendingSyncTarget = null; // Cílový čas v sekundách pro doskočení při spuštění v průběhu
-let serverClockOffset = 0; // Rozdíl mezi lokálním časem a serverem (ms)
-const failedTrackKeys = new Set(); // Množina skladeb, které selhaly na YouTube (prevence opakovaného spouštění při každém guessu)
-
 function syncServerTime(serverTime) {
   if (typeof serverTime === 'number' && !isNaN(serverTime)) {
     serverClockOffset = Date.now() - serverTime;
@@ -1875,11 +2898,6 @@ function getTrackElapsedTime(track) {
   if (!track || !track.startedAt) return 0;
   return Math.max(0, (getSyncServerNow() - track.startedAt) / 1000);
 }
-
-let musicAllowed = false; // Každý uživatel si musí přehrávání hudby explicitně povolit / zapnout jak přijde
-try {
-  musicAllowed = sessionStorage.getItem('slovotecka_music_allowed') === 'true';
-} catch (err) {}
 
 // Výchozí hlasitost 20% ("aby to nebylo nahlas prvně") s uložením do localStorage
 let currentVolume = 20;
@@ -2095,6 +3113,11 @@ function updateMusicSkipUI(skipVotes, requiredSkipVotes, hasVotedSkip) {
 
 function playTrack(track) {
   if (!track || !track.videoId) return;
+
+  const isCustom = Boolean(latestGameState?.isCustomRoom || (currentMode && currentMode.startsWith('custom_')));
+  if (!isCustom) {
+    return;
+  }
 
   const trackKey = `${track.videoId}_${track.startedAt || 0}`;
   if (failedTrackKeys.has(trackKey)) {

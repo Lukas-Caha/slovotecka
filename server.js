@@ -35,6 +35,11 @@ app.get('/unlimited', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Custom aréna – servíruje stejnou webovou aplikaci
+app.get(['/custom/:code', '/room/:code'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Počty hráčů online pro lobby přehled
 app.get('/api/arena-stats', (req, res) => {
   res.json(gameManager.getOnlineCounts());
@@ -52,7 +57,7 @@ function broadcastArenaCounts() {
 
 // Odeslání aktuálního stavu hry hráčům v dané místnosti
 function broadcastGameState(mode) {
-  const modes = mode ? [mode] : ['daily', 'unlimited'];
+  const modes = mode ? [mode] : gameManager.getAllActiveModes();
   for (const m of modes) {
     const room = gameManager.getRoom(m);
     if (!room) continue;
@@ -299,20 +304,96 @@ function handleSongConfirmation(socket, room, mode, player, pendingConf, isYes) 
   }
 }
 
-io.on('connection', (socket) => {
-  // Odeslání aktuálních počtů hráčů v obou arénách (denní + unlimited) nově připojenému klientovi
-  socket.emit('arena_counts', gameManager.getOnlineCounts());
+// Globální chat napříč všemi místnostmi
+const globalChatHistory = [];
+const MAX_GLOBAL_CHAT_HISTORY = 100;
 
-  // 1. Vstup do hry (denní nebo unlimited)
-  socket.on('join_game', ({ playerName, mode, color }) => {
-    const gameMode = mode === 'unlimited' ? 'unlimited' : 'daily';
+io.on('connection', (socket) => {
+  // Odeslání aktuálních počtů hráčů nově připojenému klientovi
+  socket.emit('arena_counts', gameManager.getOnlineCounts());
+  // Odeslání historie globálního chatu
+  socket.emit('global_chat_history', globalChatHistory);
+
+  // Vytvoření nové vlastní místnosti (Custom Room)
+  socket.on('create_custom_room', ({ wordSource }) => {
+    const room = gameManager.createCustomRoom(wordSource || 'daily');
+    socket.emit('custom_room_created', {
+      roomCode: room.roomCode,
+      mode: room.mode,
+      wordSource: room.wordSource
+    });
+  });
+
+  // Přepnutí zdroje slov ve vlastní aréně (Denní / Archivní)
+  socket.on('switch_custom_word_source', ({ wordSource }) => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    if (!room || !mode || !mode.startsWith('custom_')) return;
+    if (typeof room.setWordSource === 'function') {
+      const changed = room.setWordSource(wordSource);
+      if (changed) {
+        const sourceLabel = wordSource === 'daily' ? 'Dnešní denní slovo' : 'Náhodné archivní slovo';
+        const msg = room.addChatMessage('⚙️ ARÉNA', `Režim slov byl přepnut na: ${sourceLabel}`, false, null, '#10b981');
+        io.to(mode).emit('chat_message', msg);
+        broadcastGameState(mode);
+      }
+    }
+  });
+
+  // Odeslání zprávy do globálního chatu (pro všechny připojené hráče)
+  socket.on('send_global_chat', ({ message }) => {
+    const cleanMsg = (message || '').trim();
+    if (!cleanMsg || cleanMsg.length > 300) return;
+
+    const room = gameManager.getRoomForSocket(socket.id);
+    const player = room?.players?.[socket.id];
+    const senderName = player ? player.name : (socket.data?.playerName || 'Hráč');
+    const senderColor = player ? player.color : '#38bdf8';
+    const isAdmin = !!player?.isAdmin;
+
+    const globalEntry = {
+      id: 'g_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      sender: senderName,
+      message: cleanMsg,
+      color: senderColor,
+      isAdmin,
+      isBot: false,
+      timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    globalChatHistory.push(globalEntry);
+    if (globalChatHistory.length > MAX_GLOBAL_CHAT_HISTORY) {
+      globalChatHistory.shift();
+    }
+
+    io.emit('global_chat_message', globalEntry);
+  });
+
+  // 1. Vstup do hry (denní, unlimited, nebo vlastní aréna)
+  socket.on('join_game', ({ playerName, mode, color, customCode, wordSource }) => {
+    let gameMode = 'daily';
+    if (mode === 'unlimited') {
+      gameMode = 'unlimited';
+    } else if (mode === 'custom' || (mode && mode.startsWith('custom_')) || customCode) {
+      const rawCode = (customCode || (mode && mode.startsWith('custom_') ? mode.replace('custom_', '') : '')).toUpperCase().trim();
+      let customRoom = rawCode ? gameManager.getCustomRoom(rawCode) : null;
+      if (!customRoom && rawCode) {
+        customRoom = gameManager.createCustomRoom(wordSource || 'daily', rawCode);
+      } else if (!customRoom) {
+        customRoom = gameManager.createCustomRoom(wordSource || 'daily');
+      }
+      gameMode = customRoom.mode;
+    }
 
     // Opuštění předchozích místností
-    socket.leave('daily');
-    socket.leave('unlimited');
+    for (const r of socket.rooms) {
+      if (r !== socket.id) socket.leave(r);
+    }
     socket.join(gameMode);
 
     const { player } = gameManager.joinPlayer(socket.id, playerName, gameMode, color);
+    socket.data = socket.data || {};
+    socket.data.playerName = player.name;
 
     // Oznámení pro ostatní v téže místnosti
     socket.to(gameMode).emit('notification', {
@@ -349,12 +430,19 @@ io.on('connection', (socket) => {
       const solveText = mode === 'unlimited'
         ? `🎉 ${result.player.name} uhodl(a) archivní slovo na ${result.player.guessCount}. pokus!`
         : `🎉 ${result.player.name} právě uhodl(a) dnešní tajné slovo na ${result.player.guessCount}. pokus!`;
-      const botMsg = room.addChatMessage('🤖 BOT', solveText, false, null, '#10b981');
+      const botMsg = room.addChatMessage('🤖 BOT', solveText, false, null, '#15803D');
       io.to(mode).emit('chat_message', botMsg);
     } else {
-      socket.to(mode).emit('notification', {
-        message: `${result.player.name} poslal(a) nový tip.`
-      });
+      // Bleskový zásah (Telegraph do chatu při TOP 10)
+      if (result.guess && result.guess.rank >= 2 && result.guess.rank <= 10) {
+        const telegraphText = `⚡ [TELEGRAPH] ${result.player.name} právě zasáhl(a) TOP 10 slovem "${result.guess.word}" (#${result.guess.rank})!`;
+        const telegraphMsg = room.addChatMessage('⚡ TELEGRAPH', telegraphText, false, null, '#D97706');
+        io.to(mode).emit('chat_message', telegraphMsg);
+      } else {
+        socket.to(mode).emit('notification', {
+          message: `${result.player.name} poslal(a) nový tip.`
+        });
+      }
     }
 
     broadcastGameState(mode);
@@ -403,15 +491,17 @@ io.on('connection', (socket) => {
     broadcastGameState(mode);
   });
 
-  // 5. Hlasování o nové slovo (pouze v Unlimited módu)
+  // 5. Hlasování o nové slovo (v Unlimited nebo Vlastní aréně s archivními slovy)
   socket.on('vote_new_word', () => {
     const mode = gameManager.getModeForSocket(socket.id);
-    if (mode !== 'unlimited') {
-      socket.emit('error_message', { message: 'Hlasování o nové slovo je dostupné pouze v Unlimited módu.' });
+    const room = gameManager.getRoomForSocket(socket.id);
+    if (!room) return;
+
+    if (mode !== 'unlimited' && (!mode.startsWith('custom_') || room.wordSource === 'daily')) {
+      socket.emit('error_message', { message: 'Hlasování o nové slovo je dostupné pouze v Unlimited módu nebo ve Vlastní aréně s archivními slovy.' });
       return;
     }
 
-    const room = gameManager.getRoom('unlimited');
     const result = room.voteNewWord(socket.id);
 
     if (result.error) {
@@ -420,17 +510,17 @@ io.on('connection', (socket) => {
     }
 
     if (result.newWordTriggered) {
-      io.to('unlimited').emit('notification', {
+      io.to(mode).emit('notification', {
         message: `🗳️ Hlasování úspěšné! Předchozí slovo bylo: "${result.oldWord}". Vylosováno nové archivní slovo!`
       });
     } else {
       const actionText = result.hasVoted ? 'hlasoval(a) pro nové slovo' : 'zrušil(a) svůj hlas pro nové slovo';
-      io.to('unlimited').emit('notification', {
+      io.to(mode).emit('notification', {
         message: `🗳️ ${result.player.name} ${actionText} (${result.votesCount}/${result.requiredVotes}).`
       });
     }
 
-    broadcastGameState('unlimited');
+    broadcastGameState(mode);
   });
 
   // 6. Zpráva do chatu a příkazy (!play, !stop)
@@ -460,6 +550,13 @@ io.on('connection', (socket) => {
 
     // Příkaz pro přehrávání hudby: !play [youtube odkaz / název skladby]
     if (cleanMsg.toLowerCase().startsWith('!play')) {
+      if (!mode.startsWith('custom_')) {
+        socket.emit('error_message', {
+          message: 'Hudební jukebox (!play) je povolen pouze ve Vlastní aréně (Custom Room)!'
+        });
+        return;
+      }
+
       const queryPart = cleanMsg.slice(5).trim();
       if (!queryPart) {
         socket.emit('error_message', {
@@ -536,6 +633,13 @@ io.on('connection', (socket) => {
 
     // Příkaz pro zobrazení fronty skladeb: !queue, !fronta
     if (['!queue', '!fronta'].includes(cleanMsg.toLowerCase())) {
+      if (!mode.startsWith('custom_')) {
+        socket.emit('error_message', {
+          message: 'Hudební fronta je dostupná pouze ve Vlastní aréně!'
+        });
+        return;
+      }
+
       if (!room.currentMusic) {
         const qMsg = room.addChatMessage('📋 FRONTA', 'Právě nehraje žádná hudba a fronta je prázdná.');
         socket.emit('chat_message', qMsg);
@@ -557,6 +661,13 @@ io.on('connection', (socket) => {
 
     // Příkaz pro přeskočení hudby: !skip (více jak polovina hráčů)
     if (cleanMsg.toLowerCase() === '!skip') {
+      if (!mode.startsWith('custom_')) {
+        socket.emit('error_message', {
+          message: 'Hudba a hlasování o skip je povoleno pouze ve Vlastní aréně!'
+        });
+        return;
+      }
+
       const skipRes = room.voteSkipMusic(socket.id);
       if (skipRes.error) {
         socket.emit('error_message', { message: skipRes.error });

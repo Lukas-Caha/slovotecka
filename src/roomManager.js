@@ -974,6 +974,178 @@ class UnlimitedGameRoom extends BaseGameRoom {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Custom mód (Soukromé místnosti přátel, kód místnosti, volba slova)
+// ─────────────────────────────────────────────────────────────
+class CustomGameRoom extends BaseGameRoom {
+  constructor(roomCode, hostName = '', wordSource = 'daily') {
+    const upperCode = roomCode.toUpperCase();
+    super(`custom_${upperCode}`);
+    this.roomCode = upperCode;
+    this.mode = `custom_${upperCode}`;
+    this.isCustomRoom = true;
+    this.hostName = hostName;
+    this.wordSource = wordSource === 'archive' ? 'archive' : 'daily';
+    this.isDailyEligible = (this.wordSource === 'daily');
+    this.recentWords = [];
+    this.targetWordObj = this.selectWord();
+    this.votes = new Set();
+    this.createdAt = Date.now();
+  }
+
+  selectWord() {
+    if (this.wordSource === 'daily') {
+      return wordService.getDailyWord();
+    } else {
+      const pastPool = wordService.getPastWordsPool();
+      if (this.recentWords.length >= pastPool.length) {
+        this.recentWords = [];
+      }
+      const wObj = wordService.getUnlimitedWord(this.recentWords);
+      this.recentWords.push(wObj.word);
+      return wObj;
+    }
+  }
+
+  setWordSource(newSource) {
+    this.wordSource = newSource === 'archive' ? 'archive' : 'daily';
+    this.isDailyEligible = (this.wordSource === 'daily');
+    return this.resetWithNewWord();
+  }
+
+  getRequiredVotes() {
+    const totalPlayers = Object.keys(this.players).length;
+    if (totalPlayers <= 0) return 0;
+    return Math.floor(totalPlayers / 2) + 1;
+  }
+
+  resetWithNewWord() {
+    const oldWord = this.targetWordObj ? this.targetWordObj.word : '';
+    this.targetWordObj = this.selectWord();
+    this.guesses = [];
+    this.playerProfiles = {};
+    this.votes.clear();
+
+    for (const pid of Object.keys(this.players)) {
+      this.players[pid].solved = false;
+      this.players[pid].gaveUp = false;
+      this.players[pid].usedHint = false;
+      this.players[pid].guessCount = 0;
+      this.players[pid].solvedAt = null;
+      this.players[pid].votedForNewWord = false;
+      this.savePlayerProfile(this.players[pid]);
+    }
+
+    if (typeof this.onStateChange === 'function') {
+      this.onStateChange();
+    }
+
+    return {
+      oldWord,
+      newWord: this.targetWordObj.word,
+      dayNumber: this.targetWordObj.dayNumber
+    };
+  }
+
+  voteNewWord(socketId) {
+    const player = this.players[socketId];
+    if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
+
+    let hasVoted = false;
+    if (this.votes.has(socketId)) {
+      this.votes.delete(socketId);
+      player.votedForNewWord = false;
+      hasVoted = false;
+    } else {
+      this.votes.add(socketId);
+      player.votedForNewWord = true;
+      hasVoted = true;
+    }
+
+    const requiredVotes = this.getRequiredVotes();
+    const votesCount = this.votes.size;
+
+    if (votesCount >= requiredVotes && requiredVotes > 0) {
+      const resetResult = this.resetWithNewWord();
+      return {
+        newWordTriggered: true,
+        oldWord: resetResult.oldWord,
+        newWord: resetResult.newWord,
+        dayNumber: resetResult.dayNumber,
+        votesCount: 0,
+        requiredVotes: this.getRequiredVotes(),
+        hasVoted: false
+      };
+    }
+
+    return {
+      newWordTriggered: false,
+      votesCount,
+      requiredVotes,
+      hasVoted
+    };
+  }
+
+  getGameStateForPlayer(socketId) {
+    const player = this.players[socketId];
+    const canSeeSecret = player && (player.solved || player.gaveUp);
+    const requiredVotes = this.getRequiredVotes();
+
+    return {
+      mode: 'custom',
+      isCustomRoom: true,
+      roomCode: this.roomCode,
+      wordSource: this.wordSource,
+      isDailyEligible: this.wordSource === 'daily',
+      hostName: this.hostName,
+      date: this.wordSource === 'daily' ? wordService.getCzechDateStr() : `Archivní slovo`,
+      dayNumber: this.targetWordObj.dayNumber,
+      isSpectator: !!canSeeSecret,
+      hint: player && player.usedHint ? this.targetWordObj.hint : null,
+      hasUsedHint: player ? !!player.usedHint : false,
+      myStatus: player
+        ? {
+            name: player.name,
+            color: player.color || DEFAULT_COLOR,
+            isAdmin: !!player.isAdmin,
+            solved: player.solved,
+            gaveUp: player.gaveUp,
+            usedHint: !!player.usedHint,
+            guessCount: player.guessCount,
+            votedForNewWord: this.votes.has(socketId)
+          }
+        : null,
+      secretWord: canSeeSecret ? this.targetWordObj.word : null,
+      top50: canSeeSecret ? (this.wordSource === 'daily' ? this.targetWordObj.top50 : wordService.getTop50(this.targetWordObj)) : null,
+      poll: this.getPollPublicState(socketId),
+      players: Object.values(this.players).map((p) => ({
+        id: p.id,
+        name: p.name,
+        color: p.color || DEFAULT_COLOR,
+        isAdmin: !!p.isAdmin,
+        solved: p.solved,
+        gaveUp: p.gaveUp,
+        usedHint: !!p.usedHint,
+        guessCount: p.guessCount,
+        votedForNewWord: this.votes.has(p.id)
+      })),
+      guesses: this.getSanitizedGuesses(socketId, canSeeSecret),
+      chatHistory: this.chatHistory,
+      voting: {
+        votesCount: this.votes.size,
+        requiredVotes: requiredVotes,
+        hasVoted: this.votes.has(socketId),
+        totalPlayers: Object.keys(this.players).length
+      },
+      currentMusic: this.currentMusic ? {
+        ...this.currentMusic,
+        ...this.getSkipVoteStatus(socketId),
+        serverTime: Date.now()
+      } : null
+    };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // Správce místností (GameManager)
 // ─────────────────────────────────────────────────────────────
 class RoomManager {
@@ -982,7 +1154,8 @@ class RoomManager {
       daily: new DailyGameRoom(),
       unlimited: new UnlimitedGameRoom()
     };
-    this.socketToRoom = new Map(); // socketId -> 'daily' | 'unlimited'
+    this.customRooms = new Map(); // roomCode (uppercase) -> CustomGameRoom
+    this.socketToRoom = new Map(); // socketId -> mode string
     this.saveTimeout = null;
 
     // Propojení callbacků pro automatické ukládání
@@ -1142,39 +1315,112 @@ class RoomManager {
     }
   }
 
+  generateRoomCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    do {
+      code = '';
+      for (let i = 0; i < 5; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+    } while (this.customRooms.has(code));
+    return code;
+  }
+
+  createCustomRoom(wordSource = 'daily', customCode = null, hostName = '') {
+    const code = (customCode || this.generateRoomCode()).toUpperCase().trim();
+    if (this.customRooms.has(code)) {
+      return this.customRooms.get(code);
+    }
+    const room = new CustomGameRoom(code, hostName, wordSource);
+    this.customRooms.set(code, room);
+    return room;
+  }
+
+  getCustomRoom(roomCode) {
+    if (!roomCode) return null;
+    return this.customRooms.get(roomCode.toUpperCase().trim()) || null;
+  }
+
   getRoom(mode) {
-    return mode === 'unlimited' ? this.rooms.unlimited : this.rooms.daily;
+    if (!mode) return this.rooms.daily;
+    if (mode === 'unlimited') return this.rooms.unlimited;
+    if (mode === 'daily') return this.rooms.daily;
+    if (mode.startsWith('custom_')) {
+      const code = mode.slice(7).toUpperCase();
+      return this.customRooms.get(code) || null;
+    }
+    if (this.customRooms.has(mode.toUpperCase())) {
+      return this.customRooms.get(mode.toUpperCase());
+    }
+    return this.rooms.daily;
   }
 
   getRoomForSocket(socketId) {
     const mode = this.socketToRoom.get(socketId) || 'daily';
-    return this.rooms[mode];
+    return this.getRoom(mode);
   }
 
   getModeForSocket(socketId) {
     return this.socketToRoom.get(socketId) || 'daily';
   }
 
+  getAllActiveModes() {
+    const modes = ['daily', 'unlimited'];
+    for (const code of this.customRooms.keys()) {
+      modes.push(`custom_${code}`);
+    }
+    return modes;
+  }
+
   getOnlineCounts() {
     const dailyCount = Object.keys(this.rooms.daily.players).length;
     const unlimitedCount = Object.keys(this.rooms.unlimited.players).length;
+    let customCount = 0;
+    for (const r of this.customRooms.values()) {
+      customCount += Object.keys(r.players).length;
+    }
     return {
       daily: dailyCount,
       unlimited: unlimitedCount,
-      total: dailyCount + unlimitedCount
+      custom: customCount,
+      customPlayers: customCount,
+      customRooms: this.customRooms.size,
+      total: dailyCount + unlimitedCount + customCount
     };
   }
 
-  joinPlayer(socketId, playerName, mode = 'daily', color = null) {
-    const validMode = mode === 'unlimited' ? 'unlimited' : 'daily';
+  joinPlayer(socketId, playerName, mode = 'daily', color = null, customCode = null, wordSource = 'daily') {
+    let validMode = 'daily';
+    let room = null;
+
+    if (mode === 'unlimited') {
+      validMode = 'unlimited';
+      room = this.rooms.unlimited;
+    } else if (mode === 'custom' || customCode || mode.startsWith('custom_')) {
+      let code = (customCode || (mode.startsWith('custom_') ? mode.slice(7) : '')).toUpperCase().trim();
+      if (!code) {
+        code = this.generateRoomCode();
+      }
+      let cRoom = this.getCustomRoom(code);
+      if (!cRoom) {
+        cRoom = new CustomGameRoom(code, playerName, wordSource);
+        this.customRooms.set(code, cRoom);
+      }
+      validMode = `custom_${cRoom.roomCode}`;
+      room = cRoom;
+    } else {
+      validMode = 'daily';
+      room = this.rooms.daily;
+    }
 
     // Pokud byl hráč v jiné místnosti, odebereme ho
     const previousMode = this.socketToRoom.get(socketId);
     if (previousMode && previousMode !== validMode) {
-      this.rooms[previousMode].removePlayer(socketId);
+      const prevRoom = this.getRoom(previousMode);
+      if (prevRoom) prevRoom.removePlayer(socketId);
     }
 
-    const room = this.rooms[validMode];
     const player = room.joinPlayer(socketId, playerName, color);
     this.socketToRoom.set(socketId, validMode);
 
@@ -1186,8 +1432,19 @@ class RoomManager {
     if (!mode) return null;
 
     this.socketToRoom.delete(socketId);
-    const room = this.rooms[mode];
+    const room = this.getRoom(mode);
+    if (!room) return null;
+
     const removeResult = room.removePlayer(socketId);
+
+    if (mode.startsWith('custom_') && Object.keys(room.players).length === 0) {
+      setTimeout(() => {
+        if (room && Object.keys(room.players).length === 0) {
+          const code = mode.slice(7).toUpperCase();
+          this.customRooms.delete(code);
+        }
+      }, 15 * 60 * 1000);
+    }
 
     const player = removeResult && removeResult.player ? removeResult.player : removeResult;
     return {

@@ -97,7 +97,7 @@
           <p class="tagline">[ SÉMANTICKÁ SLOVNÍ VÝZVA &bull; MULTIPLAYER ARÉNA ]</p>
         </div>
 
-        <!-- Přepínač režimů: Denní hra vs Unlimited -->
+        <!-- Přepínač režimů: Denní hra vs Unlimited vs Vlastní aréna -->
         <nav class="header-mode-nav" aria-label="Výběr režimu hry">
           <a href="/" class="mode-tab" id="tab-daily">
             <span class="mode-tab-tag">[ MÓD ]</span>
@@ -107,9 +107,21 @@
             <span class="mode-tab-tag">[ ARCHIV ]</span>
             <span class="mode-tab-title">UNLIMITED</span>
           </a>
+          <button type="button" class="mode-tab" id="tab-custom">
+            <span class="mode-tab-tag">[ VLASTNÍ ]</span>
+            <span class="mode-tab-title">ARÉNA</span>
+          </button>
         </nav>
 
-        <div class="header-theme-toggle">
+        <div class="header-actions">
+          <button type="button" class="btn-theme-toggle btn-stats-toggle" id="btn-open-stats" title="Zobrazit legitimaci a statistiky hráče" aria-label="Statistiky hráče">
+            <span class="stats-toggle-icon">📇</span>
+            <span class="stats-toggle-text">PRŮKAZ</span>
+          </button>
+          <button type="button" class="btn-theme-toggle btn-sound-toggle" id="btn-sound-toggle" title="Zvukové efekty (cvakání kláves, analogové tóny)" aria-label="Přepnout zvukové efekty">
+            <span class="sound-toggle-icon" id="sound-toggle-icon">🔊</span>
+            <span class="sound-toggle-text" id="sound-toggle-text">ZVUK</span>
+          </button>
           <button type="button" class="btn-theme-toggle" id="btn-theme-toggle" title="Přepnout tmavý / světlý režim" aria-label="Přepnout téma">
             <span class="theme-toggle-icon" id="theme-toggle-icon">☼</span>
             <span class="theme-toggle-text" id="theme-toggle-text">SVĚTLÝ</span>
@@ -134,19 +146,12 @@
         </div>
         <div class="modal-body">
           <ul class="whats-new-list">
-            <li>uz jsou jenom podstatna jmena xdd</li>
-            <li>Kazdy vidi pouze svoje slova a ty spolecne (zadne otazniky ani jak blizko jsou ostatni). Kdyz dva lidi trefi to same, vidi odpoved stejne.</li>
-            <li>Posledni napsane slovo a jeho # je nyni videt vzdy nahoře. Barevny bar je u vsech odpovedi.</li>
-            <li>Pozor: V chatu jde poustet hudba, hlasitost je potichu, a musi si to kazdy zapnout jak prijde. ale bacha Okayge</li>
-            <li>hudbu jde skipnout hlasovanim nebo tlacitkem.</li>
-            <li>kdyz hraje hudba, nahore se toci stylovej malej vinyl s thumbnail videa jako na gramofonu pagMan.</li>
-            <li>kdyz se restartne nebo vypne server, stav se ulozi a po navratu pod stejnym jmenem vidis zpatky svoje odpovedi i pocet tipu. o pulnoci se to vzdy maze aby to nezralo misto.</li>
-            <li>napoveda commandu pres !</li>
-            <li>kdyz uhodnes slovo nebo to vzdas, prepne se ti to do divaka a vidis live vsechny tipy ostatnich lidi i s jejich jmenama lol. muzes si nahore prepinat jen svoje / vsechny.</li>
-            <li>jakmile dohrajes (vyhra nebo ragequit), muzes si rozkliknout TOP 50 nejblizsich slov od #1 po #50 a vidis i co z toho jsi sam trefil pagMan.</li>
-            <li>ankety v chatu pro admina! napis "!poll Otazka? | moznost 1 | moznost 2" a lidi muzou normalne klikat tlacitka nebo psat cisla do chatu.</li>
-            <li>v lobby o pul noci, recap vcerejska.</li>
-            <li>more cumming soon</li>
+            <li>novy design</li>
+            <li>kazeta na hudbu</li>
+            <li>hudba pouze v custom roomkach</li>
+            <li>uzivatelska karta se staty</li>
+            <li>zvukové efekty</li>
+            <li>globalni chat CHATTING</li>
           </ul>
         </div>
         <div class="modal-footer">
@@ -177,6 +182,62 @@
       </div>
     </div>
 
+    <!-- Popup: PRŮKAZ HRÁČE / STATISTIKY (Děrný štítek / Legitimace) -->
+    <div id="stats-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card modal-card-stats">
+        <div class="modal-header">
+          <div class="stats-header-left">
+            <span class="modal-title">[ 📇 PRŮKAZ HRÁČE // DĚRNÝ ŠTÍTEK ]</span>
+            <span class="stats-id-badge" id="stats-player-badge">HRÁČ</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="btn-close-stats" aria-label="Zavřít">&times;</button>
+        </div>
+        <div class="modal-body stats-modal-body">
+          <div class="punched-card-wrap">
+            <div class="punched-card-header">
+              <span class="punched-tag">ARÉNA SLOVOTEČKA • EVIDENČNÍ KARTA</span>
+              <span class="punched-serial" id="stats-card-serial">SER: #0022</span>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-box">
+                <span class="stat-label">ODEHRÁNO HER</span>
+                <span class="stat-val" id="stat-games-played">0</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">UHODNUTO VÍTĚZSTVÍ</span>
+                <span class="stat-val stat-val-green" id="stat-games-won">0</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">DENNÍ SÉRIE (STREAK)</span>
+                <span class="stat-val stat-val-amber" id="stat-current-streak">0 🔥</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">NEJDELŠÍ SÉRIE</span>
+                <span class="stat-val" id="stat-max-streak">0 dní</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">PRŮMĚRNÝ POČET TIPŮ</span>
+                <span class="stat-val" id="stat-avg-guesses">-</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">NEJLEPŠÍ VÝKON</span>
+                <span class="stat-val stat-val-best" id="stat-best-score">-</span>
+              </div>
+            </div>
+
+            <div class="punched-card-footer">
+              <span class="punched-stamp" id="punched-stamp">[ REGISTROVANÝ HRÁČ ARÉNY ]</span>
+              <img src="/barcode.svg" alt="" class="punched-barcode" aria-hidden="true">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary btn-modal-ack" id="btn-ack-stats">ZAVŘÍT</button>
+        </div>
+      </div>
+    </div>
+
     <!-- LOBBY: Vstup do arény -->
     <main id="lobby-section" class="container">
       <div class="card lobby-card">
@@ -202,6 +263,41 @@
             <span class="mode-pill-name">UNLIMITED ARCHIV</span>
             <span class="mode-pill-count"><strong id="count-unlimited">0</strong> <span id="unit-unlimited">online</span></span>
           </a>
+          <button type="button" class="lobby-mode-pill" id="card-mode-custom" title="Vytvořit nebo vstoupit do vlastní arény">
+            <span class="mode-pill-name">🎮 VLASTNÍ ARÉNA</span>
+            <span class="mode-pill-count"><strong id="count-custom">0</strong> <span id="unit-custom">arén</span></span>
+          </button>
+        </div>
+
+        <!-- Panel voleb pro vlastní arénu -->
+        <div id="custom-room-panel" class="custom-room-panel" style="display: none;">
+          <div class="custom-card-box">
+            <div class="custom-box-title">[ 1. VYTVOŘIT NOVOU ARÉNU ]</div>
+            <div class="custom-word-options">
+              <label class="custom-word-radio">
+                <input type="radio" name="custom-word-source" value="daily" checked>
+                <span>📅 Dnešní slovo <small>(započítává se do statistik & denní série)</small></span>
+              </label>
+              <label class="custom-word-radio">
+                <input type="radio" name="custom-word-source" value="archive">
+                <span>🎲 Náhodné archivní slovo</span>
+              </label>
+            </div>
+            <button type="button" class="btn btn-secondary btn-full btn-create-room" id="btn-create-custom-room">
+              ✨ VYGENEROVAT NOVÝ KÓD MÍSTNOSTI
+            </button>
+          </div>
+
+          <div class="custom-room-divider">
+            <span>NEBO VSTUP DO EXISTUJÍCÍ ARÉNY</span>
+          </div>
+
+          <div class="custom-card-box">
+            <div class="custom-box-title">[ 2. KÓD MÍSTNOSTI ]</div>
+            <div class="custom-code-input-wrap">
+              <input type="text" id="custom-code-input" class="input input-custom-code" placeholder="KÓD (např. X9K2A)" maxlength="10" autocomplete="off" spellcheck="false">
+            </div>
+          </div>
         </div>
 
         <form id="join-form">
@@ -264,6 +360,13 @@
         <div class="room-badge">
           <span class="room-badge-label" id="display-mode-label">[ DENNÍ VÝZVA ]</span>
           <span class="room-badge-code" id="display-day-title">DEN #1</span>
+        </div>
+        <div class="custom-share-badge" id="custom-share-badge" style="display: none;">
+          <span class="custom-badge-tag">[ ARÉNA ]</span>
+          <span class="custom-badge-code" id="display-custom-code">-----</span>
+          <button type="button" class="btn-copy-link" id="btn-copy-room-link" title="Zkopírovat odkaz na arénu">
+            📋 ZKOPÍROVAT ODKAZ
+          </button>
         </div>
         <div class="game-meta">
           <span id="display-date" class="meta-chip"></span>
@@ -348,7 +451,7 @@
           </div>
 
           <div id="guess-controls" class="guess-bar">
-            <input class="input input-guess" type="text" id="guess-input" placeholder="ZADEJ SLOVO..." autocomplete="off" autocorrect="off" spellcheck="false">
+            <input class="input input-guess" type="text" id="guess-input" placeholder="ZADEJ SLOVO... [/]" autocomplete="off" autocorrect="off" spellcheck="false">
             <button class="btn btn-primary" id="btn-submit-guess">HÁDAT</button>
             <button class="btn btn-ghost btn-give-up" id="btn-reveal-word">VZDÁT SE</button>
           </div>
@@ -369,6 +472,12 @@
             <div class="guesses-header-left">
               <span class="guesses-title" id="guesses-title">[ ODHALENÁ SLOVA ]</span>
 
+              <!-- Řazení tipů (Contexto pořadí vs čas zadání) -->
+              <div class="guesses-filter-tabs guesses-sort-tabs" id="guesses-sort-tabs" title="Přepnout způsob řazení tipů">
+                <button type="button" class="btn-filter-tab is-active" id="btn-sort-rank" data-sort="rank"># BLÍZKOST</button>
+                <button type="button" class="btn-filter-tab" id="btn-sort-time" data-sort="time">⏱️ ČAS</button>
+              </div>
+
               <!-- Subtilní lišta pro diváky (zobrazí se po vyřešení nebo vzdání) -->
               <div id="spectator-toolbar" class="spectator-toolbar" style="display: none;">
                 <span class="spectator-pill-badge">
@@ -384,7 +493,16 @@
                 </div>
               </div>
             </div>
-            <span class="guesses-count" id="guesses-count">0 tipů</span>
+            <!-- Mechanické páskové počítadlo tipů -->
+            <div class="tape-counter-wrap" id="tape-counter-wrap" title="Mechanické počítadlo tipů (počet pokusů v aréně)">
+              <span class="tape-counter-tag">TAPE</span>
+              <div class="tape-counter-bezel">
+                <span class="counter-digit" id="counter-d100">0</span>
+                <span class="counter-digit" id="counter-d10">0</span>
+                <span class="counter-digit" id="counter-d1">0</span>
+              </div>
+              <span class="guesses-count-subtle" id="guesses-count">0 tipů</span>
+            </div>
           </div>
 
           <div class="guesses-wrap">
@@ -396,8 +514,18 @@
 
         <!-- Pravý panel: Chat -->
         <aside class="panel chat-panel">
-          <div class="panel-header">
-            <h3 class="panel-title">[ 03. CHAT ]</h3>
+          <div class="panel-header chat-panel-header">
+            <div class="chat-header-tabs" role="tablist">
+              <button type="button" class="btn-chat-tab is-active" id="chat-tab-room" role="tab" aria-selected="true" title="Chat dané místnosti">
+                <span class="chat-tab-icon">💬</span>
+                <span class="chat-tab-label">MÍSTNOST</span>
+              </button>
+              <button type="button" class="btn-chat-tab" id="chat-tab-global" role="tab" aria-selected="false" title="Globální chat pro celou Slovotečku">
+                <span class="chat-tab-icon">🌐</span>
+                <span class="chat-tab-label">GLOBÁL</span>
+                <span class="chat-tab-unread-dot" id="global-unread-dot" style="display: none;"></span>
+              </button>
+            </div>
             <span class="chat-emote-tag" id="chat-emote-count" title="Dostupné 7TV emoty (Vernaton999 & Globální)">7TV EMOTES</span>
             <img src="/symbolWhite.svg" alt="" class="panel-symbol" aria-hidden="true">
           </div>
@@ -421,9 +549,19 @@
             </div>
           </div>
 
+          <!-- 1. Chat dané místnosti -->
           <div class="chat-messages" id="chat-messages">
             <div class="chat-empty">Zatím žádné zprávy. Napiš něco do chatu!</div>
           </div>
+
+          <!-- 2. Globální chat napříč všemi místnostmi -->
+          <div class="chat-messages chat-messages-global" id="chat-messages-global" style="display: none;">
+            <div class="chat-empty">Zatím žádné globální zprávy. Napiš vzkaz pro všechny v arénách!</div>
+          </div>
+
+          <button type="button" class="chat-unread-badge" id="chat-unread-badge" style="display: none;" title="Přejít na nejnovější zprávy">
+            ↓ NOVÉ ZPRÁVY
+          </button>
 
           <!-- Emote picker popover -->
           <div class="emote-picker" id="emote-picker" style="display: none;">
@@ -521,8 +659,9 @@
 
   <!-- Plovoucí gramofon v rohu obrazovky (Větší točící se vinyl 84px) -->
   <aside id="floating-gramophone" class="floating-gramophone is-minimized" style="display: none;" aria-label="Gramofon přehrávač">
-    <div class="gramophone-turntable">
-      <div class="vinyl-record-wrap" id="vinyl-record-wrap" title="Kliknutím zobrazíš podrobnosti skladby">
+    <div class="gramophone-turntable" id="player-deck-stage">
+      <!-- 1. Vinylový gramofon -->
+      <div class="vinyl-record-wrap" id="vinyl-record-wrap" style="display: none;" title="Kliknutím zobrazíš podrobnosti skladby">
         <div class="vinyl-disc" id="vinyl-disc">
           <div class="vinyl-grooves"></div>
           <div class="vinyl-center-label" id="vinyl-center-label">
@@ -532,12 +671,49 @@
         </div>
         <div class="vinyl-tonearm"></div>
       </div>
+
+      <!-- 2. Dvoušpulkový kazetový kazeťák (VÝCHOZÍ) -->
+      <div class="cassette-deck-wrap" id="cassette-deck-wrap" style="display: block;" title="Kliknutím zobrazíš podrobnosti skladby">
+        <div class="cassette-tape-body" id="cassette-tape-body">
+          <div class="cassette-screw screw-tl"></div>
+          <div class="cassette-screw screw-tr"></div>
+          <div class="cassette-screw screw-bl"></div>
+          <div class="cassette-screw screw-br"></div>
+          <div class="cassette-label-header">
+            <span class="cassette-type">TYPE II • CHROME</span>
+            <span class="cassette-dolby">DOLBY B-C NR</span>
+          </div>
+          <div class="cassette-window-frame">
+            <div class="cassette-reel reel-left" id="reel-left">
+              <div class="reel-spool-tape tape-full"></div>
+              <div class="reel-center-hub">
+                <div class="hub-spoke spoke-1"></div>
+                <div class="hub-spoke spoke-2"></div>
+                <div class="hub-spoke spoke-3"></div>
+              </div>
+            </div>
+            <div class="cassette-tape-bridge"></div>
+            <div class="cassette-reel reel-right" id="reel-right">
+              <div class="reel-spool-tape tape-empty"></div>
+              <div class="reel-center-hub">
+                <div class="hub-spoke spoke-1"></div>
+                <div class="hub-spoke spoke-2"></div>
+                <div class="hub-spoke spoke-3"></div>
+              </div>
+            </div>
+          </div>
+          <div class="cassette-label-footer">
+            <span class="cassette-format">C-90 STEREO</span>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="gramophone-body">
       <div class="gramophone-tag-row">
         <span class="gramophone-pulse-dot" aria-hidden="true"></span>
-        <span class="gramophone-tag">[ HRAJE GRAMOFON ]</span>
-        <button type="button" class="gramophone-btn-minimize" id="btn-gramophone-minimize" title="Minimalizovat na samotný vinyl" aria-label="Minimalizovat">−</button>
+        <span class="gramophone-tag" id="player-deck-label">[ HRAJE KAZETA ]</span>
+        <button type="button" class="btn-deck-switch" id="btn-switch-deck" title="Přepnout: Kazetový magnetofon / Gramofon" aria-label="Přepnout přehrávač">💿 GRAMOFON</button>
+        <button type="button" class="gramophone-btn-minimize" id="btn-gramophone-minimize" title="Minimalizovat na samotný přehrávač" aria-label="Minimalizovat">−</button>
       </div>
       <div class="gramophone-title" id="gramophone-title" title="">--</div>
       <div class="gramophone-requester" id="gramophone-requester"></div>
