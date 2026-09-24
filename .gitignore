@@ -6,3 +6,5 @@ template/
 newTemplate/
 src/data/savedState.json*
 *.template-backup.*
+filelist.txt
+find_*

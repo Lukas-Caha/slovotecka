@@ -6,6 +6,9 @@ const STATE_FILE_PATH = path.join(__dirname, 'data', 'savedState.json');
 
 // Tajný token pro získání administrátorských práv v přezdívce (např. Lukas /admin-perms-456)
 const ADMIN_SECRET = process.env.ADMIN_SECRET || '/admin-perms-456';
+if (process.env.NODE_ENV === 'production' && ADMIN_SECRET === '/admin-perms-456') {
+  console.warn('\x1b[33m%s\x1b[0m', '⚠️  [BEZPEČNOSTNÍ VAROVÁNÍ] V produkčním režimu používáte výchozí ADMIN_SECRET! Nastavte bezpečnou proměnnou prostředí ADMIN_SECRET.');
+}
 
 // 8 základních barev pro výběr přezdívky
 const ALLOWED_COLORS = [
@@ -44,6 +47,7 @@ class BaseGameRoom {
     this.currentPoll = null; // { id, question, options: [{ text, voters }], createdBy, createdAt, expiresAt, active }
     this.lastPollCreatedAt = 0;
     this.onStateChange = null;
+    this.currentRoundId = Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 6);
   }
 
   // Výpočet potřebné většiny pro přeskočení hudby: Math.floor(počet / 2) + 1
@@ -171,8 +175,8 @@ class BaseGameRoom {
     }
   }
 
-  // Připojení hráče do místnosti
-  joinPlayer(socketId, playerName, playerColor = null) {
+  // Připojení hráče do místnosti (s podporou rychlého reconnectu a zamezení řetězení (2))
+  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null) {
     let raw = (playerName || '').trim().slice(0, 40);
     let isAdmin = false;
 
@@ -186,25 +190,112 @@ class BaseGameRoom {
     let cleanName = raw || (isAdmin ? 'Admin' : `Hráč_${Object.keys(this.players).length + 1}`);
     cleanName = cleanName.slice(0, 40);
 
+    // Očistit případné dříve zřetězené suffixy jako " (2)", " (2) (2)"
+    const baseCleanName = cleanName.replace(/(\s*\(\d+\))+$/, '').trim() || cleanName;
+
+    // 1. Zjistíme, zda v této místnosti již neexistuje stejný hráč
+    // (např. při rychlém obnovení stránky F5, kdy se starý socket ještě nestihl odpojit)
+    let existingPlayer = null;
+    let oldSocketId = null;
+
+    for (const [sId, p] of Object.entries(this.players)) {
+      if (sId === socketId) continue;
+
+      const sameSession = Boolean(sessionId && p.sessionId && p.sessionId === sessionId);
+      const pBaseName = p.name ? p.name.replace(/(\s*\(\d+\))+$/, '').trim().toLowerCase() : '';
+      const targetBaseName = baseCleanName.toLowerCase();
+      const sameName = Boolean(pBaseName && pBaseName === targetBaseName);
+      const sameNameAndSession = Boolean(sameName && sessionId && p.sessionId && p.sessionId === sessionId);
+      const sameNameAndIp = Boolean(
+        sameName &&
+        (!sessionId || !p.sessionId) &&
+        clientIp &&
+        p.clientIp &&
+        p.clientIp === clientIp
+      );
+
+      if (sameSession || sameNameAndSession || sameNameAndIp) {
+        existingPlayer = p;
+        oldSocketId = sId;
+        break;
+      }
+    }
+
+    if (existingPlayer) {
+      // Jde o rychlý reconnect stejného hráče
+      if (this.gameManager && oldSocketId) {
+        this.gameManager.markSocketReplaced(oldSocketId);
+        this.gameManager.socketToRoom.delete(oldSocketId);
+        this.gameManager.socketToRoom.set(socketId, this.mode);
+      }
+      if (oldSocketId) {
+        delete this.players[oldSocketId];
+      }
+
+      existingPlayer.id = socketId;
+      if (sessionId) existingPlayer.sessionId = sessionId;
+      if (clientIp) existingPlayer.clientIp = clientIp;
+      if (isAdmin) existingPlayer.isAdmin = true;
+      if (playerColor) existingPlayer.color = sanitizeColor(playerColor);
+      existingPlayer.name = baseCleanName;
+
+      // Přenesení hlasů a čekajících potvrzení
+      if (this.musicSkipVotes && oldSocketId && this.musicSkipVotes.has(oldSocketId)) {
+        this.musicSkipVotes.delete(oldSocketId);
+        this.musicSkipVotes.add(socketId);
+      }
+      if (this.pendingSongConfirmations && oldSocketId && this.pendingSongConfirmations[oldSocketId]) {
+        this.pendingSongConfirmations[socketId] = this.pendingSongConfirmations[oldSocketId];
+        delete this.pendingSongConfirmations[oldSocketId];
+      }
+
+      // Aktualizujeme socketId a jméno v předchozích tipech v této místnosti
+      const normBaseName = baseCleanName.toLowerCase();
+      for (const g of this.guesses) {
+        if (g.socketId === oldSocketId || (g.player && g.player.replace(/(\s*\(\d+\))+$/, '').trim().toLowerCase() === normBaseName)) {
+          g.socketId = socketId;
+          g.player = existingPlayer.name;
+          g.playerColor = existingPlayer.color;
+        }
+      }
+
+      this.players[socketId] = existingPlayer;
+      this.savePlayerProfile(existingPlayer);
+
+      return {
+        player: existingPlayer,
+        isReconnect: true,
+        oldSocketId
+      };
+    }
+
+    // 2. Nový hráč v místnosti
+    let finalName = baseCleanName;
     const existingNames = Object.values(this.players)
       .filter((p) => p.id !== socketId)
       .map((p) => p.name.toLowerCase());
 
-    if (existingNames.includes(cleanName.toLowerCase())) {
+    if (existingNames.includes(finalName.toLowerCase())) {
       let counter = 2;
-      while (existingNames.includes(`${cleanName} (${counter})`.toLowerCase())) {
+      while (existingNames.includes(`${baseCleanName} (${counter})`.toLowerCase())) {
         counter++;
       }
-      cleanName = `${cleanName} (${counter})`;
+      finalName = `${baseCleanName} (${counter})`;
     }
 
-    // Obnovení předchozího stavu hráče se stejným jménem (pokud už v této hře/dnu hádal)
-    const existingProfile = this.playerProfiles[cleanName.toLowerCase()];
+    // Obnovení předchozího profilu hráče (upřednostníme profil s více tipy nebo čisté jméno)
+    let existingProfile = this.playerProfiles[finalName.toLowerCase()];
+    const cleanProfile = this.playerProfiles[baseCleanName.toLowerCase()];
+    if (!existingProfile || (cleanProfile && (cleanProfile.guessCount || 0) > (existingProfile.guessCount || 0))) {
+      existingProfile = cleanProfile || existingProfile;
+    }
     const chosenColor = sanitizeColor(playerColor || (existingProfile ? existingProfile.color : null));
 
     const player = {
       id: socketId,
-      name: existingProfile ? existingProfile.name : cleanName,
+      sessionId: sessionId || null,
+      clientIp: clientIp || null,
+      name: finalName,
       color: chosenColor,
       isAdmin: existingProfile && existingProfile.isAdmin !== undefined ? (existingProfile.isAdmin || !!isAdmin) : !!isAdmin,
       solved: existingProfile ? !!existingProfile.solved : false,
@@ -216,16 +307,22 @@ class BaseGameRoom {
     };
 
     // Pokud se hráč vrací pod stejným jménem, aktualizujeme socketId v minulých tipech
-    const normName = player.name.toLowerCase();
+    const normBaseName = baseCleanName.toLowerCase();
     for (const g of this.guesses) {
-      if (g.player && g.player.toLowerCase() === normName) {
+      if (g.player && g.player.replace(/(\s*\(\d+\))+$/, '').trim().toLowerCase() === normBaseName) {
         g.socketId = socketId;
+        g.player = player.name;
+        g.playerColor = player.color;
       }
     }
 
     this.players[socketId] = player;
     this.savePlayerProfile(player);
-    return player;
+    return {
+      player,
+      isReconnect: false,
+      oldSocketId: null
+    };
   }
 
   // Odebrání hráče z místnosti
@@ -640,10 +737,16 @@ class DailyGameRoom extends BaseGameRoom {
     }
   }
 
-  generateYesterdayRecap() {
-    if (!this.targetWordObj) return null;
-    const allProfiles = Object.values(this.playerProfiles);
+  generateYesterdayRecap(customData = null) {
+    const targetWord = customData && customData.targetWord ? customData.targetWord : (this.targetWordObj ? this.targetWordObj.word : '');
+    const dayNumber = customData && customData.dayNumber !== undefined ? customData.dayNumber : (this.targetWordObj ? this.targetWordObj.dayNumber : null);
+    const hint = customData && customData.hint ? customData.hint : (this.targetWordObj ? this.targetWordObj.hint : '');
+    if (!targetWord) return null;
+
+    const allProfiles = Object.values(customData && customData.playerProfiles ? customData.playerProfiles : this.playerProfiles);
     const solvedProfiles = allProfiles.filter(p => p.solved);
+    const guessesList = customData && Array.isArray(customData.guesses) ? customData.guesses : this.guesses;
+    const activeDate = customData && customData.date ? customData.date : this.activeDate;
 
     // 1. Vítěz (nejméně tipů)
     let winner = null;
@@ -668,7 +771,7 @@ class DailyGameRoom extends BaseGameRoom {
 
     // 4. Největší bloudění (tip s nejvyšším rankem >= 5000)
     let worstGuess = null;
-    for (const g of this.guesses) {
+    for (const g of guessesList) {
       if (g.rank && g.word && (!worstGuess || g.rank > worstGuess.rank)) {
         worstGuess = { player: g.player, word: g.word, rank: g.rank };
       }
@@ -678,12 +781,12 @@ class DailyGameRoom extends BaseGameRoom {
     const surrenderedCount = allProfiles.filter(p => p.gaveUp).length;
 
     return {
-      date: this.activeDate,
-      dayNumber: this.targetWordObj.dayNumber,
-      word: this.targetWordObj.word,
-      hint: this.targetWordObj.hint || '',
+      date: activeDate,
+      dayNumber: dayNumber,
+      word: targetWord,
+      hint: hint || '',
       playersCount: allProfiles.length,
-      guessesCount: this.guesses.length,
+      guessesCount: guessesList.length,
       solvedCount: solvedProfiles.length,
       winner,
       clown,
@@ -734,9 +837,9 @@ class DailyGameRoom extends BaseGameRoom {
     return { isNewDay: false };
   }
 
-  joinPlayer(socketId, playerName, playerColor = null) {
+  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null) {
     this.checkMidnightRoll();
-    return super.joinPlayer(socketId, playerName, playerColor);
+    return super.joinPlayer(socketId, playerName, playerColor, sessionId, clientIp);
   }
 
   submitGuess(socketId, rawWord) {
@@ -750,6 +853,7 @@ class DailyGameRoom extends BaseGameRoom {
 
     return {
       mode: 'daily',
+      roundId: `daily_${this.activeDate}`,
       date: this.activeDate,
       dayNumber: this.targetWordObj.dayNumber,
       isSpectator: !!canSeeSecret,
@@ -814,6 +918,7 @@ class UnlimitedGameRoom extends BaseGameRoom {
 
   // Získání nového slova z archivu a reset kola
   resetWithNewWord() {
+    this.currentRoundId = Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 6);
     const oldWord = this.targetWordObj.word;
     const pastPool = wordService.getPastWordsPool();
 
@@ -925,6 +1030,7 @@ class UnlimitedGameRoom extends BaseGameRoom {
 
     return {
       mode: 'unlimited',
+      roundId: `unlimited_${this.currentRoundId}`,
       date: `Archivní slovo (z předchozích dnů)`,
       dayNumber: this.targetWordObj.dayNumber,
       isSpectator: !!canSeeSecret,
@@ -1019,6 +1125,7 @@ class CustomGameRoom extends BaseGameRoom {
   }
 
   resetWithNewWord() {
+    this.currentRoundId = Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 6);
     const oldWord = this.targetWordObj ? this.targetWordObj.word : '';
     this.targetWordObj = this.selectWord();
     this.guesses = [];
@@ -1089,9 +1196,13 @@ class CustomGameRoom extends BaseGameRoom {
     const player = this.players[socketId];
     const canSeeSecret = player && (player.solved || player.gaveUp);
     const requiredVotes = this.getRequiredVotes();
+    const roundId = this.wordSource === 'daily'
+      ? `custom_daily_${wordService.getCzechDateStr()}`
+      : `custom_${this.roomCode}_${this.currentRoundId}`;
 
     return {
       mode: 'custom',
+      roundId: roundId,
       isCustomRoom: true,
       roomCode: this.roomCode,
       wordSource: this.wordSource,
@@ -1115,7 +1226,7 @@ class CustomGameRoom extends BaseGameRoom {
           }
         : null,
       secretWord: canSeeSecret ? this.targetWordObj.word : null,
-      top50: canSeeSecret ? (this.wordSource === 'daily' ? this.targetWordObj.top50 : wordService.getTop50(this.targetWordObj)) : null,
+      top50: canSeeSecret ? wordService.getTop50(this.targetWordObj) : null,
       poll: this.getPollPublicState(socketId),
       players: Object.values(this.players).map((p) => ({
         id: p.id,
@@ -1154,8 +1265,11 @@ class RoomManager {
       daily: new DailyGameRoom(),
       unlimited: new UnlimitedGameRoom()
     };
+    this.rooms.daily.gameManager = this;
+    this.rooms.unlimited.gameManager = this;
     this.customRooms = new Map(); // roomCode (uppercase) -> CustomGameRoom
     this.socketToRoom = new Map(); // socketId -> mode string
+    this.replacedSockets = new Set(); // socketIds nahrazených při rychlém reconnectu
     this.saveTimeout = null;
 
     // Propojení callbacků pro automatické ukládání
@@ -1167,6 +1281,22 @@ class RoomManager {
     this.rooms.daily.onMidnightReset = () => {
       this.clearSavedStateFile();
     };
+  }
+
+  markSocketReplaced(socketId) {
+    if (!socketId) return;
+    this.replacedSockets.add(socketId);
+    setTimeout(() => {
+      this.replacedSockets.delete(socketId);
+    }, 30000);
+  }
+
+  isSocketReplaced(socketId) {
+    return this.replacedSockets.has(socketId);
+  }
+
+  clearReplacedSocket(socketId) {
+    this.replacedSockets.delete(socketId);
   }
 
   // Naplánování asynchronního uložení (debounce 1s)
@@ -1264,6 +1394,17 @@ class RoomManager {
           console.log(`[STATE] Úspěšně obnoven denní stav (${todayStr}): ${this.rooms.daily.guesses.length} tipů, ${Object.keys(this.rooms.daily.playerProfiles).length} hráčů.`);
         } else {
           console.log(`[STATE] Uložený stav je ze dne ${data.daily.date} (dnes je ${todayStr}). Promazávám stará data pro uvolnění místa.`);
+          try {
+            if (!this.rooms.daily.yesterdayRecap || this.rooms.daily.yesterdayRecap.date !== data.daily.date) {
+              const recap = this.rooms.daily.generateYesterdayRecap(data.daily);
+              if (recap) {
+                this.rooms.daily.saveYesterdayRecap(recap);
+                console.log(`[STATE] Úspěšně vygenerována a uložena včerejší rekapitulace ze dne ${data.daily.date}.`);
+              }
+            }
+          } catch (recErr) {
+            console.warn('[STATE] Nepodařilo se vygenerovat včerejší rekapitulaci při startu:', recErr.message);
+          }
           this.clearSavedStateFile();
         }
       }
@@ -1333,6 +1474,7 @@ class RoomManager {
       return this.customRooms.get(code);
     }
     const room = new CustomGameRoom(code, hostName, wordSource);
+    room.gameManager = this;
     this.customRooms.set(code, room);
     return room;
   }
@@ -1408,7 +1550,7 @@ class RoomManager {
     };
   }
 
-  joinPlayer(socketId, playerName, mode = 'daily', color = null, customCode = null, wordSource = 'daily') {
+  joinPlayer(socketId, playerName, mode = 'daily', color = null, customCode = null, wordSource = 'daily', sessionId = null, clientIp = null) {
     let validMode = 'daily';
     let room = null;
 
@@ -1423,6 +1565,7 @@ class RoomManager {
       let cRoom = this.getCustomRoom(code);
       if (!cRoom) {
         cRoom = new CustomGameRoom(code, playerName, wordSource);
+        cRoom.gameManager = this;
         this.customRooms.set(code, cRoom);
       }
       validMode = `custom_${cRoom.roomCode}`;
@@ -1439,13 +1582,26 @@ class RoomManager {
       if (prevRoom) prevRoom.removePlayer(socketId);
     }
 
-    const player = room.joinPlayer(socketId, playerName, color);
+    const joinResult = room.joinPlayer(socketId, playerName, color, sessionId, clientIp);
+    const player = joinResult.player || joinResult;
     this.socketToRoom.set(socketId, validMode);
 
-    return { player, room, mode: validMode };
+    return {
+      player,
+      room,
+      mode: validMode,
+      isReconnect: !!joinResult.isReconnect,
+      oldSocketId: joinResult.oldSocketId || null
+    };
   }
 
   removePlayer(socketId) {
+    if (this.isSocketReplaced(socketId)) {
+      this.clearReplacedSocket(socketId);
+      this.socketToRoom.delete(socketId);
+      return null;
+    }
+
     const mode = this.socketToRoom.get(socketId);
     if (!mode) return null;
 

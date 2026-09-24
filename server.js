@@ -1,15 +1,65 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
+const helmet = require('helmet');
 const { Server } = require('socket.io');
 const gameManager = require('./src/roomManager');
 const emoteService = require('./src/emoteService');
+const wordService = require('./src/wordService');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
+
+// Důvěra v reverzní proxy (Render, Nginx, Cloudflare)
+app.set('trust proxy', 1);
+
+// Bezpečnostní HTTP hlavičky (Helmet)
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://www.youtube.com",
+          "https://s.ytimg.com"
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https:",
+          "https://*.7tv.app",
+          "https://*.7tv.io",
+          "https://i.ytimg.com",
+          "https://yt3.ggpht.com"
+        ],
+        fontSrc: ["'self'", "data:"],
+        connectSrc: [
+          "'self'",
+          "ws:",
+          "wss:",
+          "https://7tv.io",
+          "https://api.7tv.app",
+          "https://www.googleapis.com"
+        ],
+        frameSrc: [
+          "'self'",
+          "https://www.youtube.com",
+          "https://www.youtube-nocookie.com"
+        ],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+      }
+    },
+    crossOriginEmbedderPolicy: false
+  })
+);
 
 // Inicializace 7TV emotů (Vernaton999 Kick & 7TV + Globální)
 emoteService.init();
@@ -167,6 +217,35 @@ async function fetchYouTubeTitle(videoId) {
 async function searchYouTube(query) {
   if (!query || !query.trim()) return null;
   const cleanQ = query.trim();
+
+  // 1. Oficiální Google YouTube Data API v3 (pokud je v .env nastaven YOUTUBE_API_KEY)
+  if (process.env.YOUTUBE_API_KEY) {
+    try {
+      const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&q=${encodeURIComponent(cleanQ)}&key=${encodeURIComponent(process.env.YOUTUBE_API_KEY)}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4500);
+      const res = await fetch(apiUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        const items = data.items || [];
+        for (const item of items) {
+          const vid = item.id?.videoId;
+          const title = item.snippet?.title;
+          if (vid && vid !== 'dQw4w9WgXcQ') {
+            const check = await checkYouTubeVideo(vid);
+            if (check.playable) {
+              return { videoId: vid, title: check.title || title };
+            }
+          }
+        }
+      }
+    } catch (apiErr) {
+      console.warn('[YouTube API] Chyba při volání oficiálního API:', apiErr.message);
+    }
+  }
+
+  // 2. Fallback vyhledávání (webový dotaz)
   try {
     const url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(cleanQ);
     const controller = new AbortController();
@@ -308,6 +387,40 @@ function handleSongConfirmation(socket, room, mode, player, pendingConf, isYes) 
 const globalChatHistory = [];
 const MAX_GLOBAL_CHAT_HISTORY = 100;
 
+// ── OCHRANA SERVERU A RATE LIMITING (Proti DoS / spamu / brute-force) ──
+const socketRateLimits = new Map(); // socket.id -> { lastGuess, lastChat, lastGlobalChat, customRoomsCount, customRoomsReset }
+
+function checkSocketRate(socketId, action, minIntervalMs) {
+  const now = Date.now();
+  if (!socketRateLimits.has(socketId)) {
+    socketRateLimits.set(socketId, {});
+  }
+  const data = socketRateLimits.get(socketId);
+  const lastTime = data[action] || 0;
+  if (now - lastTime < minIntervalMs) {
+    return false;
+  }
+  data[action] = now;
+  return true;
+}
+
+function checkCustomRoomRate(socketId) {
+  const now = Date.now();
+  if (!socketRateLimits.has(socketId)) {
+    socketRateLimits.set(socketId, {});
+  }
+  const data = socketRateLimits.get(socketId);
+  if (!data.customRoomsReset || now > data.customRoomsReset) {
+    data.customRoomsCount = 0;
+    data.customRoomsReset = now + 60 * 60 * 1000; // 1 hodina
+  }
+  if (data.customRoomsCount >= 5) {
+    return false;
+  }
+  data.customRoomsCount = (data.customRoomsCount || 0) + 1;
+  return true;
+}
+
 io.on('connection', (socket) => {
   // Odeslání aktuálních počtů hráčů nově připojenému klientovi
   socket.emit('arena_counts', gameManager.getOnlineCounts());
@@ -321,6 +434,12 @@ io.on('connection', (socket) => {
 
   // Vytvoření nové vlastní místnosti (Custom Room)
   socket.on('create_custom_room', ({ wordSource }) => {
+    if (!checkCustomRoomRate(socket.id)) {
+      socket.emit('error_message', {
+        message: 'Překročen limit pro zakládání vlastních arén (max 5 za hodinu).'
+      });
+      return;
+    }
     const room = gameManager.createCustomRoom(wordSource || 'daily');
     socket.emit('custom_room_created', {
       roomCode: room.roomCode,
@@ -347,6 +466,10 @@ io.on('connection', (socket) => {
 
   // Odeslání zprávy do globálního chatu (pro všechny připojené hráče)
   socket.on('send_global_chat', ({ message }) => {
+    if (!checkSocketRate(socket.id, 'lastGlobalChat', 1200)) {
+      socket.emit('error_message', { message: 'Globální zprávy lze posílat jednou za 1,2 sekundy.' });
+      return;
+    }
     const cleanMsg = (message || '').trim();
     if (!cleanMsg || cleanMsg.length > 300) return;
 
@@ -375,7 +498,7 @@ io.on('connection', (socket) => {
   });
 
   // 1. Vstup do hry (denní, unlimited, nebo vlastní aréna)
-  socket.on('join_game', ({ playerName, mode, color, customCode, wordSource }) => {
+  socket.on('join_game', ({ playerName, mode, color, customCode, wordSource, sessionId }) => {
     let gameMode = 'daily';
     if (mode === 'unlimited') {
       gameMode = 'unlimited';
@@ -396,14 +519,39 @@ io.on('connection', (socket) => {
     }
     socket.join(gameMode);
 
-    const { player } = gameManager.joinPlayer(socket.id, playerName, gameMode, color);
+    const clientIp = socket.handshake.headers['x-forwarded-for']
+      ? socket.handshake.headers['x-forwarded-for'].split(',')[0].trim()
+      : socket.handshake.address;
+
+    const { player, isReconnect, oldSocketId } = gameManager.joinPlayer(
+      socket.id,
+      playerName,
+      gameMode,
+      color,
+      customCode,
+      wordSource,
+      sessionId,
+      clientIp
+    );
     socket.data = socket.data || {};
     socket.data.playerName = player.name;
 
-    // Oznámení pro ostatní v téže místnosti
-    socket.to(gameMode).emit('notification', {
-      message: `${player.name} se připojil(a) do hry!`
-    });
+    // Pokud starý socket ještě existuje, bezpečně ho odpojíme
+    if (isReconnect && oldSocketId) {
+      const oldSock = io.sockets.sockets.get(oldSocketId);
+      if (oldSock) {
+        try {
+          oldSock.disconnect(true);
+        } catch (e) {}
+      }
+    }
+
+    // Oznámení pro ostatní v téže místnosti (pouze při novém příchodu, ne při tichém reconnectu)
+    if (!isReconnect) {
+      socket.to(gameMode).emit('notification', {
+        message: `${player.name} se připojil(a) do hry!`
+      });
+    }
 
     // Odeslání stavu všem v dané místnosti
     broadcastGameState(gameMode);
@@ -412,15 +560,15 @@ io.on('connection', (socket) => {
     broadcastArenaCounts();
   });
 
-  // 2. Odeslání tipu
-  socket.on('submit_guess', ({ word }) => {
-    const room = gameManager.getRoomForSocket(socket.id);
-    const mode = gameManager.getModeForSocket(socket.id);
+  function executePlayerGuess(socket, room, mode, word, fromChat = false) {
+    if (!room || !socket) return null;
     const result = room.submitGuess(socket.id, word);
 
     if (result.error) {
-      socket.emit('error_message', { message: result.error });
-      return;
+      if (!fromChat) {
+        socket.emit('error_message', { message: result.error });
+      }
+      return result;
     }
 
     if (result.isWinner) {
@@ -428,7 +576,9 @@ io.on('connection', (socket) => {
         message: `${result.player.name} právě uhodl(a) tajné slovo (#1) na ${result.player.guessCount}. pokus!`
       });
       socket.emit('notification', {
-        message: `Výborně! Uhodl(a) jsi tajné slovo: "${result.guess.word}" na ${result.player.guessCount}. pokus!`
+        message: fromChat
+          ? `🎉 Výborně! Spletl(a) sis chat s herním polem? Tajné slovo "${result.guess.word}" bylo započteno a vyhrál(a) jsi na ${result.player.guessCount}. pokus!`
+          : `Výborně! Uhodl(a) jsi tajné slovo: "${result.guess.word}" na ${result.player.guessCount}. pokus!`
       });
 
       // Stručné oznámení bota v chatu (místo zaplnění celého okna)
@@ -438,15 +588,32 @@ io.on('connection', (socket) => {
       const botMsg = room.addChatMessage('🤖 BOT', solveText, false, null, '#15803D');
       io.to(mode).emit('chat_message', botMsg);
     } else {
-      // Bleskový zásah (Telegraph do chatu při TOP 10)
+      if (fromChat) {
+        socket.emit('notification', {
+          message: `💡 Slovo "${result.guess.word}" z chatu bylo započteno jako tvůj herní tip (#${result.guess.rank}). Do chatu nebylo odesláno, aby nenapovídalo ostatním.`
+        });
+      }
+      // Bleskový zásah (Telegraph do chatu při TOP 10 – bez prozrazení slova)
       if (result.guess && result.guess.rank >= 2 && result.guess.rank <= 10) {
-        const telegraphText = `⚡ [TELEGRAPH] ${result.player.name} právě zasáhl(a) TOP 10 slovem "${result.guess.word}" (#${result.guess.rank})!`;
+        const telegraphText = `⚡ [TELEGRAPH] ${result.player.name} právě zasáhl(a) #${result.guess.rank} (TOP 10)!`;
         const telegraphMsg = room.addChatMessage('⚡ TELEGRAPH', telegraphText, false, null, '#D97706');
         io.to(mode).emit('chat_message', telegraphMsg);
       }
     }
 
     broadcastGameState(mode);
+    return result;
+  }
+
+  // 2. Odeslání tipu
+  socket.on('submit_guess', ({ word }) => {
+    if (!checkSocketRate(socket.id, 'lastGuess', 400)) {
+      socket.emit('error_message', { message: 'Tipuješ příliš rychle. Zpomal prosím.' });
+      return;
+    }
+    const room = gameManager.getRoomForSocket(socket.id);
+    const mode = gameManager.getModeForSocket(socket.id);
+    executePlayerGuess(socket, room, mode, word, false);
   });
 
   // 3. Vzdát se a odhalit tajné slovo
@@ -524,14 +691,155 @@ io.on('connection', (socket) => {
     broadcastGameState(mode);
   });
 
+  // ── Hlášení nevhodného obsahu (EU Digital Services Act – DSA) ──
+  socket.on('report_content', ({ reportedUser, messageText, reason }) => {
+    try {
+      const room = gameManager.getRoomForSocket(socket.id);
+      const mode = gameManager.getModeForSocket(socket.id) || 'lobby';
+      const player = room?.players?.[socket.id];
+      const reporterName = player?.name || socket.data?.playerName || 'Anonymní hráč';
+
+      const cleanReason = (reason || 'Nevhodný obsah').toString().slice(0, 300);
+      const cleanTarget = (reportedUser || 'Neznámý').toString().slice(0, 50);
+      const cleanSnippet = (messageText || '').toString().slice(0, 500);
+
+      const reportEntry = {
+        id: 'rep_' + Date.now(),
+        date: new Date().toISOString(),
+        mode,
+        reporter: reporterName,
+        target: cleanTarget,
+        reason: cleanReason,
+        text: cleanSnippet
+      };
+
+      console.warn(`[DSA REPORT] Hráč "${reporterName}" nahlásil "${cleanTarget}": "${cleanReason}"`);
+
+      // Zápis do logu hlášení v src/data
+      const dataDir = path.join(__dirname, 'src', 'data');
+      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+      fs.appendFileSync(path.join(dataDir, 'reports.log'), JSON.stringify(reportEntry) + '\n', 'utf-8');
+
+      // Oznámení pro administrátora v aréně
+      if (room && room.players) {
+        for (const [sId, p] of Object.entries(room.players)) {
+          if (p.isAdmin) {
+            const adminSocket = io.sockets.sockets.get(sId);
+            if (adminSocket) {
+              adminSocket.emit('notification', {
+                message: `⚠️ [DSA HLÁŠENÍ]: ${reporterName} nahlásil hráče ${cleanTarget} (${cleanReason})`
+              });
+            }
+          }
+        }
+      }
+
+      socket.emit('notification', {
+        message: '🛡️ Děkujeme za hlášení. Provozovatel podnět prověří v souladu s DSA.'
+      });
+    } catch (e) {
+      console.error('Chyba při zpracování hlášení DSA:', e.message);
+    }
+  });
+
+  // Běžná konverzační slova, která nikdy neblokujeme pro blízká slova (rank >= 2)
+  const CHAT_COMMON_STOP_WORDS = new Set([
+    'a', 'i', 'v', 's', 'z', 'u', 'o', 'k', 'se', 'si', 'je', 'to', 'ta', 'ten',
+    'ti', 'ty', 'toho', 'tomu', 'tom', 'tech', 'těch', 'co', 'jak', 'tak', 'uz', 'už',
+    'ne', 'ano', 'jo', 'ale', 'nebo', 'kdyz', 'když', 'jen', 'proc', 'proč',
+    'tam', 'tady', 'dnes', 'dneska', 'hra', 'hry', 'den', 'cas', 'čas', 'moc',
+    'mam', 'mám', 'mas', 'máš', 'ma', 'má', 'mame', 'máme', 'mate', 'máte', 'maji', 'mají',
+    'jsem', 'jsi', 'jsme', 'jste', 'jsou', 'byl', 'byla', 'bylo', 'byli',
+    'bude', 'budu', 'budes', 'budeš', 'budeme', 'budete', 'budou',
+    'chci', 'chces', 'chceš', 'chce', 'chceme', 'chcete', 'chteji', 'chtějí',
+    'nevim', 'nevím', 'vis', 'víš', 'vi', 'ví', 'vime', 'víme', 'vic', 'víc', 'min', 'míň',
+    'dobre', 'dobře', 'spatne', 'špatně', 'super', 'hele', 'ahoj', 'cau', 'čau', 'dik', 'dík', 'diky', 'díky',
+    'kdo', 'proc', 'proč', 'kde', 'kam', 'odkud', 'proto', 'protoze', 'protože',
+    'malo', 'málo', 'docela', 'fakt', 'asi', 'mozna', 'možná', 'urcite', 'určitě',
+    'ani', 'bud', 'buď', 'zatim', 'zatím', 'porad', 'pořád', 'stale', 'stále',
+    'vsechno', 'všechno', 'nic', 'vse', 'vše', 'kazdy', 'každý', 'nekdo', 'někdo',
+    'clovek', 'člověk', 'lidi', 'lide', 'lidé', 'slovo', 'slova', 'tip', 'tipy'
+  ]);
+
+  function escapeRegexForChat(s) {
+    return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+  }
+
+  /**
+   * Kontrola spoilerů v chatu – pouze pro aktivní tajné slovo daného dne / místnosti!
+   * Nikdy neblokuje dopředu ani neomezuje běžnou konverzaci.
+   */
+  function checkChatSpoiler(targetWordObj, message, isSolvedOrGaveUp) {
+    if (!targetWordObj || !targetWordObj.dayData || !message) return null;
+
+    const targetWord = (targetWordObj.word || '').trim().toLowerCase();
+    if (!targetWord) return null;
+    const targetNorm = wordService.removeDiacritics(targetWord);
+
+    // 1. Zkouška roztaženého nebo odděleného tajného slova (např. "p r o h l a s e n i", "p.r.o.h.l.a.s.e.n.i")
+    if (targetNorm.length >= 3) {
+      const lettersPattern = targetNorm.split('').map(escapeRegexForChat).join('[\\s\\.\\-_*~`\'",]{1,3}');
+      const regex = new RegExp('(?:^|[^a-záčďéěíňóřšťúůýž])' + lettersPattern + '(?:$|[^a-záčďéěíňóřšťúůýž])', 'i');
+      const msgNorm = wordService.removeDiacritics(message);
+      if (regex.test(msgNorm)) {
+        return { isTarget: true, word: targetWord };
+      }
+    }
+
+    // 2. Kontrola jednotlivých slov / tokenů
+    const words = message.match(/[a-záčďéěíňóřšťúůýž]+/gi) || [];
+    const { exactMap, normalizedMap } = targetWordObj.dayData;
+    const collapse = (s) => s.replace(/(.)\1+/g, '$1');
+    const targetCollapsed = collapse(targetNorm);
+
+    for (const rawWord of words) {
+      const w = rawWord.toLowerCase();
+      const wNorm = wordService.removeDiacritics(w);
+
+      // Přímá shoda s tajným slovem nebo protaženým slovem (např. "prohlaaaaseni")
+      if (wNorm === targetNorm || (targetNorm.length >= 3 && collapse(wNorm) === targetCollapsed)) {
+        return { isTarget: true, word: rawWord };
+      }
+
+      // Běžná konverzační stop-slova nikdy neblokujeme pro blízká slova
+      if (CHAT_COMMON_STOP_WORDS.has(wNorm)) continue;
+
+      let rank = exactMap.get(w);
+      if (rank === undefined && normalizedMap.has(wNorm)) {
+        rank = normalizedMap.get(wNorm).rank;
+      }
+
+      if (rank && rank > 1) {
+        // Slova v TOP 10 (bezprostřední synonyma a bezprostřední blízkost)
+        if (rank <= 10) {
+          return { isTarget: false, rank, word: rawWord };
+        }
+        // Krátké zprávy (1-3 slova) s nápovědou v TOP 20 (např. "zkus oznámení")
+        if (words.length <= 3 && rank <= 20) {
+          return { isTarget: false, rank, word: rawWord };
+        }
+        // Hráč, který se vzdal nebo vyhrál a radí v TOP 20
+        if (isSolvedOrGaveUp && rank <= 20) {
+          return { isTarget: false, rank, word: rawWord };
+        }
+      }
+    }
+
+    return null;
+  }
+
   // 6. Zpráva do chatu a příkazy (!play, !stop)
   socket.on('send_chat', async ({ message }) => {
+    if (!checkSocketRate(socket.id, 'lastChat', 800)) {
+      socket.emit('error_message', { message: 'Zprávy lze do chatu posílat jednou za sekundu.' });
+      return;
+    }
     const cleanMsg = (message || '').trim();
     if (!cleanMsg) return;
 
     const room = gameManager.getRoomForSocket(socket.id);
     const mode = gameManager.getModeForSocket(socket.id);
-    const player = room.players[socket.id];
+    const player = room?.players?.[socket.id];
     if (!player) return;
 
     // Kontrola, zda hráč odpovídá na čekající potvrzení skladby (ano / ne)
@@ -545,6 +853,49 @@ io.on('connection', (socket) => {
         const userMsg = room.addChatMessage(player.name, cleanMsg, player.isAdmin);
         io.to(mode).emit('chat_message', userMsg);
         handleSongConfirmation(socket, room, mode, player, pendingConf, isYes);
+        return;
+      }
+    }
+
+    // Ochrana proti spoilerům v chatu – pouze pro aktivní slovo daného dne / místnosti
+    if (!player.isAdmin && room && room.targetWordObj) {
+      const isSolvedOrGaveUp = Boolean(player.solved || player.gaveUp);
+      const spoiler = checkChatSpoiler(room.targetWordObj, cleanMsg, isSolvedOrGaveUp);
+      if (spoiler) {
+        if (isSolvedOrGaveUp) {
+          // Hráč už zná řešení -> zákaz vyzrazování v chatu
+          socket.emit('error_message', {
+            message: spoiler.isTarget
+              ? '🚫 Již znáš tajné slovo – neprozrazuj ho ostatním v chatu!'
+              : '🚫 Již znáš řešení – nenapovídej ostatním v chatu blízká slova!'
+          });
+          return;
+        }
+
+        // Hráč je aktivní hádající:
+        // Zjistíme, zda už toto slovo má ve svých předchozích tipech
+        const targetClean = room.targetWordObj.word;
+        const guessWord = spoiler.isTarget ? targetClean : spoiler.word;
+        const normSpoilerWord = wordService.removeDiacritics(guessWord.toLowerCase());
+
+        const alreadyGuessed = Array.isArray(room.guesses) && room.guesses.some((g) =>
+          (g.socketId === socket.id || (g.player && player.name && g.player.toLowerCase() === player.name.toLowerCase())) &&
+          wordService.removeDiacritics((g.word || '').toLowerCase()) === normSpoilerWord
+        );
+
+        if (alreadyGuessed) {
+          // Hráč už slovo dříve sám trefil na své herní ploše -> teď ho píše do chatu, aby radil
+          socket.emit('error_message', {
+            message: `🚫 Slovo "${guessWord}" již máš ve svých tipech – nenapovídej ostatním v chatu!`
+          });
+          return;
+        }
+
+        // Hráč slovo ještě netipnul:
+        // AUTOMATICKÉ PŘESMĚROVÁNÍ (AUTO-GUESS):
+        // Započte se jako oficiální herní tip (přičte se pokus, odhalí se pořadí nebo rovnou výhra),
+        // zpráva se do chatu nepošle, takže ostatní hráči nedostanou spoiler ani nápovědu!
+        executePlayerGuess(socket, room, mode, guessWord, true);
         return;
       }
     }
@@ -1198,6 +1549,11 @@ io.on('connection', (socket) => {
 
   // 7. Odpojení hráče
   socket.on('disconnect', () => {
+    socketRateLimits.delete(socket.id);
+    if (gameManager.isSocketReplaced(socket.id)) {
+      gameManager.clearReplacedSocket(socket.id);
+      return;
+    }
     const removal = gameManager.removePlayer(socket.id);
     if (removal && removal.player) {
       io.to(removal.mode).emit('notification', {

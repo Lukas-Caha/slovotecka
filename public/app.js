@@ -290,8 +290,28 @@ const isInitialCustom = Boolean(urlCustomCode);
 let currentMode = isUnlimited ? 'unlimited' : (isInitialCustom ? `custom_${urlCustomCode}` : 'daily');
 let selectedLobbyMode = isUnlimited ? 'unlimited' : (isInitialCustom ? 'custom' : 'daily');
 
-// Globální stav
-let myPlayerName = localStorage.getItem('slovotecka_nickname') || '';
+// Persistentní identifikátor relace prohlížeče (zamezí duplicitním (2) účtům při rychlém reconnectu/F5)
+function getOrCreateSessionId() {
+  let sid = null;
+  try {
+    sid = localStorage.getItem('slovotecka_session_id');
+    if (!sid || typeof sid !== 'string' || sid.length < 5) {
+      sid = 'usr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('slovotecka_session_id', sid);
+    }
+  } catch (e) {
+    sid = 'usr_temp_' + Math.random().toString(36).substring(2, 10);
+  }
+  return sid;
+}
+
+// Globální stav (automaticky očištěno od případných dřívějších (2) suffixů)
+let myPlayerName = (localStorage.getItem('slovotecka_nickname') || '').replace(/(\s*\(\d+\))+$/, '').trim();
+if (myPlayerName) {
+  try {
+    localStorage.setItem('slovotecka_nickname', myPlayerName);
+  } catch (e) {}
+}
 
 // DOM – Navigace
 const tabDaily = document.getElementById('tab-daily');
@@ -777,76 +797,154 @@ const btnOpenStats = document.getElementById('btn-open-stats');
 const btnCloseStats = document.getElementById('btn-close-stats');
 const btnAckStats = document.getElementById('btn-ack-stats');
 
-const PlayerStats = (() => {
-  function getStorageKey() {
-    const name = (myPlayerName || '').trim().toLowerCase();
-    return name ? `slovotecka_player_stats_${name}` : 'slovotecka_player_stats';
+// ── Pomocné funkce pro datum a čas v českém pásmu (Europe/Prague) ─────────
+function getCzechDateStr(date = new Date()) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Prague',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(date);
+  } catch (e) {
+    return date.toISOString().slice(0, 10);
   }
+}
+
+function getCalendarDayDiff(dateStr1, dateStr2) {
+  if (!dateStr1 || !dateStr2) return 999;
+  const p1 = String(dateStr1).split('-').map(Number);
+  const p2 = String(dateStr2).split('-').map(Number);
+  if (p1.length < 3 || p2.length < 3 || isNaN(p1[0]) || isNaN(p2[0])) return 999;
+  const t1 = Date.UTC(p1[0], p1[1] - 1, p1[2]);
+  const t2 = Date.UTC(p2[0], p2[1] - 1, p2[2]);
+  return Math.round((t2 - t1) / (1000 * 60 * 60 * 24));
+}
+
+const PlayerStats = (() => {
+  const PRIMARY_STORAGE_KEY = 'slovotecka_player_stats';
 
   function getStats() {
-    const key = getStorageKey();
+    let stats = null;
     try {
-      const data = localStorage.getItem(key) || (key !== 'slovotecka_player_stats' ? localStorage.getItem('slovotecka_player_stats') : null);
-      if (data) {
-        return JSON.parse(data);
+      const raw = localStorage.getItem(PRIMARY_STORAGE_KEY);
+      if (raw) stats = JSON.parse(raw);
+    } catch (e) {}
+
+    // Migrace / sloučení dat z dřívějších klíčů navázaných na přezdívku (slovotecka_player_stats_*)
+    try {
+      let needsSave = false;
+      if (!stats) {
+        stats = {
+          gamesPlayed: 0,
+          gamesWon: 0,
+          currentStreak: 0,
+          maxStreak: 0,
+          lastWinDate: null,
+          totalWinningGuesses: 0,
+          bestScore: null,
+          recordedPlayedGames: [],
+          recordedWonGames: []
+        };
+      }
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('slovotecka_player_stats_') && k !== PRIMARY_STORAGE_KEY) {
+          try {
+            const legacyData = JSON.parse(localStorage.getItem(k));
+            if (legacyData && typeof legacyData === 'object') {
+              stats.gamesPlayed = Math.max(stats.gamesPlayed || 0, legacyData.gamesPlayed || 0);
+              stats.gamesWon = Math.max(stats.gamesWon || 0, legacyData.gamesWon || 0);
+              stats.currentStreak = Math.max(stats.currentStreak || 0, legacyData.currentStreak || 0);
+              stats.maxStreak = Math.max(stats.maxStreak || 0, legacyData.maxStreak || 0);
+              if (legacyData.lastWinDate) {
+                if (!stats.lastWinDate || legacyData.lastWinDate > stats.lastWinDate) {
+                  stats.lastWinDate = legacyData.lastWinDate;
+                }
+              }
+              if (typeof legacyData.totalWinningGuesses === 'number') {
+                stats.totalWinningGuesses = Math.max(stats.totalWinningGuesses || 0, legacyData.totalWinningGuesses);
+              }
+              if (typeof legacyData.bestScore === 'number' && legacyData.bestScore > 0) {
+                if (stats.bestScore === null || legacyData.bestScore < stats.bestScore) {
+                  stats.bestScore = legacyData.bestScore;
+                }
+              }
+              if (Array.isArray(legacyData.recordedPlayedGames)) {
+                stats.recordedPlayedGames = Array.from(new Set([...(stats.recordedPlayedGames || []), ...legacyData.recordedPlayedGames]));
+              }
+              if (Array.isArray(legacyData.recordedWonGames)) {
+                stats.recordedWonGames = Array.from(new Set([...(stats.recordedWonGames || []), ...legacyData.recordedWonGames]));
+              }
+              needsSave = true;
+            }
+          } catch (e) {}
+        }
+      }
+      if (needsSave) {
+        localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(stats));
       }
     } catch (e) {}
-    return {
-      gamesPlayed: 0,
-      gamesWon: 0,
-      currentStreak: 0,
-      maxStreak: 0,
-      lastWinDate: null,
-      totalWinningGuesses: 0,
-      bestScore: null,
-      recordedPlayedGames: [],
-      recordedWonGames: []
-    };
+
+    if (!stats) {
+      stats = {
+        gamesPlayed: 0,
+        gamesWon: 0,
+        currentStreak: 0,
+        maxStreak: 0,
+        lastWinDate: null,
+        totalWinningGuesses: 0,
+        bestScore: null,
+        recordedPlayedGames: [],
+        recordedWonGames: []
+      };
+    }
+
+    if (!Array.isArray(stats.recordedPlayedGames)) stats.recordedPlayedGames = [];
+    if (!Array.isArray(stats.recordedWonGames)) stats.recordedWonGames = [];
+    return stats;
   }
 
   function saveStats(stats) {
     try {
-      localStorage.setItem(getStorageKey(), JSON.stringify(stats));
+      localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(stats));
     } catch (e) {}
   }
 
   function recordGameEntry(gameId) {
     if (!gameId) return;
     const stats = getStats();
-    if (!stats.recordedPlayedGames) stats.recordedPlayedGames = [];
     if (!stats.recordedPlayedGames.includes(gameId)) {
       stats.recordedPlayedGames.push(gameId);
-      if (stats.recordedPlayedGames.length > 100) stats.recordedPlayedGames.shift();
+      if (stats.recordedPlayedGames.length > 200) stats.recordedPlayedGames.shift();
       stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
       saveStats(stats);
+      if (statsModal && statsModal.style.display === 'flex') {
+        updateModalUI();
+      }
     }
   }
 
-  function recordGameWin(gameId, guessesCount) {
+  function recordGameWin(gameId, guessesCount, isDaily = false) {
     if (!gameId) return;
     const stats = getStats();
-    if (!stats.recordedWonGames) stats.recordedWonGames = [];
     if (stats.recordedWonGames.includes(gameId)) {
-      return; // Výhra v této konkrétní hře již byla zaznamenána
+      return; // Výhra v této konkrétní hře již byla započtena
     }
     stats.recordedWonGames.push(gameId);
-    if (stats.recordedWonGames.length > 100) stats.recordedWonGames.shift();
+    if (stats.recordedWonGames.length > 200) stats.recordedWonGames.shift();
 
     stats.gamesWon = (stats.gamesWon || 0) + 1;
 
-    // Denní série (streak) podle kalendářních dnů (započítává se i z custom roomek hrajících denní slovo)
-    const isDaily = gameId.startsWith('daily_') || gameId.startsWith('custom_daily_');
+    // Denní série (streak) podle kalendářních dnů v časovém pásmu ČR
     if (isDaily) {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getCzechDateStr();
       if (stats.lastWinDate) {
-        const prevDate = new Date(stats.lastWinDate);
-        const currDate = new Date(today);
-        const diffMs = currDate - prevDate;
-        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        const diffDays = getCalendarDayDiff(stats.lastWinDate, today);
         if (diffDays === 1) {
           stats.currentStreak = (stats.currentStreak || 0) + 1;
         } else if (diffDays === 0) {
-          // Více výher v jeden den zachová streak
+          // Více výher v jeden kalendářní den zachovává sérii
         } else {
           stats.currentStreak = 1;
         }
@@ -858,13 +956,16 @@ const PlayerStats = (() => {
     }
 
     if (typeof guessesCount === 'number' && guessesCount > 0) {
-      stats.totalWinningGuesses = (stats.totalWinningGuesses || 0) + guessesCount;
+      stats.totalWinningGuesses = (Number(stats.totalWinningGuesses) || 0) + guessesCount;
       if (stats.bestScore === null || guessesCount < stats.bestScore) {
         stats.bestScore = guessesCount;
       }
     }
 
     saveStats(stats);
+    if (statsModal && statsModal.style.display === 'flex') {
+      updateModalUI();
+    }
   }
 
   function updateModalUI() {
@@ -879,27 +980,30 @@ const PlayerStats = (() => {
     const bestEl = document.getElementById('stat-best-score');
     const stampEl = document.getElementById('punched-stamp');
 
-    const name = myPlayerName || 'HRÁČ';
+    const name = (myPlayerName || (playerNameInput ? playerNameInput.value : '') || 'HRÁČ').trim();
     if (badgeEl) badgeEl.textContent = name.toUpperCase();
 
     if (serialEl) {
       let hash = 0;
-      for (let i = 0; i < name.length; i++) {
-        hash = ((hash << 5) - hash) + name.charCodeAt(i);
+      const lowerName = name.toLowerCase();
+      for (let i = 0; i < lowerName.length; i++) {
+        hash = ((hash << 5) - hash) + lowerName.charCodeAt(i);
       }
       const num = String(Math.abs(hash) % 9000 + 1000).padStart(4, '0');
       serialEl.textContent = `SER: #${num}`;
     }
 
-    // Výpočet efektivního streaku (pokud včerejšek nebyl odehrán, streak vypršel)
-    const today = new Date().toISOString().slice(0, 10);
+    // Výpočet efektivního streaku (pokud včerejšek nebyl vyhrán a dnes ještě také ne, streak vypršel)
+    const today = getCzechDateStr();
     let effectiveStreak = stats.currentStreak || 0;
     if (stats.lastWinDate) {
-      const prevDate = new Date(stats.lastWinDate);
-      const currDate = new Date(today);
-      const diffDays = Math.round((currDate - prevDate) / (1000 * 60 * 60 * 24));
+      const diffDays = getCalendarDayDiff(stats.lastWinDate, today);
       if (diffDays > 1) {
         effectiveStreak = 0;
+        if (stats.currentStreak !== 0) {
+          stats.currentStreak = 0;
+          saveStats(stats);
+        }
       }
     }
 
@@ -917,7 +1021,7 @@ const PlayerStats = (() => {
     }
 
     if (bestEl) {
-      bestEl.textContent = stats.bestScore
+      bestEl.textContent = (stats.bestScore && stats.bestScore > 0)
         ? `${stats.bestScore} ${stats.bestScore === 1 ? 'tip' : stats.bestScore < 5 ? 'tipy' : 'tipů'}`
         : '-';
     }
@@ -1925,8 +2029,11 @@ function updateTapeCounter(count) {
 // ── 1. Vstup do hry ───────────────────────────────────
 joinForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  const name = playerNameInput.value.trim();
+  const rawInput = playerNameInput.value.trim();
+  // Automaticky očistíme případné zřetězené (2) (2) z minula
+  const name = rawInput.replace(/(\s*\(\d+\))+$/, '').trim();
   if (!name) return showToast('Zadej své jméno nebo přezdívku.', true);
+  playerNameInput.value = name;
 
   SoundFx.playKeyClick();
 
@@ -1939,24 +2046,26 @@ joinForm.addEventListener('submit', (e) => {
   myPlayerName = name;
   localStorage.setItem('slovotecka_nickname', name);
 
+  const sessionId = getOrCreateSessionId();
+
   if (selectedLobbyMode === 'custom') {
     const rawCode = customCodeInput ? customCodeInput.value.trim().toUpperCase() : '';
     const sourceRadio = document.querySelector('input[name="custom-word-source"]:checked');
     const wordSource = sourceRadio ? sourceRadio.value : 'daily';
     if (!rawCode) {
       currentMode = 'custom';
-      socket.emit('join_game', { playerName: name, mode: 'custom', color: myPlayerColor, wordSource });
+      socket.emit('join_game', { playerName: name, mode: 'custom', color: myPlayerColor, wordSource, sessionId });
     } else {
       currentMode = `custom_${rawCode}`;
-      socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor, customCode: rawCode, wordSource });
+      socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor, customCode: rawCode, wordSource, sessionId });
     }
   } else {
     currentMode = selectedLobbyMode;
-    socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor });
+    socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor, sessionId });
   }
 });
 
-// Automatické znovupřipojení při výpadku spojení
+// Automatické znovupřipojení při výpadku spojení (se zachováním relace sessionId)
 socket.on('connect', () => {
   let joinName = myPlayerName;
   try {
@@ -1965,7 +2074,13 @@ socket.on('connect', () => {
   } catch (err) {}
   if (joinName && gameSection.style.display !== 'none') {
     const customCode = (currentMode && currentMode.startsWith('custom_')) ? currentMode.replace('custom_', '') : null;
-    socket.emit('join_game', { playerName: joinName, mode: currentMode, color: myPlayerColor, customCode });
+    socket.emit('join_game', {
+      playerName: joinName,
+      mode: currentMode,
+      color: myPlayerColor,
+      customCode,
+      sessionId: getOrCreateSessionId()
+    });
   }
 });
 
@@ -3181,9 +3296,13 @@ function renderGameState(state) {
     }
     if (state.myStatus.name) {
       myPlayerName = state.myStatus.name;
-      try {
-        localStorage.setItem('slovotecka_nickname', myPlayerName);
-      } catch (e) {}
+      // Do localStorage ukládáme pouze čistou přezdívku bez automatických suffixů (2)
+      const baseClean = myPlayerName.replace(/(\s*\(\d+\))+$/, '').trim();
+      if (baseClean) {
+        try {
+          localStorage.setItem('slovotecka_nickname', baseClean);
+        } catch (e) {}
+      }
     }
     renderAdminCommandsInPopover();
 
@@ -3240,11 +3359,20 @@ function renderGameState(state) {
     } else if (state.mode === 'unlimited') {
       statGameType = 'unlimited';
     }
-    const currentGameId = `${statGameType}_${state.dayNumber || state.date || state.roomCode || 'round'}`;
-    PlayerStats.recordGameEntry(currentGameId);
+    const currentGameId = state.roundId || `${statGameType}_${state.dayNumber || state.date || state.roomCode || 'round'}`;
+
+    // Hra se započítává jako odehraná pouze pokud se hráč aktivně zapojil (alespoň 1 tip, vyřešeno, nebo vzdáno)
+    const hasParticipated = (myGuesses.length > 0) || (state.myStatus && (state.myStatus.guessCount > 0 || state.myStatus.solved || state.myStatus.gaveUp));
+    if (hasParticipated) {
+      PlayerStats.recordGameEntry(currentGameId);
+    }
+
     if (state.myStatus && state.myStatus.solved) {
-      const winGuesses = (typeof state.myStatus.guessCount === 'number') ? state.myStatus.guessCount : myGuesses.length;
-      PlayerStats.recordGameWin(currentGameId, winGuesses);
+      const winGuesses = (typeof state.myStatus.guessCount === 'number' && state.myStatus.guessCount > 0)
+        ? state.myStatus.guessCount
+        : (myGuesses.length || 1);
+      const isDailyGame = state.mode === 'daily' || (isCustom && !!state.isDailyEligible);
+      PlayerStats.recordGameWin(currentGameId, winGuesses, isDailyGame);
     }
   }
 
@@ -4021,3 +4149,95 @@ function tryResumePlayback() {
 }
 document.addEventListener('click', tryResumePlayback);
 document.addEventListener('keydown', tryResumePlayback);
+
+// ==========================================================================
+// PRÁVNÍ INFORMACE, PODMÍNKY A VIDEO NÁHLED (GDPR / ToS / Cookies / DSA)
+// ==========================================================================
+
+const legalModal = document.getElementById('legal-modal');
+const btnCloseLegal = document.getElementById('btn-close-legal');
+const btnAckLegal = document.getElementById('btn-ack-legal');
+const legalTabBtns = document.querySelectorAll('.legal-tab-btn');
+const legalPanes = document.querySelectorAll('.legal-tab-pane');
+const footerLegalBtns = document.querySelectorAll('.legal-link-btn');
+
+function switchLegalTab(tabId) {
+  legalTabBtns.forEach(btn => {
+    const isTarget = btn.getAttribute('data-target') === tabId;
+    btn.classList.toggle('is-active', isTarget);
+  });
+
+  legalPanes.forEach(pane => {
+    const isTarget = pane.id === `legal-pane-${tabId}`;
+    pane.style.display = isTarget ? 'block' : 'none';
+  });
+
+  const body = document.querySelector('.legal-modal-body');
+  if (body) body.scrollTop = 0;
+}
+
+function openLegalModal(targetTab = 'terms') {
+  if (!legalModal) return;
+  SoundFx.playKeyClick();
+  switchLegalTab(targetTab);
+  legalModal.style.display = 'flex';
+}
+
+function closeLegalModal() {
+  if (!legalModal) return;
+  legalModal.style.display = 'none';
+}
+
+if (btnCloseLegal) {
+  btnCloseLegal.addEventListener('click', closeLegalModal);
+}
+
+if (btnAckLegal) {
+  btnAckLegal.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    closeLegalModal();
+  });
+}
+
+if (legalModal) {
+  legalModal.addEventListener('click', (e) => {
+    if (e.target === legalModal) closeLegalModal();
+  });
+}
+
+legalTabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    const target = btn.getAttribute('data-target');
+    if (target) switchLegalTab(target);
+  });
+});
+
+footerLegalBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.getAttribute('data-legal');
+    openLegalModal(target || 'terms');
+  });
+});
+
+// Klávesa Escape zavírá právní modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && legalModal && legalModal.style.display === 'flex') {
+    closeLegalModal();
+  }
+});
+
+// ── Volitelný PIP náhled YouTube videa (100% soulad s YouTube IFrame API) ──
+const btnMusicVideoToggle = document.getElementById('btn-music-video-toggle');
+const ytPlayerContainer = document.getElementById('yt-player-container');
+
+if (btnMusicVideoToggle && ytPlayerContainer) {
+  btnMusicVideoToggle.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    const isPip = ytPlayerContainer.classList.toggle('is-visible-pip');
+    btnMusicVideoToggle.classList.toggle('is-active', isPip);
+    btnMusicVideoToggle.title = isPip ? 'Skrýt video náhled' : 'Zobrazit video náhled (YouTube)';
+    showToast(isPip ? '📺 Náhled videa zobrazen' : '📺 Náhled videa skryt');
+  });
+}
+

@@ -4,14 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
+  <meta name="description" content="SLOVO. – Česká vědomostní online hra na principu sémantické podobnosti slov (Contexto) v reálném čase s multiplayerem a retro estetikou.">
+  <meta name="author" content="SLOVO.">
+  <meta property="og:title" content="SLOVO. – Český Contexto Multiplayer">
+  <meta property="og:description" content="Hádej české tajné slovo podle významové blízkosti s přáteli v reálném čase.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/symbolWhite.svg">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SLOVO. – Český Contexto Multiplayer">
+  <meta name="twitter:description" content="Hádej české tajné slovo podle významové blízkosti s přáteli v reálném čase.">
   <title>SLOVO. – Český Contexto Multiplayer</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  
-  <!-- Google Fonts: Road Rage (grunge display) & JetBrains Mono (monospace body) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Road+Rage&display=swap" rel="stylesheet">
-  
+
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -71,6 +75,10 @@
               </button>
               <button type="button" class="music-btn btn-music-stop" id="btn-music-stop" title="Zastavit hudbu pro tebe" aria-label="Zastavit hudbu pro tebe">
                 <span>⏹</span>
+              </button>
+              <!-- Volitelný náhled videa (100% soulad s YouTube IFrame API) -->
+              <button type="button" class="music-btn btn-music-video" id="btn-music-video-toggle" title="Zobrazit / Skrýt video náhled (YouTube)" aria-label="Zobrazit nebo skrýt video">
+                <span id="music-video-icon">📺</span>
               </button>
             </div>
           </div>
@@ -296,6 +304,148 @@
           <button type="button" class="btn btn-danger-give-up" id="btn-confirm-give-up">
             🏳️ ANO, VZDÁT SE
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup: PRÁVNÍ INFORMACE, PODMÍNKY A OCHRANA SOUKROMÍ (GDPR / ToS / Cookies / DSA) -->
+    <div id="legal-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card modal-card-legal">
+        <div class="modal-header">
+          <div class="legal-header-left">
+            <span class="modal-title">[ ⚖️ PRÁVNÍ INFORMACE & PODMÍNKY ]</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="btn-close-legal" aria-label="Zavřít">&times;</button>
+        </div>
+        <div class="legal-tabs-nav">
+          <button type="button" class="legal-tab-btn is-active" data-target="terms">Podmínky užití</button>
+          <button type="button" class="legal-tab-btn" data-target="privacy">Soukromí (GDPR)</button>
+          <button type="button" class="legal-tab-btn" data-target="cookies">Úložiště & Cookies</button>
+          <button type="button" class="legal-tab-btn" data-target="youtube">YouTube & Licence</button>
+          <button type="button" class="legal-tab-btn" data-target="report">Nahlásit obsah (DSA)</button>
+        </div>
+        <div class="modal-body legal-modal-body">
+          <!-- Záložka 1: Podmínky užití -->
+          <div class="legal-tab-pane is-active" id="legal-pane-terms">
+            <h3 class="legal-section-title">Podmínky užití služby SLOVO.</h3>
+            <p class="legal-date">Platné od: 1. září 2026 • Verze 1.1</p>
+            <div class="legal-article">
+              <h4>1. Provozovatel a povaha služby</h4>
+              <p>Hra SLOVO. (dále jen „Služba“) je bezplatná nekomerční webová hra zaměřená na hádání českých slov na základě sémantické významové blízkosti. Provozovatelem je autor projektu, kontaktní e-mail: <strong><a href="mailto:slovotecka@proton.me">slovotecka@proton.me</a></strong>.</p>
+            </div>
+            <div class="legal-article">
+              <h4>2. Pravidla chování v chatu a arénách</h4>
+              <p>Uživatel se zavazuje jednat v souladu s právním řádem ČR a zásadami slušnosti. V chatu je přísně zakázáno:</p>
+              <ul>
+                <li>Šíření vulgarit, urážek, nenávistných projevů a diskriminace na základě rasy, pohlaví, náboženství či orientace.</li>
+                <li>Kyberšikana, obtěžování a vyhrožování ostatním hráčům.</li>
+                <li>Zveřejňování osobních údajů jiných osob bez jejich výslovného souhlasu (doxxing).</li>
+                <li>Šíření spamu, komerční reklamy, podvodných odkazů či škodlivého kódu.</li>
+                <li>Automatizované botování, zneužívání chyb a zahlcování serveru (DoS).</li>
+              </ul>
+            </div>
+            <div class="legal-article">
+              <h4>3. Oprávnění provozovatele a moderace</h4>
+              <p>Provozovatel si vyhrazuje právo moderovat obsah v chatu, odstranit zprávy porušující pravidla a udělit dočasný či trvalý zákaz přístupu (kick/ban) uživateli, který tato pravidla porušuje.</p>
+            </div>
+            <div class="legal-article">
+              <h4>4. Omezení odpovědnosti</h4>
+              <p>Služba je poskytována „jak stojí a leží“ (as is) bez jakýchkoli záruk nepřetržité dostupnosti, funkčnosti či bezchybnosti. Provozovatel nenese odpovědnost za případné technické výpadky, ztrátu lokálně uložených statistik ani za obsah vložený samotnými uživateli před jeho nahlášením a odstraněním.</p>
+            </div>
+            <div class="legal-article">
+              <h4>5. Nezávislost na projektu Contexto</h4>
+              <p>Tato hra je nezávislým českým komunitním projektem inspirovaným herním principem Contexto. Není nijak sponzorována, podporována ani právně spojena s původními autory hry Contexto.</p>
+            </div>
+          </div>
+
+          <!-- Záložka 2: Ochrana soukromí (GDPR) -->
+          <div class="legal-tab-pane" id="legal-pane-privacy" style="display: none;">
+            <h3 class="legal-section-title">Zásady ochrany osobních údajů (GDPR)</h3>
+            <p class="legal-date">V souladu s Nařízením Evropského parlamentu a Rady (EU) 2016/679 (GDPR) a Zákonem č. 110/2019 Sb.</p>
+            <div class="legal-article">
+              <h4>1. Správce osobních údajů</h4>
+              <p>Správcem údajů je provozovatel webu SLOVO. Kontaktní e-mail pro uplatnění práv: <strong><a href="mailto:slovotecka@proton.me">slovotecka@proton.me</a></strong>.</p>
+            </div>
+            <div class="legal-article">
+              <h4>2. Rozsah a účely zpracování údajů</h4>
+              <ul>
+                <li><strong>IP adresa:</strong> Technicky nezbytná pro síťovou komunikaci přes WebSocket / HTTP a ochranu před kybernetickými útoky (rate limiting, ochrana před spamem a zahlcením serveru). Právním základem je <em>oprávněný zájem správce</em> (čl. 6 odst. 1 písm. f) GDPR). Serverové logy jsou automaticky rotovány.</li>
+                <li><strong>Herní přezdívka:</strong> Zvolená uživatelem pro rozlišení hráčů v aréně. Doporučujeme nepoužívat celé své reálné jméno ani citlivé údaje.</li>
+                <li><strong>Zprávy v herním chatu:</strong> Slouží pro komunikaci v reálném čase. Globální chat drží v operační paměti pouze historii posledních 100 zpráv, poté jsou starší zprávy automaticky vymazány.</li>
+                <li><strong>Herní statistiky:</strong> Ukládají se výhradně lokálně ve vašem prohlížeči (LocalStorage).</li>
+              </ul>
+            </div>
+            <div class="legal-article">
+              <h4>3. Nulové sledování třetími stranami</h4>
+              <p>Web <strong>nepoužívá žádné analytické, reklamní ani profilovací nástroje</strong> třetích stran (žádný Google Analytics, Meta Pixel, Hotjar apod.). Písma (fonty) jsou uložena přímo na našem serveru, nedochází tedy k předávání IP adresy na externí servery Google Fonts.</p>
+            </div>
+            <div class="legal-article">
+              <h4>4. Vaše práva dle GDPR</h4>
+              <p>Máte právo požadovat informaci o tom, jaké údaje zpracováváme, právo na jejich výmaz (např. zprávy v chatu) a právo podat stížnost u dozorového úřadu: <strong>Úřad pro ochranu osobních údajů</strong> (Pplk. Sochora 27, 170 00 Praha 7, <a href="https://www.uoou.gov.cz" target="_blank" rel="noopener">www.uoou.gov.cz</a>).</p>
+            </div>
+          </div>
+
+          <!-- Záložka 3: Úložiště a Cookies -->
+          <div class="legal-tab-pane" id="legal-pane-cookies" style="display: none;">
+            <h3 class="legal-section-title">Informace o místním úložišti (LocalStorage) a Cookies</h3>
+            <p class="legal-date">Dle § 89 odst. 3 Zákona č. 127/2005 Sb., o elektronických komunikacích</p>
+            <div class="legal-article">
+              <h4>1. Proč na webu není otravná vyskakovací cookie lišta?</h4>
+              <p>Zákon o elektronických komunikacích vyžaduje předchozí aktivní souhlas (opt-in lištu) pouze pro sledovací, analytické, reklamní či profilovací cookies. Web SLOVO. žádné takové soubory nepoužívá.</p>
+              <p>Využíváme výhradně <strong>technicky a funkčně nezbytné místní úložiště (LocalStorage)</strong> pro zajištění funkčnosti, kterou si sami přejete (zapamatování vašeho nastavení). Pro tyto účely zákon ukládá povinnost transparentně uživatele informovat, což činíme tímto přehledem.</p>
+            </div>
+            <div class="legal-article">
+              <h4>2. Přehled ukládaných položek v prohlížeči</h4>
+              <ul>
+                <li><code>slovotecka_nickname</code> – Vámi zadaná herní přezdívka, abyste ji nemuseli psát při každé návštěvě znovu.</li>
+                <li><code>slovotecka_color</code> – Vybraná barva vaší přezdívky.</li>
+                <li><code>slovotecka_theme</code> – Zvolený vizuální režim (tmavý / světlý).</li>
+                <li><code>slovotecka_sound</code> – Přepínač zapnutí/vypnutí zvukových efektů při psaní a vítězství.</li>
+                <li><code>slovotecka_music_volume</code> – Poslední nastavená hlasitost hudebního přehrávače.</li>
+                <li><code>slovotecka_player_stats</code> – Lokální přehled vašich odehraných a vyhraných kol a denní série (streak).</li>
+              </ul>
+              <p>Tato data jsou uložena pouze v paměti vašeho zařízení a můžete je kdykoli smazat v nastavení svého prohlížeče (Vymazat data webu / cookies).</p>
+            </div>
+          </div>
+
+          <!-- Záložka 4: YouTube & Licence -->
+          <div class="legal-tab-pane" id="legal-pane-youtube" style="display: none;">
+            <h3 class="legal-section-title">YouTube API, hudební funkce & Licence</h3>
+            <div class="legal-article">
+              <h4>1. Využití YouTube IFrame Player API</h4>
+              <p>Funkce hudebního přehrávače ve hře SLOVO. využívá oficiální JavaScriptové rozhraní YouTube IFrame Player API v souladu s podmínkami služby YouTube.</p>
+              <p>Hra SLOVO. <strong>neukládá, nereprodukuje ani nestahuje žádné hudební či video soubory</strong> na svých serverech. Web slouží pouze jako společný synchronizátor času pro spuštění veřejně dostupných videí třetích stran na YouTube.</p>
+            </div>
+            <div class="legal-article">
+              <h4>2. Autorská práva a majitelé práv</h4>
+              <p>Veškerá autorská práva, ochranné známky a licenční práva k přehrávané hudbě a videím náleží jejich autorům, interpretům a držitelům práv na platformě YouTube. Pokud jste držitelem autorských práv a přejete si zakázat přehrávání určité skladby, kontaktujte nás na <a href="mailto:slovotecka@proton.me">slovotecka@proton.me</a>.</p>
+            </div>
+            <div class="legal-article">
+              <h4>3. Zobrazení videa a kontrola přehrávání</h4>
+              <p>Každý uživatel má plnou kontrolu nad přehráváním: hudbu si může kdykoli vypnout, regulovat její hlasitost nebo si kliknutím na tlačítko 📺 přepnout zobrazení náhledu videa.</p>
+            </div>
+          </div>
+
+          <!-- Záložka 5: Nahlášení obsahu (DSA) -->
+          <div class="legal-tab-pane" id="legal-pane-report" style="display: none;">
+            <h3 class="legal-section-title">Hlášení závadného obsahu (EU Digital Services Act – DSA)</h3>
+            <p class="legal-date">V souladu s Nařízením Evropského parlamentu a Rady (EU) 2022/2065 (DSA) a Zákonem č. 480/2004 Sb.</p>
+            <div class="legal-article">
+              <h4>1. Jednotné kontaktní místo pro hlášení</h4>
+              <p>Pokud v herním chatu nebo arénách narazíte na protiprávní obsah, šikanu, výhružky, porušení autorských práv či závažné porušení podmínek, kontaktujte neprodleně provozovatele na vyhrazeném e-mailu:</p>
+              <p class="legal-contact-box">📧 Kontaktní e-mail DSA: <strong><a href="mailto:slovotecka@proton.me">slovotecka@proton.me</a></strong></p>
+              <p>V hlášení prosím uveďte:</p>
+              <ul>
+                <li>Přezdívku ohlašovaného hráče a název místnosti (Denní výzva / Archiv / kód arény).</li>
+                <li>Datum a přibližný čas zprávy.</li>
+                <li>Popis, proč obsah považujete za protiprávní či závadný (případně screenshot).</li>
+              </ul>
+              <p>Provozovatel podnět prověří a v případě zjištění závadného obsahu neprodleně zjedná nápravu (odstranění zpráv, blokace uživatele).</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary btn-modal-ack" id="btn-ack-legal">ROZUMÍM A SOUHLASÍM</button>
         </div>
       </div>
     </div>
@@ -706,14 +856,27 @@
 
     </main>
 
-    <!-- Footer ve stylu Grunge šablony -->
+    <!-- Footer ve stylu Grunge šablony s kompletními právními náležitostmi -->
     <footer class="site-footer">
       <div class="footer-inner">
         <div class="footer-copy">
           <span class="footer-brand font-grunge">SLOVO.</span>
+          <span class="footer-tagline">Český multiplayer na principu významové blízkosti slov</span>
+        </div>
+        <div class="footer-legal-nav" aria-label="Právní informace a podmínky">
+          <button type="button" class="legal-link-btn" data-legal="terms">Podmínky užití</button>
+          <span class="legal-sep" aria-hidden="true">&bull;</span>
+          <button type="button" class="legal-link-btn" data-legal="privacy">Ochrana soukromí (GDPR)</button>
+          <span class="legal-sep" aria-hidden="true">&bull;</span>
+          <button type="button" class="legal-link-btn" data-legal="cookies">Úložiště & Cookies</button>
+          <span class="legal-sep" aria-hidden="true">&bull;</span>
+          <button type="button" class="legal-link-btn" data-legal="youtube">YouTube & Licence</button>
+          <span class="legal-sep" aria-hidden="true">&bull;</span>
+          <button type="button" class="legal-link-btn" data-legal="report">Nahlásit obsah (DSA)</button>
         </div>
         <div class="footer-meta">
-          <span>SÉMANTICKÝ MODEL CS &bull; WORD EMBEDDINGS</span>
+          <span class="footer-contact">Kontakt & DSA: <a href="mailto:slovotecka@proton.me" class="footer-mail-link">slovotecka@proton.me</a></span>
+          <span class="footer-disclaimer">Nezávislý český projekt inspirovaný principem Contexto. Není nijak spojen s původními autory Contexto.</span>
         </div>
       </div>
     </footer>
