@@ -5,6 +5,7 @@ npm-debug.log
 template/
 newTemplate/
 src/data/savedState.json*
+src/data/yesterdayRecap.json
 *.template-backup.*
 filelist.txt
 find_*
