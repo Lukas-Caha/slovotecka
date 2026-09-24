@@ -1503,8 +1503,8 @@ const btnClosePlayers = document.getElementById('btn-close-players');
 const playersPopover = document.getElementById('players-popover');
 const headerPlayersCount = document.getElementById('header-players-count');
 
-// ── DYNAMICKÉ OMEZENÍ VÝŠKY A POZICE POSTRANNÍCH PANELŮ (CHAT & ONLINE) ─────
-// Zabraňuje lezení chatu a online panelu pod hlavičku a přes patičku při scrollování
+// ── POZICE A VÝŠKA POSTRANNÍCH PANELŮ (CHAT & ONLINE) ──────────────────────
+// Udržuje panely zarovnané pod sticky hlavičkou / hudební lištou bez smršťování při scrollování
 let sidebarBoundsRaf = null;
 
 function updateSidebarBounds() {
@@ -1517,7 +1517,7 @@ function updateSidebarBounds() {
     return;
   }
 
-  // 1. Spočítat spodní hranu sticky hlavičky / hudební lišty
+  // Spočítat spodní hranu sticky hlavičky / hudební lišty
   const topContainer = document.getElementById('site-top-container') || document.querySelector('.site-header');
   let topHeight = 68;
   if (topContainer) {
@@ -1525,17 +1525,7 @@ function updateSidebarBounds() {
     topHeight = Math.max(50, Math.round(topRect.bottom));
   }
   document.documentElement.style.setProperty('--site-top-height', `${topHeight}px`);
-
-  // 2. Spočítat kolik patičky (.site-footer) je vidět v okně a zvednout spodní okraj panelů
-  const footer = document.querySelector('.site-footer');
-  let bottomClearance = 18;
-  if (footer) {
-    const footerRect = footer.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const footerVisibleHeight = Math.max(0, viewportHeight - footerRect.top);
-    bottomClearance = 18 + footerVisibleHeight;
-  }
-  document.documentElement.style.setProperty('--site-bottom-clearance', `${bottomClearance}px`);
+  document.documentElement.style.setProperty('--site-bottom-clearance', '18px');
 }
 
 function scheduleSidebarBoundsUpdate() {
@@ -1546,17 +1536,13 @@ function scheduleSidebarBoundsUpdate() {
   });
 }
 
-window.addEventListener('scroll', scheduleSidebarBoundsUpdate, { passive: true });
+// Aktualizace při změně velikosti okna nebo změně rozměru lišty (např. spuštění přehrávače hudby)
 window.addEventListener('resize', scheduleSidebarBoundsUpdate, { passive: true });
 
 if (typeof ResizeObserver !== 'undefined') {
   const topCont = document.getElementById('site-top-container') || document.querySelector('.site-header');
   if (topCont) {
     new ResizeObserver(scheduleSidebarBoundsUpdate).observe(topCont);
-  }
-  const siteFooter = document.querySelector('.site-footer');
-  if (siteFooter) {
-    new ResizeObserver(scheduleSidebarBoundsUpdate).observe(siteFooter);
   }
 }
 updateSidebarBounds();

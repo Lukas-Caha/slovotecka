@@ -483,9 +483,11 @@ body {
   position: fixed;
   top: calc(var(--site-top-height, 68px) + 12px);
   left: 18px;
+  bottom: var(--site-bottom-clearance, 18px);
   width: var(--players-width, 220px);
   max-width: calc(100vw - 36px);
-  max-height: calc(100vh - var(--site-top-height, 68px) - var(--site-bottom-clearance, 18px) - 24px);
+  height: auto;
+  max-height: calc(100vh - var(--site-top-height, 68px) - var(--site-bottom-clearance, 18px) - 12px);
   background: rgba(18, 19, 22, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -1996,7 +1998,8 @@ body.players-is-open .players-panel {
   min-width: 260px;
   max-width: min(750px, calc(100vw - 420px));
   height: auto;
-  max-height: calc(100vh - var(--site-top-height, 68px) - var(--site-bottom-clearance, 18px) - 24px);
+  min-height: min(380px, calc(100vh - var(--site-top-height, 68px) - 30px));
+  max-height: calc(100vh - var(--site-top-height, 68px) - var(--site-bottom-clearance, 18px) - 12px);
   background: rgba(18, 19, 22, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -2162,7 +2165,8 @@ body.chat-is-open .chat-panel,
 }
 
 .chat-messages {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -2441,45 +2445,6 @@ body.chat-is-open .chat-panel,
   opacity: 0.7;
 }
 
-/* ── FOOTER ─────────────────────────────────────────────────────────────── */
-.site-footer {
-  margin-top: auto;
-  border-top: 2px solid var(--border-strong);
-  background: var(--bg-footer);
-  padding: 18px 24px;
-}
-
-.footer-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.footer-copy {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  color: var(--color-base-600);
-}
-
-.footer-brand {
-  font-family: var(--font-grunge);
-  font-size: 1.4rem;
-  color: var(--color-base-900);
-  margin-right: 6px;
-  letter-spacing: 0;
-}
-
-.footer-meta {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  color: var(--color-base-600);
-}
 
 /* ── TOAST NOTIFICATIONS ────────────────────────────────────────────────── */
 #toast-container {
@@ -3026,7 +2991,7 @@ body.chat-is-open .chat-panel,
 /* ── Plovoucí gramofon v rohu (Větší vinyl 84px) ────────────────────────── */
 .floating-gramophone {
   position: fixed;
-  bottom: calc(var(--site-bottom-clearance, 18px) + 6px);
+  bottom: 24px;
   left: 24px;
   z-index: 999;
   display: flex;
@@ -5874,12 +5839,14 @@ body.chat-is-open .chat-panel,
    PRÁVNÍ INFORMACE, PODMÍNKY A PATIČKA (GDPR / ToS / Cookies / DSA)
    ========================================================================== */
 
-/* ── 1. Patička webu (Footer) ───────────────────────────────────────────── */
+/* ── 1. Patička webu (Footer) - kompaktní & minimalistická ───────────────── */
 .site-footer {
-  margin-top: 48px;
+  margin-top: auto;
   border-top: 1px solid var(--border);
   background: var(--bg-header);
-  padding: 24px 16px 32px;
+  padding: 8px 16px 10px;
+  position: relative;
+  z-index: 10;
 }
 
 .footer-inner {
@@ -5889,27 +5856,29 @@ body.chat-is-open .chat-panel,
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 14px;
-}
-
-.footer-copy {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 4px;
 }
 
+.footer-copy {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px 10px;
+}
+
 .footer-brand {
-  font-size: 2rem;
-  letter-spacing: 0.05em;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
   color: var(--color-base-900);
+  line-height: 1.2;
 }
 
 .footer-tagline {
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   color: var(--color-base-600);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 .footer-legal-nav {
@@ -5917,23 +5886,23 @@ body.chat-is-open .chat-panel,
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 8px 12px;
-  margin: 6px 0;
+  gap: 4px 10px;
+  margin: 2px 0;
 }
 
 .legal-link-btn {
   background: transparent;
   border: none;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--color-base-700);
   text-decoration: underline;
   text-decoration-color: var(--border-strong);
-  text-underline-offset: 3px;
+  text-underline-offset: 2px;
   cursor: pointer;
   transition: all 0.15s ease;
-  padding: 2px 4px;
+  padding: 1px 3px;
 }
 
 .legal-link-btn:hover {
@@ -5943,25 +5912,32 @@ body.chat-is-open .chat-panel,
 
 .legal-sep {
   color: var(--color-base-500);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
 }
 
 .footer-meta {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 4px 8px;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--color-base-600);
-  max-width: 700px;
-  line-height: 1.45;
+  font-size: 0.67rem;
+  color: var(--color-base-500);
+  max-width: 820px;
+  line-height: 1.35;
+}
+
+.footer-sep {
+  color: var(--color-base-500);
+  font-size: 0.65rem;
+  opacity: 0.6;
 }
 
 .footer-mail-link {
   color: #38bdf8;
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .footer-mail-link:hover {
@@ -5969,7 +5945,7 @@ body.chat-is-open .chat-panel,
 }
 
 .footer-disclaimer {
-  font-size: 0.68rem;
+  font-size: 0.67rem;
   color: var(--color-base-500);
   font-style: italic;
 }
