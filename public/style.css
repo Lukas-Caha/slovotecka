@@ -11,57 +11,62 @@
 }
 
 :root {
-  /* Colors from template (Dark default - Vyvážený tmavý grunge retro styl dle předlohy) */
-  --color-base-100: #141312; /* Hluboký matný grafitový podklad bez žlutého nádechu */
-  --color-base-200: #1c1a19; /* Tmavé lišty a výlisky */
-  --color-base-300: #262321; /* Dělící spáry a vlisované drážky */
-  --color-base-400: #3a3632; /* Zvýrazněné přechody a hrany */
-  --color-base-500: #57504a; /* Tlumené popisky */
-  --color-base-600: #7d756c; /* Sekundární texty (časy, meta informace) */
-  --color-base-700: #aba195; /* Čitelné štítky a popisky */
-  --color-base-800: #d8d0c4; /* Patinovaný světlý tón */
-  --color-base-900: #FAF7F2; /* Čistá, kontrastní vintage slonová kost pro hlavní nápisy */
+  /* Klidná, příjemná tmavá paleta pro oči (Dark default) */
+  --color-base-100: #121316; /* Uklidňující tmavý uhlový podklad */
+  --color-base-200: #17181d; /* Tmavé lišty a výlisky */
+  --color-base-300: #1f2128; /* Karty a plochy */
+  --color-base-400: #2a2d36; /* Jemné oddělovače */
+  --color-base-500: #525866; /* Tlumené popisky */
+  --color-base-600: #7e8696; /* Sekundární texty (časy, meta informace) */
+  --color-base-700: #abb3c4; /* Čitelné štítky a popisky */
+  --color-base-800: #d5dae5; /* Světlý neutrální text */
+  --color-base-900: #f8fafc; /* Čistý kontrastní text pro hlavní nadpisy */
 
   /* Fonts */
   --font-grunge: 'Road Rage', cursive, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Borders & Shadows */
-  --border: rgba(250, 247, 242, 0.22);
-  --border-strong: #EDE7DC; /* Ostrý, kontrastní světlý rámeček přesně jako v předloze */
-  --shadow-brutal: 4px 4px 0px rgba(0, 0, 0, 0.8);
+  /* Borders & Shadows - jemnější, nerušivé */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --shadow-brutal: 0 4px 16px rgba(0, 0, 0, 0.35);
 
-  /* Accents - Stejné v obou módech */
-  --color-accent: #D63031;
-  --color-amber: #D97706;
-  --color-green: #15803D;
+  /* Accents */
+  --color-accent: #ef4444;
+  --color-amber: #f59e0b;
+  --color-green: #22c55e;
 
-  /* Rank tiers */
-  --rank-1: #D63031;
-  --rank-hot: #15803D;
-  --rank-warm: #D97706;
-  --rank-cool: #8A8378;
+  /* Rank tiers - sémantické barvy hádání */
+  --rank-1: #22c55e;
+  --rank-hot: #16a34a;
+  --rank-warm: #f59e0b;
+  --rank-cool: #475569;
 
-  /* Panely a herní prvky – tmavý matný povrch s vysokým kontrastem */
-  --bg-panel: #1A1817;
-  --bg-panel-header: #23211F;
-  --bg-guess-card: #1D1B1A;
-  --bg-guess-card-hover: #272523;
-  --bg-last-guess: #1A1817;
-  --border-guess-card: rgba(250, 247, 242, 0.18);
-  --guess-rank-color: #FAF7F2;
-  --guess-word-color: #FFFFFF;
-  --guess-card-shadow: 2px 2px 0px rgba(0, 0, 0, 0.6);
-  --bg-input: #11100F;
-  --bg-input-focus: #171615;
-  --bg-chat-form: #1E1C1B;
+  /* Panely a herní prvky */
+  --bg-panel: #18191e;
+  --bg-panel-header: #1f2127;
+  --bg-guess-card: #1c1d23;
+  --bg-guess-card-hover: #252730;
+  --bg-last-guess: #18191e;
+  --border-guess-card: rgba(255, 255, 255, 0.07);
+  --guess-rank-color: #f8fafc;
+  --guess-word-color: #ffffff;
+  --guess-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --bg-input: #121316;
+  --bg-input-focus: #17181e;
+  --bg-chat-form: #1c1d23;
   --bg-chat-msg-me: transparent;
-  --bg-header: #1A1817;
-  --bg-footer: #161514;
-  --bg-modal: #1A1817;
-  --bg-popover: #1E1C1B;
-  --bg-gramophone: #1A1817;
+  --bg-header: rgba(18, 19, 22, 0.94);
+  --bg-footer: #121316;
+  --bg-modal: #18191e;
+  --bg-popover: #1c1d23;
+  --bg-gramophone: #18191e;
   --svg-invert: 0;
+
+  /* Rozměry chatu a herního pole */
+  --chat-width: 320px;
+  --game-width: 860px;
+  --players-width: 220px;
 }
 
 [data-theme="light"] {
@@ -85,6 +90,11 @@
   --color-amber: #D97706;
   --color-green: #15803D;
 
+  --rank-1: #15803D;
+  --rank-hot: #16a34a;
+  --rank-warm: #D97706;
+  --rank-cool: #665935;
+
   /* Panely, karty a herní plochy – sytý starý zažloutlý plast */
   --bg-panel: #EFE4BA;
   --bg-panel-header: #DECFA0;
@@ -98,7 +108,7 @@
   --bg-input: #F7EFD2;
   --bg-input-focus: #FAF4DE;
   --bg-chat-form: #DECFA0;
-  --bg-chat-msg-me: transparent;
+  --bg-chat-msg-me: rgba(24, 21, 10, 0.05);
   --bg-header: rgba(229, 218, 178, 0.96);
   --bg-footer: #DECFA0;
   --bg-modal: #EFE4BA;
@@ -132,6 +142,15 @@ body {
   overflow-x: hidden;
 }
 
+[data-theme="light"] body {
+  background-color: var(--color-base-100);
+  background-image: 
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(247, 239, 210, 0.6) 0%, transparent 80%),
+    radial-gradient(ellipse 70% 80% at 50% 120%, rgba(199, 183, 132, 0.45) 0%, transparent 100%),
+    linear-gradient(to right, rgba(24, 21, 10, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(24, 21, 10, 0.04) 1px, transparent 1px);
+}
+
 /* ── Noise Overlay (Gritty Grunge Texture - jemná analogová zrnitost) ── */
 .noise-overlay {
   position: fixed;
@@ -151,8 +170,18 @@ body {
   flex-direction: column;
 }
 
+/* ── Sticky Top Container (Hlavička + Hudební lišta) ─────────────────────── */
+.site-top-container {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+}
+
 /* ── Header ─────────────────────────────────────────────────────────────── */
 .site-header {
+  position: relative;
+  z-index: 10;
   background: var(--bg-header);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -176,39 +205,375 @@ body {
 }
 
 .btn-theme-toggle,
-.btn-sound-toggle {
+.btn-sound-toggle,
+.btn-stats-toggle,
+.btn-top50-toggle,
+.btn-chat-toggle,
+.btn-players-toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
   font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   padding: 6px 12px;
-  border: 1px solid var(--border-strong);
-  background: var(--bg-guess-card);
-  color: var(--color-base-900);
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--color-base-800);
   cursor: pointer;
-  border-radius: 0;
-  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
-  transition: all 0.12s ease;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
   user-select: none;
 }
 
 .btn-theme-toggle:hover,
-.btn-sound-toggle:hover {
-  background: var(--color-base-900);
-  color: var(--color-base-100);
-  border-color: var(--color-base-900);
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.7);
+.btn-sound-toggle:hover,
+.btn-stats-toggle:hover,
+.btn-top50-toggle:hover,
+.btn-chat-toggle:hover,
+.btn-players-toggle:hover {
+  background: var(--color-base-300);
+  color: var(--color-base-900);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
 }
 
 .btn-theme-toggle:active,
-.btn-sound-toggle:active {
-  transform: translate(1px, 1px);
-  box-shadow: none;
+.btn-sound-toggle:active,
+.btn-stats-toggle:active,
+.btn-top50-toggle:active,
+.btn-chat-toggle:active,
+.btn-players-toggle:active,
+.btn-chat-toggle.is-active,
+.btn-players-toggle.is-active {
+  background: var(--color-base-400);
+  color: var(--color-base-900);
+  border-color: var(--border-strong);
+  transform: translateY(0);
+}
+
+.btn-top50-toggle {
+  color: var(--color-amber);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.btn-top50-toggle:hover {
+  border-color: var(--color-amber);
+}
+
+/* ── Posuvný přepínač Tématu (Slunce vlevo, posuvník, Měsíc vpravo) ── */
+.theme-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  user-select: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.theme-toggle-wrap:hover {
+  border-color: var(--border-strong);
+}
+
+.theme-icon-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-base-500);
+  cursor: pointer;
+  transition: color 0.18s ease, transform 0.15s ease, filter 0.18s ease;
+}
+
+.theme-icon-btn:hover {
+  color: var(--color-base-900);
+  transform: scale(1.12);
+}
+
+.theme-svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+.theme-switch {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.theme-switch-track {
+  display: block;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-strong);
+  position: relative;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.theme-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* V TMAVÉM režimu (výchozí): thumb je VPRAVO u Měsíce */
+[data-theme="dark"] .theme-switch-thumb,
+:root:not([data-theme="light"]) .theme-switch-thumb {
+  transform: translateX(16px);
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+[data-theme="dark"] .theme-moon-btn,
+:root:not([data-theme="light"]) .theme-moon-btn {
+  color: #f59e0b;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.45));
+}
+
+[data-theme="dark"] .theme-sun-btn,
+:root:not([data-theme="light"]) .theme-sun-btn {
+  color: var(--color-base-500);
+}
+
+/* Ve SVĚTLÉM režimu: thumb je VLEVO u Slunce */
+[data-theme="light"] .theme-switch-thumb {
+  transform: translateX(0px);
+  background: #d97706;
+  box-shadow: 0 0 6px rgba(217, 119, 6, 0.5);
+}
+
+[data-theme="light"] .theme-sun-btn {
+  color: #d97706;
+  filter: drop-shadow(0 0 4px rgba(217, 119, 6, 0.4));
+}
+
+[data-theme="light"] .theme-moon-btn {
+  color: var(--color-base-400);
+}
+
+[data-theme="light"] .theme-switch-track {
+  background: rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .theme-toggle-wrap {
+  background: var(--bg-panel-header);
+  border-color: var(--border-strong);
+  box-shadow: 2px 2px 0px rgba(24, 21, 10, 0.4);
+}
+
+.header-players-wrap {
+  position: relative;
+  z-index: 1001;
+}
+
+.players-online-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+  margin-right: 2px;
+}
+
+.chat-unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+  margin-left: 2px;
+}
+
+/* ── PLAYERS PANEL (SIDEBAR VLEVO V PRÁZDNÉM PROSTORU) ─────────────────────── */
+.players-panel {
+  display: none;
+  position: fixed;
+  top: calc(var(--site-top-height, 68px) + 12px);
+  left: 18px;
+  width: var(--players-width, 220px);
+  max-width: calc(100vw - 36px);
+  max-height: calc(100vh - var(--site-top-height, 68px) - var(--site-bottom-clearance, 18px) - 24px);
+  background: rgba(18, 19, 22, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 4px 8px 30px rgba(0, 0, 0, 0.45);
+  flex-direction: column;
+  z-index: 50;
+  overflow: hidden;
+  animation: playersSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes playersSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.players-panel.is-open,
+body.players-is-open .players-panel {
+  display: flex !important;
+}
+
+.players-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg-panel-header);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.players-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.popover-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--color-base-700);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-popover-close {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--color-base-700);
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.btn-popover-close:hover {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+/* Plovoucí tlačítko na levé hraně obrazovky (když je panel zavřený) */
+.floating-players-pill {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .floating-players-pill {
+    display: inline-flex;
+    position: fixed;
+    top: calc(var(--site-top-height, 68px) + 12px);
+    left: 18px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(18, 19, 22, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--color-base-800);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    z-index: 45;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    text-transform: uppercase;
+  }
+
+  .floating-players-pill:hover {
+    background: var(--bg-panel-header);
+    border-color: var(--border-strong);
+    color: var(--color-base-900);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  }
+
+  body.players-is-open .floating-players-pill {
+    display: none !important;
+  }
+}
+
+/* Mobilní zobrazení pro online hráče (< 960px) */
+@media (max-width: 959px) {
+  .floating-players-pill {
+    display: none !important;
+  }
+
+  .players-panel {
+    display: none;
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 70vh;
+    border-radius: 12px 12px 0 0;
+    z-index: 1002;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.7);
+  }
+
+  .players-panel.is-open,
+  body.players-is-open .players-panel {
+    display: flex !important;
+  }
+}
+
+.brand-link {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
 }
 
 .btn-sound-toggle.is-muted {
@@ -282,10 +647,11 @@ body {
   flex: 1;
 }
 
-/* ── Shared Brutalist Cards / Panels ────────────────────────────────────── */
+/* ── Shared Clean Cards / Panels ────────────────────────────────────────── */
 .card, .panel {
   background: var(--bg-panel);
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
   box-shadow: var(--shadow-brutal);
 }
 
@@ -293,8 +659,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
-  border-bottom: 2px solid var(--border-strong);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
   background: var(--bg-panel-header);
 }
 
@@ -736,6 +1102,46 @@ body {
   opacity: 0.6;
 }
 
+/* ── GAME SECTION ───────────────────────────────────────────────────────── */
+#game-section {
+  max-width: var(--game-width, 860px);
+  margin: 24px auto;
+  transition: margin 0.25s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+/* Panel online hráčů (vlevo) je plovoucí překryvný panel a hrací plocha
+   zůstává vždy vycentrovaná (margin: 24px auto) – nepřicucává se k panelu.
+   Na středně velkých desktopech (960px až 1559px), kde otevřený chat zasahuje
+   do prostoru vycentrované hrací plochy, plocha ustoupí zprava před chatem.
+   Na velkých monitorech (1560px+) zůstává plocha vždy plně vycentrovaná bez posunů. */
+@media (min-width: 960px) and (max-width: 1559px) {
+  /* Pouze chat otevřen na menších desktopech */
+  body.chat-is-open:not(.players-is-open) #game-section {
+    margin-right: calc(var(--chat-width, 320px) + 36px);
+    margin-left: auto;
+    max-width: min(var(--game-width, 860px), calc(100vw - var(--chat-width, 320px) - 64px));
+  }
+
+  /* Oba panely otevřeny najednou na menších desktopech */
+  body.players-is-open.chat-is-open #game-section {
+    margin-left: calc(var(--players-width, 220px) + 36px);
+    margin-right: calc(var(--chat-width, 320px) + 36px);
+    max-width: min(var(--game-width, 860px), calc(100vw - var(--chat-width, 320px) - var(--players-width, 220px) - 90px));
+  }
+}
+
+@media (min-width: 1560px) {
+  /* Na velkých monitorech je dostatek místa na obou stranách: hrací plocha zůstává vždy přesně vycentrovaná */
+  body.chat-is-open #game-section,
+  body.players-is-open #game-section,
+  body.players-is-open.chat-is-open #game-section {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: var(--game-width, 860px);
+  }
+}
+
 /* ── GAME HEADER ────────────────────────────────────────────────────────── */
 .game-header-card {
   display: flex;
@@ -915,35 +1321,41 @@ body {
 
 /* ── GAME GRID ──────────────────────────────────────────────────────────── */
 .game-grid {
-  display: grid;
-  grid-template-columns: 240px 1fr 400px;
-  gap: 18px;
-  align-items: start;
-}
-
-/* ── SIDE PANEL (Hráči) ─────────────────────────────────────────────────── */
-.side-panel {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
 }
 
+.main-panel {
+  width: 100%;
+  max-width: var(--game-width, 860px);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-strong);
+}
+
+/* ── PLAYERS POPOVER LIST ───────────────────────────────────────────────── */
 .players-list {
   list-style: none;
-  padding: 12px;
+  padding: 4px 8px 4px 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 520px;
+  gap: 4px;
+  max-height: 240px;
   overflow-y: auto;
 }
 
 .player-item {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 10px 12px;
-  border: 1px solid rgba(250, 248, 245, 0.18);
-  background: rgba(14, 13, 12, 0.8);
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-guess-card);
+  border-radius: 4px;
   transition: border-color 0.15s;
 }
 
@@ -974,13 +1386,16 @@ body {
 
 .player-name {
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--color-base-900);
   word-break: break-word;
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .player-color-dot {
@@ -995,10 +1410,65 @@ body {
 
 .player-status {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-base-700);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.player-status.status-solved {
+  color: var(--color-green);
+  font-weight: 800;
+}
+
+.player-status.status-gave-up {
+  color: var(--color-base-600);
+}
+
+.player-room-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-base-600);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.players-section-title {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--color-base-600);
+  text-transform: uppercase;
+  padding: 6px 4px 2px 4px;
+  border-top: 1px dashed var(--border);
+  margin-top: 6px;
+  list-style: none;
+}
+
+.players-section-title:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 2px;
+}
+
+.players-empty {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-base-600);
+  text-align: center;
+  padding: 18px 8px;
+  line-height: 1.5;
+  list-style: none;
 }
 
 /* ── MAIN PANEL (Hádání) ────────────────────────────────────────────────── */
@@ -1022,6 +1492,45 @@ body {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.btn-submit-guess {
+  padding: 8px 24px;
+}
+
+.guess-bar-divider {
+  width: 1px;
+  background: var(--border);
+  margin: 2px 4px;
+  align-self: stretch;
+}
+
+.btn-give-up {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border: 1px dashed rgba(250, 248, 245, 0.25);
+  background: transparent;
+  color: var(--color-base-700);
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-give-up:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(239, 68, 68, 0.12);
+  box-shadow: none;
+}
+
+.give-up-flag {
+  font-size: 0.92rem;
+  line-height: 1;
 }
 
 @keyframes inputShake {
@@ -1092,9 +1601,9 @@ body {
 
 /* ── CONTEXTO-STYLE LAST GUESS ROW (Přímo pod zadáváním) ──────────────────── */
 .last-guess-container {
-  padding: 12px 14px 10px 14px;
+  padding: 12px 16px;
   background: var(--bg-panel-header);
-  border-bottom: 2px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
 }
 
 .last-guess-row {
@@ -1103,9 +1612,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border-strong);
   background: var(--bg-last-guess);
-  box-shadow: var(--shadow-brutal);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   min-height: 48px;
   padding: 0 16px;
 }
@@ -1160,7 +1670,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 10px 16px;
-  border-bottom: 2px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
   background: var(--bg-panel-header);
   gap: 12px;
   flex-wrap: wrap;
@@ -1404,12 +1914,171 @@ body {
   font-family: var(--font-mono);
 }
 
-/* ── CHAT PANEL ─────────────────────────────────────────────────────────── */
+/* ── CHAT PANEL (SIDEBAR COMPANION OFF TO THE RIGHT) ─────────────────────── */
+.chat-backdrop {
+  display: none;
+}
+
 .chat-panel {
-  display: flex;
+  display: none;
+  position: fixed;
+  top: calc(var(--site-top-height, 68px) + 12px);
+  right: 18px;
+  bottom: var(--site-bottom-clearance, 18px);
+  width: var(--chat-width, 320px);
+  min-width: 260px;
+  max-width: min(750px, calc(100vw - 420px));
+  height: auto;
+  max-height: calc(100vh - var(--site-top-height, 68px) - var(--site-bottom-clearance, 18px) - 24px);
+  background: rgba(18, 19, 22, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: -4px 8px 30px rgba(0, 0, 0, 0.45);
   flex-direction: column;
-  height: 600px;
-  position: relative;
+  z-index: 50;
+  overflow: hidden;
+  animation: chatSidebarSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Úchyt pro změnu šířky chatu tažením myší */
+.chat-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  cursor: col-resize;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.chat-resize-handle-bar {
+  width: 3px;
+  height: 48px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 0.15s ease, height 0.15s ease, width 0.15s ease, box-shadow 0.15s ease;
+  pointer-events: none;
+}
+
+.chat-resize-handle:hover .chat-resize-handle-bar,
+body.is-resizing-chat .chat-resize-handle .chat-resize-handle-bar {
+  background: var(--color-accent);
+  height: 84px;
+  width: 4px;
+  box-shadow: 0 0 10px var(--color-accent);
+}
+
+.chat-resize-handle:hover,
+body.is-resizing-chat .chat-resize-handle {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Během tažení - žádné prodlevy, lagy ani označování textu */
+body.is-resizing-chat {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  cursor: col-resize !important;
+}
+
+body.is-resizing-chat * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.is-resizing-chat .chat-panel,
+body.is-resizing-chat #game-section {
+  transition: none !important;
+}
+
+@keyframes chatSidebarSlide {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+body.chat-is-open .chat-panel,
+.chat-panel.is-open {
+  display: flex;
+}
+
+@media (max-width: 959px) {
+  #game-section,
+  body.chat-is-open #game-section {
+    max-width: 100%;
+    margin: 16px auto;
+  }
+  .chat-resize-handle {
+    display: none !important;
+  }
+  .chat-panel {
+    display: none;
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 75vh;
+    border-radius: 12px 12px 0 0;
+    z-index: 1001;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.7);
+  }
+  body.chat-is-open .chat-panel,
+  .chat-panel.is-open {
+    display: flex;
+  }
+  body.chat-is-open .chat-backdrop,
+  .chat-backdrop.is-open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 1000;
+  }
+}
+
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-chat-close {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--color-base-700);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.12s ease;
+}
+
+.btn-chat-close:hover {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
 }
 
 .chat-emote-tag {
@@ -1809,12 +2478,9 @@ body {
 
 /* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  .game-grid {
-    grid-template-columns: 220px 1fr;
-  }
-  .chat-panel {
-    grid-column: 1 / -1;
-    height: 380px;
+  .header-inner {
+    flex-wrap: wrap;
+    gap: 14px;
   }
 }
 
@@ -1822,40 +2488,30 @@ body {
   #toast-container {
     left: 14px;
     right: 14px;
-    bottom: 100px;
+    bottom: 24px;
     max-width: none;
-  }
-  .game-grid {
-    grid-template-columns: 1fr;
-  }
-  .side-panel {
-    order: 2;
-  }
-  .main-panel {
-    order: 1;
-  }
-  .chat-panel {
-    order: 3;
-    height: 360px;
   }
   .header-inner {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 12px;
   }
-  .header-decor {
-    display: none;
+  .header-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .header-mode-nav {
+    justify-content: center;
+  }
+  .header-brand {
+    text-align: center;
+    align-items: center;
   }
   .logo {
-    font-size: 2.6rem;
+    font-size: 2.4rem;
   }
   .room-badge-code {
-    font-size: 2rem;
-  }
-  .game-bottom-bar {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
+    font-size: 1.8rem;
   }
   .footer-inner {
     flex-direction: column;
@@ -1870,47 +2526,46 @@ body {
   align-items: center;
 }
 
-.mode-tab {
+.header-mode-nav {
   display: flex;
-  flex-direction: column;
-  padding: 6px 14px;
-  border: 2px solid var(--border);
-  background: rgba(20, 19, 18, 0.6);
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  padding: 3px;
+  border-radius: 6px;
+}
+
+.mode-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
   text-decoration: none;
-  color: var(--color-base-700);
+  color: var(--color-base-600);
   transition: all 0.15s ease-in-out;
+  cursor: pointer;
 }
 
 .mode-tab:hover {
-  border-color: var(--border-strong);
   color: var(--color-base-900);
-  background: rgba(40, 38, 36, 0.8);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .mode-tab.active {
-  border-color: var(--color-accent);
-  background: rgba(255, 59, 48, 0.15);
+  border-color: var(--border-strong);
+  background: var(--color-base-300);
   color: var(--color-base-900);
-  box-shadow: 2px 2px 0px rgba(255, 59, 48, 0.4);
-}
-
-.mode-tab-tag {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  font-weight: 700;
-  opacity: 0.8;
-}
-
-.mode-tab.active .mode-tab-tag {
-  color: var(--color-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .mode-tab-title {
-  font-family: var(--font-grunge);
-  font-size: 1.15rem;
-  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1.1;
 }
@@ -2142,6 +2797,97 @@ body {
   font-size: 1.1rem;
 }
 
+/* ── POTVRZENÍ VZDÁNÍ SE (MODAL) ────────────────────────────────────────── */
+.modal-card-give-up {
+  max-width: 490px;
+  border-color: rgba(239, 68, 68, 0.55);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(239, 68, 68, 0.25);
+}
+
+.give-up-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.give-up-warning-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.give-up-modal-body {
+  padding: 20px 22px;
+}
+
+.give-up-warning-lead {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 14px;
+  letter-spacing: 0.02em;
+}
+
+.give-up-consequences {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--color-base-800);
+  line-height: 1.55;
+}
+
+.give-up-consequences li {
+  position: relative;
+  padding-left: 20px;
+}
+
+.give-up-consequences li::before {
+  content: '▶';
+  position: absolute;
+  left: 0;
+  color: var(--color-accent);
+  font-size: 0.65rem;
+  top: 3px;
+}
+
+.modal-footer-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+}
+
+.btn-modal-keep-playing {
+  font-size: 1.05rem;
+  padding: 8px 18px;
+  white-space: nowrap;
+}
+
+.btn-danger-give-up {
+  font-family: var(--font-grunge);
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  border: 2px solid var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(239, 68, 68, 0.12);
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-danger-give-up:hover {
+  background: var(--color-accent);
+  color: #fff;
+  box-shadow: 2px 2px 0px rgba(239, 68, 68, 0.4);
+}
+
 @media (max-height: 600px) {
   .modal-card {
     max-height: calc(100vh - 20px);
@@ -2183,9 +2929,8 @@ body {
 
 /* ── Music Bar (YouTube Sync Audio Player) ────────────────────────────────── */
 .music-bar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  position: relative;
+  z-index: 10;
   background: var(--bg-header);
   border-bottom: 2px solid var(--border-strong);
   padding: 6px 20px;
@@ -2214,7 +2959,7 @@ body {
 /* ── Plovoucí gramofon v rohu (Větší vinyl 84px) ────────────────────────── */
 .floating-gramophone {
   position: fixed;
-  bottom: 24px;
+  bottom: calc(var(--site-bottom-clearance, 18px) + 6px);
   left: 24px;
   z-index: 999;
   display: flex;
@@ -3700,7 +4445,8 @@ body {
 }
 
 [data-theme="light"] .btn-theme-toggle,
-[data-theme="light"] .btn-sound-toggle {
+[data-theme="light"] .btn-sound-toggle,
+[data-theme="light"] .floating-players-pill {
   background: var(--bg-panel-header);
   border-color: var(--border-strong);
   color: var(--color-base-900);
@@ -3708,9 +4454,25 @@ body {
 }
 
 [data-theme="light"] .btn-theme-toggle:hover,
-[data-theme="light"] .btn-sound-toggle:hover {
+[data-theme="light"] .btn-sound-toggle:hover,
+[data-theme="light"] .floating-players-pill:hover {
   background: var(--color-base-900);
   color: var(--bg-panel);
+}
+
+[data-theme="light"] .btn-give-up {
+  border-color: rgba(24, 21, 10, 0.25);
+  color: var(--color-base-700);
+}
+
+[data-theme="light"] .btn-give-up:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(214, 48, 49, 0.12);
+}
+
+[data-theme="light"] .guess-bar-divider {
+  background: var(--border);
 }
 
 [data-theme="light"] .last-guess-bar-bg,

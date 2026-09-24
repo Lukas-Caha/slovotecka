@@ -314,6 +314,11 @@ io.on('connection', (socket) => {
   // Odeslání historie globálního chatu
   socket.emit('global_chat_history', globalChatHistory);
 
+  // Vyžádání aktuálního seznamu online hráčů
+  socket.on('get_online_players', () => {
+    socket.emit('arena_counts', gameManager.getOnlineCounts());
+  });
+
   // Vytvoření nové vlastní místnosti (Custom Room)
   socket.on('create_custom_room', ({ wordSource }) => {
     const room = gameManager.createCustomRoom(wordSource || 'daily');
@@ -438,10 +443,6 @@ io.on('connection', (socket) => {
         const telegraphText = `⚡ [TELEGRAPH] ${result.player.name} právě zasáhl(a) TOP 10 slovem "${result.guess.word}" (#${result.guess.rank})!`;
         const telegraphMsg = room.addChatMessage('⚡ TELEGRAPH', telegraphText, false, null, '#D97706');
         io.to(mode).emit('chat_message', telegraphMsg);
-      } else {
-        socket.to(mode).emit('notification', {
-          message: `${result.player.name} poslal(a) nový tip.`
-        });
       }
     }
 

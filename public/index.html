@@ -22,117 +22,150 @@
   <!-- Page wrapper above the background & noise -->
   <div class="site-wrapper">
 
-    <!-- Hudební lišta (YouTube sync přehrávač) -->
-    <aside id="music-bar" class="music-bar" style="display: none;" aria-label="Společný hudební přehrávač">
-      <div class="music-bar-inner">
-        <div class="music-bar-left">
-          <span class="music-icon-pulse" aria-hidden="true">🎵</span>
-          <span class="music-tag">[ HRAJE ]</span>
-          <span class="music-title" id="music-title" title="">--</span>
-          <span class="music-requester" id="music-requester"></span>
-        </div>
-
-        <div class="music-bar-center">
-          <span class="music-time-badge" id="music-time" title="Zbývající čas skladby">-:--</span>
-          <div class="music-progress-wrap" title="Průběh přehrávání">
-            <div class="music-progress-bar" id="music-progress-bar"></div>
+    <!-- Společný lepící kontejner pro hlavičku a hudební lištu -->
+    <div class="site-top-container" id="site-top-container">
+      <!-- Hudební lišta (YouTube sync přehrávač) -->
+      <aside id="music-bar" class="music-bar" style="display: none;" aria-label="Společný hudební přehrávač">
+        <div class="music-bar-inner">
+          <div class="music-bar-left">
+            <span class="music-icon-pulse" aria-hidden="true">🎵</span>
+            <span class="music-tag">[ HRAJE ]</span>
+            <span class="music-title" id="music-title" title="">--</span>
+            <span class="music-requester" id="music-requester"></span>
           </div>
-        </div>
 
-        <div class="music-bar-right">
-          <!-- Tlačítko pro explicitní povolení / zapnutí hudby každým uživatelem -->
-          <button type="button" class="btn-music-enable" id="btn-music-enable" title="Povolit a zapnout zvuk pro mě">
-            <span class="music-enable-icon">▶</span>
-            <span>ZAPNOUT HUDBU</span>
-          </button>
-
-          <div class="music-controls-active" id="music-controls-active" style="display: none;">
-            <button type="button" class="music-btn" id="btn-music-toggle" title="Pozastavit / Přehrát pro mě" aria-label="Pozastavit nebo přehrát hudbu">
-              <span id="music-toggle-icon">⏸</span>
-            </button>
-            <div class="music-volume-wrap">
-              <button type="button" class="music-btn btn-vol-mute" id="btn-music-mute" title="Ztlumit / Nahlas" aria-label="Ztlumit nebo zesílit">
-                <span id="music-mute-icon">🔈</span>
-              </button>
-              <input type="range" min="0" max="100" value="20" id="music-volume-slider" class="music-volume-slider" title="Hlasitost hudby (výchozí 20%)" aria-label="Hlasitost hudby">
-              <span class="music-volume-val" id="music-volume-val">20%</span>
+          <div class="music-bar-center">
+            <span class="music-time-badge" id="music-time" title="Zbývající čas skladby">-:--</span>
+            <div class="music-progress-wrap" title="Průběh přehrávání">
+              <div class="music-progress-bar" id="music-progress-bar"></div>
             </div>
-            <!-- Tlačítko pro zobrazení fronty skladeb -->
-            <button type="button" class="music-btn btn-music-queue" id="btn-music-queue" title="Zobrazit frontu skladeb (!queue)" aria-label="Fronta skladeb">
-              <span class="music-queue-icon">📋</span>
-              <span class="music-queue-badge" id="music-queue-badge">0</span>
+          </div>
+
+          <div class="music-bar-right">
+            <!-- Tlačítko pro explicitní povolení / zapnutí hudby každým uživatelem -->
+            <button type="button" class="btn-music-enable" id="btn-music-enable" title="Povolit a zapnout zvuk pro mě">
+              <span class="music-enable-icon">▶</span>
+              <span>ZAPNOUT HUDBU</span>
             </button>
-            <!-- Tlačítko pro přeskočení skladby hlasováním (!skip) -->
-            <button type="button" class="music-btn btn-music-skip" id="btn-music-skip" title="Hlasovat pro přeskočení hudby (!skip)" aria-label="Hlasovat pro přeskočení">
-              <span class="music-skip-icon">⏭</span>
-              <span class="music-skip-badge" id="music-skip-badge">0/1</span>
+
+            <div class="music-controls-active" id="music-controls-active" style="display: none;">
+              <button type="button" class="music-btn" id="btn-music-toggle" title="Pozastavit / Přehrát pro mě" aria-label="Pozastavit nebo přehrát hudbu">
+                <span id="music-toggle-icon">⏸</span>
+              </button>
+              <div class="music-volume-wrap">
+                <button type="button" class="music-btn btn-vol-mute" id="btn-music-mute" title="Ztlumit / Nahlas" aria-label="Ztlumit nebo zesílit">
+                  <span id="music-mute-icon">🔈</span>
+                </button>
+                <input type="range" min="0" max="100" value="20" id="music-volume-slider" class="music-volume-slider" title="Hlasitost hudby (výchozí 20%)" aria-label="Hlasitost hudby">
+                <span class="music-volume-val" id="music-volume-val">20%</span>
+              </div>
+              <!-- Tlačítko pro zobrazení fronty skladeb -->
+              <button type="button" class="music-btn btn-music-queue" id="btn-music-queue" title="Zobrazit frontu skladeb (!queue)" aria-label="Fronta skladeb">
+                <span class="music-queue-icon">📋</span>
+                <span class="music-queue-badge" id="music-queue-badge">0</span>
+              </button>
+              <!-- Tlačítko pro přeskočení skladby hlasováním (!skip) -->
+              <button type="button" class="music-btn btn-music-skip" id="btn-music-skip" title="Hlasovat pro přeskočení hudby (!skip)" aria-label="Hlasovat pro přeskočení">
+                <span class="music-skip-icon">⏭</span>
+                <span class="music-skip-badge" id="music-skip-badge">0/1</span>
+              </button>
+              <button type="button" class="music-btn btn-music-stop" id="btn-music-stop" title="Zastavit hudbu pro tebe" aria-label="Zastavit hudbu pro tebe">
+                <span>⏹</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Rozbalovací popover s frontou skladeb -->
+          <div class="music-queue-popover" id="music-queue-popover" style="display: none;">
+            <div class="music-queue-header">
+              <span class="music-queue-title">[ FRONTA SKLADEB ]</span>
+              <button type="button" class="music-queue-close" id="btn-close-queue" aria-label="Zavřít frontu">&times;</button>
+            </div>
+            <div class="music-queue-body" id="music-queue-body">
+              <div class="queue-empty">Fronta je prázdná. Přidej skladbu příkazem <code>!play &lt;název / odkaz&gt;</code></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Moderní minimalistický Header -->
+      <header class="site-header">
+        <div class="header-inner">
+          <div class="header-brand">
+            <a href="/" class="brand-link" title="SLOVO – Český Contexto">
+              <h1 class="logo">SLOVO<span class="logo-dot">.</span></h1>
+            </a>
+          </div>
+
+          <!-- Přepínač režimů: Denní hra vs Unlimited vs Vlastní aréna -->
+          <nav class="header-mode-nav" aria-label="Výběr režimu hry">
+            <a href="/" class="mode-tab" id="tab-daily">
+              <span class="mode-tab-title">Denní výzva</span>
+            </a>
+            <a href="/unlimited" class="mode-tab" id="tab-unlimited">
+              <span class="mode-tab-title">Archiv</span>
+            </a>
+            <button type="button" class="mode-tab" id="tab-custom">
+              <span class="mode-tab-title">Vlastní aréna</span>
             </button>
-            <button type="button" class="music-btn btn-music-stop" id="btn-music-stop" title="Zastavit hudbu pro tebe" aria-label="Zastavit hudbu pro tebe">
-              <span>⏹</span>
+          </nav>
+
+          <div class="header-actions">
+            <!-- TOP 50 tlačítko v liště (odemkne se až po vzdání / uhádnutí) -->
+            <button type="button" class="btn-theme-toggle btn-top50-toggle" id="btn-nav-top50" title="Zobrazit TOP 50 slov k tajnému heslu" aria-label="TOP 50 slov" style="display: none;">
+              <span class="top50-toggle-icon">🏆</span>
+              <span class="top50-toggle-text">TOP 50</span>
             </button>
+
+            <!-- Průkaz / Statistika -->
+            <button type="button" class="btn-theme-toggle btn-stats-toggle" id="btn-open-stats" title="Zobrazit statistiky hráče" aria-label="Statistiky hráče">
+              <span class="stats-toggle-icon">📇</span>
+              <span class="stats-toggle-text">STATY</span>
+            </button>
+
+            <!-- Chat drawer toggle -->
+            <button type="button" class="btn-theme-toggle btn-chat-toggle" id="btn-toggle-chat" title="Otevřít chat místnosti" aria-label="Otevřít chat">
+              <span class="chat-toggle-icon">💬</span>
+              <span class="chat-toggle-text">CHAT</span>
+              <span class="chat-unread-dot" id="header-chat-dot" style="display: none;"></span>
+            </button>
+
+            <!-- Zvukové efekty -->
+            <button type="button" class="btn-theme-toggle btn-sound-toggle" id="btn-sound-toggle" title="Zvukové efekty" aria-label="Přepnout zvukové efekty">
+              <span class="sound-toggle-icon" id="sound-toggle-icon">🔊</span>
+              <span class="sound-toggle-text" id="sound-toggle-text">ZVUK</span>
+            </button>
+
+            <!-- Posuvný přepínač Světlý / Tmavý režim (Slunce vlevo, posuvník, Měsíc vpravo) -->
+            <div class="theme-toggle-wrap" id="theme-toggle-wrap" title="Přepnout světlý / tmavý režim">
+              <button type="button" class="theme-icon-btn theme-sun-btn" id="theme-sun-btn" aria-label="Světlý režim" title="Přepnout na světlý režim">
+                <svg class="theme-svg theme-sun-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <path d="M12 2v2"></path>
+                  <path d="M12 20v2"></path>
+                  <path d="m4.93 4.93 1.41 1.41"></path>
+                  <path d="m17.66 17.66 1.41 1.41"></path>
+                  <path d="M2 12h2"></path>
+                  <path d="M20 12h2"></path>
+                  <path d="m6.34 17.66-1.41 1.41"></path>
+                  <path d="m19.07 4.93-1.41 1.41"></path>
+                </svg>
+              </button>
+              <button type="button" class="theme-switch" id="btn-theme-toggle" role="switch" aria-checked="false" aria-label="Přepnout režim zobrazení (světlý / tmavý)" title="Přepnout světlý / tmavý režim">
+                <span class="theme-switch-track">
+                  <span class="theme-switch-thumb"></span>
+                </span>
+              </button>
+              <button type="button" class="theme-icon-btn theme-moon-btn" id="theme-moon-btn" aria-label="Tmavý režim" title="Přepnout na tmavý režim">
+                <svg class="theme-svg theme-moon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
-
-        <!-- Rozbalovací popover s frontou skladeb -->
-        <div class="music-queue-popover" id="music-queue-popover" style="display: none;">
-          <div class="music-queue-header">
-            <span class="music-queue-title">[ FRONTA SKLADEB ]</span>
-            <button type="button" class="music-queue-close" id="btn-close-queue" aria-label="Zavřít frontu">&times;</button>
-          </div>
-          <div class="music-queue-body" id="music-queue-body">
-            <div class="queue-empty">Fronta je prázdná. Přidej skladbu příkazem <code>!play &lt;název / odkaz&gt;</code></div>
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Header v grunge brutalistickém stylu -->
-    <header class="site-header">
-      <div class="header-inner">
-        <div class="header-brand">
-          <div class="brand-row">
-            <h1 class="logo">SLOVO<span class="logo-dot">.</span></h1>
-            <img src="/symbolWhite.svg" alt="" class="header-symbol" aria-hidden="true">
-          </div>
-          <p class="tagline">[ SÉMANTICKÁ SLOVNÍ VÝZVA &bull; MULTIPLAYER ARÉNA ]</p>
-        </div>
-
-        <!-- Přepínač režimů: Denní hra vs Unlimited vs Vlastní aréna -->
-        <nav class="header-mode-nav" aria-label="Výběr režimu hry">
-          <a href="/" class="mode-tab" id="tab-daily">
-            <span class="mode-tab-tag">[ MÓD ]</span>
-            <span class="mode-tab-title">DENNÍ VÝZVA</span>
-          </a>
-          <a href="/unlimited" class="mode-tab" id="tab-unlimited">
-            <span class="mode-tab-tag">[ ARCHIV ]</span>
-            <span class="mode-tab-title">UNLIMITED</span>
-          </a>
-          <button type="button" class="mode-tab" id="tab-custom">
-            <span class="mode-tab-tag">[ VLASTNÍ ]</span>
-            <span class="mode-tab-title">ARÉNA</span>
-          </button>
-        </nav>
-
-        <div class="header-actions">
-          <button type="button" class="btn-theme-toggle btn-stats-toggle" id="btn-open-stats" title="Zobrazit legitimaci a statistiky hráče" aria-label="Statistiky hráče">
-            <span class="stats-toggle-icon">📇</span>
-            <span class="stats-toggle-text">PRŮKAZ</span>
-          </button>
-          <button type="button" class="btn-theme-toggle btn-sound-toggle" id="btn-sound-toggle" title="Zvukové efekty (cvakání kláves, analogové tóny)" aria-label="Přepnout zvukové efekty">
-            <span class="sound-toggle-icon" id="sound-toggle-icon">🔊</span>
-            <span class="sound-toggle-text" id="sound-toggle-text">ZVUK</span>
-          </button>
-          <button type="button" class="btn-theme-toggle" id="btn-theme-toggle" title="Přepnout tmavý / světlý režim" aria-label="Přepnout téma">
-            <span class="theme-toggle-icon" id="theme-toggle-icon">☼</span>
-            <span class="theme-toggle-text" id="theme-toggle-text">SVĚTLÝ</span>
-          </button>
-        </div>
-
-        <div class="header-decor">
-          <img src="/barcode.svg" alt="Barcode" class="header-barcode" aria-hidden="true">
-        </div>
-      </div>
-    </header>
+      </header>
+    </div>
 
     <!-- Notifikace (Toast) -->
     <div id="toast-container" aria-live="polite"></div>
@@ -238,33 +271,79 @@
       </div>
     </div>
 
+    <!-- Popup: POTVRZENÍ VZDÁNÍ SE (Prevence nechtěného missclicku) -->
+    <div id="give-up-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card modal-card-give-up">
+        <div class="modal-header">
+          <div class="give-up-header-title">
+            <span class="give-up-warning-icon">⚠️</span>
+            <span class="modal-title">[ OPRAVDU SE CHCEŠ VZDÁT? ]</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="btn-close-give-up" aria-label="Zavřít">&times;</button>
+        </div>
+        <div class="modal-body give-up-modal-body">
+          <p class="give-up-warning-lead">Vzdáním se pro tebe toto kolo končí!</p>
+          <ul class="give-up-consequences">
+            <li>Odhalí se ti tajné slovo.</li>
+            <li>V horní liště se ti odemkne tlačítko <strong>🏆 TOP 50</strong> slov.</li>
+            <li><strong>Ztratíš možnost dále v tomto kole hádat</strong> a přejdeš do diváckého režimu.</li>
+          </ul>
+        </div>
+        <div class="modal-footer modal-footer-split">
+          <button type="button" class="btn btn-primary btn-modal-keep-playing" id="btn-cancel-give-up">
+            🛡️ ZPĚT DO HRY
+          </button>
+          <button type="button" class="btn btn-danger-give-up" id="btn-confirm-give-up">
+            🏳️ ANO, VZDÁT SE
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dokovatelný panel online hráčů na levé straně (volné místo) -->
+    <aside class="panel players-panel" id="players-popover" style="display: none;">
+      <div class="panel-header players-panel-header">
+        <div class="players-header-left">
+          <span class="players-online-dot"></span>
+          <span class="popover-title" id="players-popover-title">HRÁČI ONLINE</span>
+        </div>
+        <button type="button" class="btn-popover-close" id="btn-close-players" aria-label="Zavřít panel" title="Zavřít panel">&times;</button>
+      </div>
+      <ul class="players-list" id="players-list"></ul>
+    </aside>
+
+    <!-- Plovoucí tlačítko online hráčů vlevo (pokud je panel zavřený) -->
+    <button type="button" class="floating-players-pill" id="btn-floating-players" title="Zobrazit online hráče (vlevo)" aria-label="Hráči online">
+      <span class="players-online-dot"></span>
+      <span class="players-toggle-text"><span id="floating-players-count">1</span> online</span>
+    </button>
+
     <!-- LOBBY: Vstup do arény -->
     <main id="lobby-section" class="container">
       <div class="card lobby-card">
         <div class="card-header-bar">
           <div class="lobby-header-left">
-            <span class="card-tag" id="lobby-tag">[ 01. REGISTRACE DO HRY ]</span>
-            <button type="button" class="btn-whats-new-badge" id="btn-open-whats-new" title="Zobrazit novinky">[ WHATS NEW ]</button>
+            <span class="card-tag" id="lobby-tag">PŘIPOJENÍ DO HRY</span>
+            <button type="button" class="btn-whats-new-badge" id="btn-open-whats-new" title="Zobrazit novinky">Co je nového?</button>
           </div>
-          <img src="/symbolWhite.svg" alt="" class="card-mini-symbol" aria-hidden="true">
         </div>
 
-        <h2 class="card-title" id="lobby-title">DNEŠNÍ SPOLEČNÁ VÝZVA</h2>
-        <p class="lobby-desc" id="lobby-desc">Zadej své jméno nebo přezdívku a zapoj se do společného hádání se všemi, kdo jsou právě v aréně.</p>
+        <h2 class="card-title" id="lobby-title">DNEŠNÍ VÝZVA</h2>
+        <p class="lobby-desc" id="lobby-desc">Zadej svou přezdívku a začni hádat tajné slovo dne společně s ostatními.</p>
         
         <!-- Subtilní přepínač arén s počtem online hráčů -->
         <div class="lobby-mode-pills" id="lobby-mode-pills">
           <a href="/" class="lobby-mode-pill" id="card-mode-daily" title="Přejít na Denní výzvu">
             <span class="mode-pill-dot" aria-hidden="true"></span>
-            <span class="mode-pill-name">DENNÍ VÝZVA</span>
+            <span class="mode-pill-name">Denní výzva</span>
             <span class="mode-pill-count"><strong id="count-daily">0</strong> <span id="unit-daily">online</span></span>
           </a>
           <a href="/unlimited" class="lobby-mode-pill" id="card-mode-unlimited" title="Přejít na Unlimited archiv">
-            <span class="mode-pill-name">UNLIMITED ARCHIV</span>
+            <span class="mode-pill-name">Archiv slov</span>
             <span class="mode-pill-count"><strong id="count-unlimited">0</strong> <span id="unit-unlimited">online</span></span>
           </a>
           <button type="button" class="lobby-mode-pill" id="card-mode-custom" title="Vytvořit nebo vstoupit do vlastní arény">
-            <span class="mode-pill-name">🎮 VLASTNÍ ARÉNA</span>
+            <span class="mode-pill-name">Vlastní aréna</span>
             <span class="mode-pill-count"><strong id="count-custom">0</strong> <span id="unit-custom">arén</span></span>
           </button>
         </div>
@@ -272,11 +351,11 @@
         <!-- Panel voleb pro vlastní arénu -->
         <div id="custom-room-panel" class="custom-room-panel" style="display: none;">
           <div class="custom-card-box">
-            <div class="custom-box-title">[ 1. VYTVOŘIT NOVOU ARÉNU ]</div>
+            <div class="custom-box-title">Vytvořit novou arénu</div>
             <div class="custom-word-options">
               <label class="custom-word-radio">
                 <input type="radio" name="custom-word-source" value="daily" checked>
-                <span>📅 Dnešní slovo <small>(započítává se do statistik & denní série)</small></span>
+                <span>📅 Dnešní slovo <small>(započítává se do statistik & série)</small></span>
               </label>
               <label class="custom-word-radio">
                 <input type="radio" name="custom-word-source" value="archive">
@@ -284,7 +363,7 @@
               </label>
             </div>
             <button type="button" class="btn btn-secondary btn-full btn-create-room" id="btn-create-custom-room">
-              ✨ VYGENEROVAT NOVÝ KÓD MÍSTNOSTI
+              ✨ VYGENEROVAT KÓD MÍSTNOSTI
             </button>
           </div>
 
@@ -293,9 +372,9 @@
           </div>
 
           <div class="custom-card-box">
-            <div class="custom-box-title">[ 2. KÓD MÍSTNOSTI ]</div>
+            <div class="custom-box-title">Zadat kód místnosti</div>
             <div class="custom-code-input-wrap">
-              <input type="text" id="custom-code-input" class="input input-custom-code" placeholder="KÓD (např. X9K2A)" maxlength="10" autocomplete="off" spellcheck="false">
+              <input type="text" id="custom-code-input" class="input input-custom-code" placeholder="Kód např. X9K2A" maxlength="10" autocomplete="off" spellcheck="false">
             </div>
           </div>
         </div>
@@ -303,11 +382,11 @@
         <form id="join-form">
           <div class="field-label-row">
             <label class="field-label" for="player-name">TVOJE PŘEZDÍVKA</label>
-            <span class="color-selected-badge" id="color-selected-badge" style="color: #3b82f6;">[ MODRÁ ]</span>
+            <span class="color-selected-badge" id="color-selected-badge" style="color: #3b82f6;">MODRÁ</span>
           </div>
           <div class="input-with-gear-wrap">
             <span class="input-color-dot" id="preview-dot" style="background-color: #3b82f6;"></span>
-            <input class="input input-name" type="text" id="player-name" placeholder="PŘEZDÍVKA" maxlength="40" autocomplete="off" autofocus>
+            <input class="input input-name" type="text" id="player-name" placeholder="Přezdívka hráče..." maxlength="40" autocomplete="off" autofocus>
             <button type="button" class="btn-color-gear" id="btn-toggle-color-picker" title="Změnit barvu jména v chatu" aria-label="Změnit barvu jména v chatu">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="gear-icon">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -318,7 +397,7 @@
 
           <!-- Výsuvný popover pro výběr z 8 barev -->
           <div class="color-picker-popover" id="color-picker-popover" style="display: none;">
-            <div class="color-picker-popover-title">[ VYBER SI BARVU ]</div>
+            <div class="color-picker-popover-title">Vyber si barvu</div>
             <div class="color-palette" role="radiogroup" id="color-palette">
               <button type="button" class="color-swatch-btn" data-color="#ef4444" data-name="Červená" style="--swatch-color: #ef4444;" title="Červená" aria-label="Červená"></button>
               <button type="button" class="color-swatch-btn" data-color="#f97316" data-name="Oranžová" style="--swatch-color: #f97316;" title="Oranžová" aria-label="Oranžová"></button>
@@ -345,10 +424,6 @@
         <div id="lobby-yesterday-recap" class="lobby-yesterday-recap" style="display: none;">
           <!-- Dynamicky generováno: tajné slovo, vítěz, klaun, bloudění -->
         </div>
-
-        <div class="card-footer-decor">
-          <img src="/barcode.svg" alt="" class="card-barcode" aria-hidden="true">
-        </div>
       </div>
     </main>
 
@@ -358,11 +433,11 @@
       <!-- Horní lišta herního stavu -->
       <div class="game-header-card">
         <div class="room-badge">
-          <span class="room-badge-label" id="display-mode-label">[ DENNÍ VÝZVA ]</span>
+          <span class="room-badge-label" id="display-mode-label">DENNÍ VÝZVA</span>
           <span class="room-badge-code" id="display-day-title">DEN #1</span>
         </div>
         <div class="custom-share-badge" id="custom-share-badge" style="display: none;">
-          <span class="custom-badge-tag">[ ARÉNA ]</span>
+          <span class="custom-badge-tag">KÓD ARÉNY</span>
           <span class="custom-badge-code" id="display-custom-code">-----</span>
           <button type="button" class="btn-copy-link" id="btn-copy-room-link" title="Zkopírovat odkaz na arénu">
             📋 ZKOPÍROVAT ODKAZ
@@ -384,10 +459,10 @@
       <div id="vote-bar" class="vote-bar" style="display:none;">
         <div class="vote-info">
           <div class="vote-tag-row">
-            <span class="vote-tag">[ 🗳️ HLASOVÁNÍ O NOVÉ SLOVO ]</span>
+            <span class="vote-tag">HLASOVÁNÍ O NOVÉ SLOVO</span>
             <span id="vote-count-badge" class="vote-count-badge">0 / 1 HLASŮ</span>
           </div>
-          <p class="vote-desc" id="vote-desc">Když se shodne nadpoloviční většina hráčů (např. 2 ze 3), vylosuje se nové slovo z fondu archivních slov.</p>
+          <p class="vote-desc" id="vote-desc">Když se shodne nadpoloviční většina hráčů, vylosuje se nové slovo z fondu archivních slov.</p>
         </div>
         <button type="button" class="btn btn-vote" id="btn-vote-new-word">
           <span class="vote-icon">🗳️</span>
@@ -411,7 +486,7 @@
               <line x1="12" y1="16" x2="12" y2="12"></line>
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
-            Odhalit nápovědu (dostaneš 🤡)
+            Odhalit nápovědu (+1 🤡)
           </button>
         </div>
         <div id="hint-revealed" class="hint-revealed" style="display:none;">
@@ -427,33 +502,23 @@
 
       <!-- Tajné slovo (viditelné jen po vyřešení / vzdání) -->
       <div id="secret-word-box" class="secret-box" style="display:none;">
-        <span class="secret-label" id="secret-label">[ DNEŠNÍ TAJNÉ SLOVO ]</span>
+        <span class="secret-label" id="secret-label">TAJNÉ SLOVO ODHALENO</span>
         <span id="display-secret-word" class="secret-word"></span>
       </div>
 
-      <!-- Hlavní herní plocha: 3 sloupce -->
+      <!-- Hlavní herní plocha: Čistý vycentrovaný hrací stůl -->
       <div class="game-grid">
-
-        <!-- Levý panel: online hráči -->
-        <aside class="panel side-panel">
-          <div class="panel-header">
-            <h3 class="panel-title">[ 01. HRÁČI ONLINE ]</h3>
-            <img src="/symbolWhite.svg" alt="" class="panel-symbol" aria-hidden="true">
-          </div>
-          <ul class="players-list" id="players-list"></ul>
-        </aside>
 
         <!-- Střední panel: hádání + tabulka -->
         <section class="panel main-panel">
-          <div class="panel-header">
-            <h3 class="panel-title">[ 02. HÁDÁNÍ SLOVA ]</h3>
-            <img src="/barcode.svg" alt="" class="panel-barcode-mini" aria-hidden="true">
-          </div>
-
           <div id="guess-controls" class="guess-bar">
-            <input class="input input-guess" type="text" id="guess-input" placeholder="ZADEJ SLOVO... [/]" autocomplete="off" autocorrect="off" spellcheck="false">
-            <button class="btn btn-primary" id="btn-submit-guess">HÁDAT</button>
-            <button class="btn btn-ghost btn-give-up" id="btn-reveal-word">VZDÁT SE</button>
+            <input class="input input-guess" type="text" id="guess-input" placeholder="Zadej slovo a stiskni Enter... [/]" autocomplete="off" autocorrect="off" spellcheck="false" autofocus>
+            <button type="button" class="btn btn-primary btn-submit-guess" id="btn-submit-guess">HÁDAT</button>
+            <div class="guess-bar-divider" aria-hidden="true"></div>
+            <button type="button" class="btn btn-ghost btn-give-up" id="btn-reveal-word" title="Vzdát se a odhalit tajné slovo (vyžaduje potvrzení)">
+              <span class="give-up-flag" aria-hidden="true">🏳️</span>
+              <span>VZDÁT SE</span>
+            </button>
           </div>
           <p id="guess-feedback" class="guess-feedback"></p>
 
@@ -470,7 +535,7 @@
 
           <div class="guesses-header">
             <div class="guesses-header-left">
-              <span class="guesses-title" id="guesses-title">[ ODHALENÁ SLOVA ]</span>
+              <span class="guesses-title" id="guesses-title">Tvoje tipy</span>
 
               <!-- Řazení tipů (Contexto pořadí vs čas zadání) -->
               <div class="guesses-filter-tabs guesses-sort-tabs" id="guesses-sort-tabs" title="Přepnout způsob řazení tipů">
@@ -484,18 +549,15 @@
                   <span class="spectator-pulse-dot" aria-hidden="true"></span>
                   DIVÁK
                 </span>
-                <button type="button" class="btn-subtle-top50" id="btn-show-top50" title="Zobrazit 50 nejbližších slov">
-                  🏆 TOP 50
-                </button>
                 <div id="spectator-filter-tabs" class="guesses-filter-tabs">
                   <button type="button" class="btn-filter-tab is-active" id="btn-filter-all" data-filter="all">VŠECHNY TIPY</button>
                   <button type="button" class="btn-filter-tab" id="btn-filter-mine" data-filter="mine">POUZE MOJE</button>
                 </div>
               </div>
             </div>
+
             <!-- Mechanické páskové počítadlo tipů -->
-            <div class="tape-counter-wrap" id="tape-counter-wrap" title="Mechanické počítadlo tipů (počet pokusů v aréně)">
-              <span class="tape-counter-tag">TAPE</span>
+            <div class="tape-counter-wrap" id="tape-counter-wrap" title="Počet pokusů v aréně">
               <div class="tape-counter-bezel">
                 <span class="counter-digit" id="counter-d100">0</span>
                 <span class="counter-digit" id="counter-d10">0</span>
@@ -507,140 +569,141 @@
 
           <div class="guesses-wrap">
             <div class="guesses-cards-list" id="guesses-list">
-              <div class="empty-guesses">ZATÍM ŽÁDNÉ TIPY. ZAČNI HÁDAT DNEŠNÍ SLOVO!</div>
+              <div class="empty-guesses">Zatím žádné tipy. Začni hádat dnešní slovo!</div>
             </div>
           </div>
         </section>
 
-        <!-- Pravý panel: Chat -->
-        <aside class="panel chat-panel">
+        <!-- Dokovatelný postranní chat panel (Toggle) -->
+        <aside class="panel chat-panel" id="chat-panel">
+          <!-- Úchyt pro změnu šířky chatu tažením myší -->
+          <div class="chat-resize-handle" id="chat-resize-handle" role="separator" aria-orientation="vertical" title="Táhnutím do stran změnit šířku chatu (dvojklik pro výchozí)" aria-label="Změnit šířku chatu">
+            <div class="chat-resize-handle-bar"></div>
+          </div>
           <div class="panel-header chat-panel-header">
-            <div class="chat-header-tabs" role="tablist">
-              <button type="button" class="btn-chat-tab is-active" id="chat-tab-room" role="tab" aria-selected="true" title="Chat dané místnosti">
-                <span class="chat-tab-icon">💬</span>
-                <span class="chat-tab-label">MÍSTNOST</span>
-              </button>
-              <button type="button" class="btn-chat-tab" id="chat-tab-global" role="tab" aria-selected="false" title="Globální chat pro celou Slovotečku">
-                <span class="chat-tab-icon">🌐</span>
-                <span class="chat-tab-label">GLOBÁL</span>
-                <span class="chat-tab-unread-dot" id="global-unread-dot" style="display: none;"></span>
-              </button>
-            </div>
-            <span class="chat-emote-tag" id="chat-emote-count" title="Dostupné 7TV emoty (Vernaton999 & Globální)">7TV EMOTES</span>
-            <img src="/symbolWhite.svg" alt="" class="panel-symbol" aria-hidden="true">
+          <div class="chat-header-tabs" role="tablist">
+            <button type="button" class="btn-chat-tab is-active" id="chat-tab-room" role="tab" aria-selected="true" title="Chat dané místnosti">
+              <span class="chat-tab-icon">💬</span>
+              <span class="chat-tab-label">MÍSTNOST</span>
+            </button>
+            <button type="button" class="btn-chat-tab" id="chat-tab-global" role="tab" aria-selected="false" title="Globální chat pro celou Slovotečku">
+              <span class="chat-tab-icon">🌐</span>
+              <span class="chat-tab-label">GLOBÁL</span>
+              <span class="chat-tab-unread-dot" id="global-unread-dot" style="display: none;"></span>
+            </button>
           </div>
-
-          <!-- Živá anketa v chatu (!poll) -->
-          <div id="chat-poll-widget" class="chat-poll-widget" style="display: none;">
-            <div class="poll-header-row">
-              <div class="poll-badge-wrap">
-                <span class="poll-pulse-dot" aria-hidden="true"></span>
-                <span class="poll-tag">[ 📊 ANKETA ]</span>
-              </div>
-              <span class="poll-timer-badge" id="poll-timer-badge">60 s</span>
-            </div>
-            <div class="poll-question" id="poll-question">Otázka ankety...</div>
-            <div class="poll-options-list" id="poll-options-list">
-              <!-- Dynamicky generováno -->
-            </div>
-            <div class="poll-footer-meta">
-              <span class="poll-votes-total" id="poll-votes-total">0 hlasů</span>
-              <span class="poll-author" id="poll-author">od Lukas</span>
-            </div>
+          <div class="chat-header-actions">
+            <span class="chat-emote-tag" id="chat-emote-count" title="Dostupné 7TV emoty">7TV</span>
+            <button type="button" class="btn-chat-close" id="btn-close-chat" aria-label="Zavřít chat" title="Zavřít chat">&times;</button>
           </div>
+        </div>
 
-          <!-- 1. Chat dané místnosti -->
-          <div class="chat-messages" id="chat-messages">
-            <div class="chat-empty">Zatím žádné zprávy. Napiš něco do chatu!</div>
+        <!-- Živá anketa v chatu (!poll) -->
+        <div id="chat-poll-widget" class="chat-poll-widget" style="display: none;">
+          <div class="poll-header-row">
+            <div class="poll-badge-wrap">
+              <span class="poll-pulse-dot" aria-hidden="true"></span>
+              <span class="poll-tag">ANKETA</span>
+            </div>
+            <span class="poll-timer-badge" id="poll-timer-badge">60 s</span>
           </div>
-
-          <!-- 2. Globální chat napříč všemi místnostmi -->
-          <div class="chat-messages chat-messages-global" id="chat-messages-global" style="display: none;">
-            <div class="chat-empty">Zatím žádné globální zprávy. Napiš vzkaz pro všechny v arénách!</div>
+          <div class="poll-question" id="poll-question">Otázka ankety...</div>
+          <div class="poll-options-list" id="poll-options-list">
+            <!-- Dynamicky generováno -->
           </div>
+          <div class="poll-footer-meta">
+            <span class="poll-votes-total" id="poll-votes-total">0 hlasů</span>
+            <span class="poll-author" id="poll-author">od Lukas</span>
+          </div>
+        </div>
 
-          <button type="button" class="chat-unread-badge" id="chat-unread-badge" style="display: none;" title="Přejít na nejnovější zprávy">
-            ↓ NOVÉ ZPRÁVY
+        <!-- 1. Chat dané místnosti -->
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-empty">Zatím žádné zprávy. Napiš něco do chatu!</div>
+        </div>
+
+        <!-- 2. Globální chat napříč všemi místnostmi -->
+        <div class="chat-messages chat-messages-global" id="chat-messages-global" style="display: none;">
+          <div class="chat-empty">Zatím žádné globální zprávy. Napiš vzkaz pro všechny v arénách!</div>
+        </div>
+
+        <button type="button" class="chat-unread-badge" id="chat-unread-badge" style="display: none;" title="Přejít na nejnovější zprávy">
+          ↓ NOVÉ ZPRÁVY
+        </button>
+
+        <!-- Emote picker popover -->
+        <div class="emote-picker" id="emote-picker" style="display: none;">
+          <div class="emote-picker-header">
+            <input type="text" id="emote-search" class="emote-search-input" placeholder="Hledat 7TV emote..." autocomplete="off">
+            <span class="emote-picker-count" id="emote-picker-count">0</span>
+          </div>
+          <div class="emote-picker-grid" id="emote-picker-grid">
+            <!-- Dynamicky generované emoty -->
+          </div>
+        </div>
+
+        <!-- Nápověda příkazů chatu (autocomplete při zadání !) -->
+        <div class="chat-commands-popover" id="chat-commands-popover" style="display: none;">
+          <div class="chat-commands-header">
+            <span class="chat-commands-tag">Příkazy chatu</span>
+            <span class="chat-commands-hint">Vyber kliknutím nebo dopiš</span>
+          </div>
+          <div class="chat-commands-list" id="chat-commands-list">
+            <button type="button" class="chat-command-item" data-command="!play ">
+              <span class="cmd-code">!play &lt;název / odkaz&gt;</span>
+              <span class="cmd-desc">Vyhledá skladbu nebo pustí YouTube odkaz</span>
+            </button>
+            <button type="button" class="chat-command-item" data-command="!queue">
+              <span class="cmd-code">!queue</span>
+              <span class="cmd-desc">Zobrazí aktuální frontu skladeb</span>
+            </button>
+            <button type="button" class="chat-command-item" data-command="!skip">
+              <span class="cmd-code">!skip</span>
+              <span class="cmd-desc">Hlasovat pro přeskočení skladby</span>
+            </button>
+            <button type="button" class="chat-command-item" data-command="!stop">
+              <span class="cmd-code">!stop</span>
+              <span class="cmd-desc">Zastavit hudbu pro sebe</span>
+            </button>
+            <button type="button" class="chat-command-item" data-command="!debil">
+              <span class="cmd-code">!debil</span>
+              <span class="cmd-desc">Změří, na kolik procent jsi debil</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Autocomplete popover pro emoty (:xyz) a zmínky (@hráč) -->
+        <div class="chat-autocomplete-popover" id="chat-autocomplete-popover" style="display: none;">
+          <div class="chat-autocomplete-header">
+            <span class="chat-autocomplete-tag" id="chat-autocomplete-tag">Nápověda</span>
+            <span class="chat-autocomplete-hint">↑↓ výběr, Tab/Enter vložit, Esc zavřít</span>
+          </div>
+          <div class="chat-autocomplete-list" id="chat-autocomplete-list">
+            <!-- Dynamicky generované položky emotů / hráčů -->
+          </div>
+        </div>
+
+        <form class="chat-form" id="chat-form">
+          <button type="button" class="btn btn-emote-toggle" id="btn-toggle-emotes" title="Otevřít 7TV emoty" aria-label="Otevřít 7TV emoty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="emote-icon">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+              <line x1="9" y1="9" x2="9.01" y2="9" stroke-width="3" stroke-linecap="round"></line>
+              <line x1="15" y1="9" x2="15.01" y2="9" stroke-width="3" stroke-linecap="round"></line>
+            </svg>
           </button>
-
-          <!-- Emote picker popover -->
-          <div class="emote-picker" id="emote-picker" style="display: none;">
-            <div class="emote-picker-header">
-              <input type="text" id="emote-search" class="emote-search-input" placeholder="Hledat 7TV emote..." autocomplete="off">
-              <span class="emote-picker-count" id="emote-picker-count">0</span>
-            </div>
-            <div class="emote-picker-grid" id="emote-picker-grid">
-              <!-- Dynamicky generované emoty -->
-            </div>
-          </div>
-
-          <!-- Nápověda příkazů chatu (autocomplete při zadání !) -->
-          <div class="chat-commands-popover" id="chat-commands-popover" style="display: none;">
-            <div class="chat-commands-header">
-              <span class="chat-commands-tag">[ PŘÍKAZY CHATU ]</span>
-              <span class="chat-commands-hint">Vyber kliknutím nebo dopiš</span>
-            </div>
-            <div class="chat-commands-list" id="chat-commands-list">
-              <button type="button" class="chat-command-item" data-command="!play ">
-                <span class="cmd-code">!play &lt;název / odkaz&gt;</span>
-                <span class="cmd-desc">Vyhledá skladbu nebo pustí přímý YouTube odkaz</span>
-              </button>
-              <button type="button" class="chat-command-item" data-command="!queue">
-                <span class="cmd-code">!queue</span>
-                <span class="cmd-desc">Zobrazí aktuální frontu skladeb</span>
-              </button>
-              <button type="button" class="chat-command-item" data-command="!skip">
-                <span class="cmd-code">!skip</span>
-                <span class="cmd-desc">Hlasovat pro přeskočení skladby (&gt;50 % hlasů)</span>
-              </button>
-              <button type="button" class="chat-command-item" data-command="!stop">
-                <span class="cmd-code">!stop</span>
-                <span class="cmd-desc">Zastavit hudbu pro sebe</span>
-              </button>
-              <button type="button" class="chat-command-item" data-command="!debil">
-                <span class="cmd-code">!debil</span>
-                <span class="cmd-desc">Změří, na kolik procent jsi debil</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Autocomplete popover pro emoty (:xyz) a zmínky (@hráč) -->
-          <div class="chat-autocomplete-popover" id="chat-autocomplete-popover" style="display: none;">
-            <div class="chat-autocomplete-header">
-              <span class="chat-autocomplete-tag" id="chat-autocomplete-tag">[ NÁPOVĚDA ]</span>
-              <span class="chat-autocomplete-hint">↑↓ výběr, Tab/Enter vložit, Esc zavřít</span>
-            </div>
-            <div class="chat-autocomplete-list" id="chat-autocomplete-list">
-              <!-- Dynamicky generované položky emotů / hráčů -->
-            </div>
-          </div>
-
-          <form class="chat-form" id="chat-form">
-            <button type="button" class="btn btn-emote-toggle" id="btn-toggle-emotes" title="Otevřít 7TV emoty" aria-label="Otevřít 7TV emoty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="emote-icon">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                <line x1="9" y1="9" x2="9.01" y2="9" stroke-width="3" stroke-linecap="round"></line>
-                <line x1="15" y1="9" x2="15.01" y2="9" stroke-width="3" stroke-linecap="round"></line>
-              </svg>
-            </button>
-            <input class="input input-chat" type="text" id="chat-input" placeholder="Napiš zprávu... (např. xdd)" maxlength="500" autocomplete="off">
-            <button type="submit" class="btn btn-primary btn-chat" aria-label="Poslat zprávu">
-              <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-              </svg>
-            </button>
-          </form>
-        </aside>
+          <input class="input input-chat" type="text" id="chat-input" placeholder="Napiš zprávu... (např. xdd)" maxlength="500" autocomplete="off">
+          <button type="submit" class="btn btn-primary btn-chat" aria-label="Poslat zprávu">
+            <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </form>
+      </aside>
+      <div id="chat-backdrop" class="chat-backdrop"></div>
       </div>
 
-      <!-- Spodní dekorativní pruh podle template -->
-      <div class="game-bottom-bar">
-        <img src="/symbolWhite.svg" alt="" class="bottom-symbol" aria-hidden="true">
-        <span class="bottom-tag">SLOVO // MULTIPLAYER CONTEXTO // ENGINE 1.0</span>
-        <img src="/barcode.svg" alt="" class="bottom-barcode" aria-hidden="true">
-      </div>
     </main>
 
     <!-- Footer ve stylu Grunge šablony -->

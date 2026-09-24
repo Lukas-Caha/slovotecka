@@ -1374,19 +1374,37 @@ class RoomManager {
   }
 
   getOnlineCounts() {
-    const dailyCount = Object.keys(this.rooms.daily.players).length;
-    const unlimitedCount = Object.keys(this.rooms.unlimited.players).length;
-    let customCount = 0;
-    for (const r of this.customRooms.values()) {
-      customCount += Object.keys(r.players).length;
+    const formatPlayer = (p, modeKey, modeTitle) => ({
+      name: p.name,
+      color: p.color || '#3b82f6',
+      mode: modeKey,
+      roomTitle: modeTitle,
+      guessCount: p.guessCount || 0,
+      solved: !!p.solved,
+      gaveUp: !!p.gaveUp,
+      usedHint: !!p.usedHint,
+      isAdmin: !!p.isAdmin
+    });
+
+    const dailyPlayers = Object.values(this.rooms.daily.players).map(p => formatPlayer(p, 'daily', 'Denní výzva'));
+    const unlimitedPlayers = Object.values(this.rooms.unlimited.players).map(p => formatPlayer(p, 'unlimited', 'Archiv'));
+    const customPlayers = [];
+    for (const [code, r] of this.customRooms.entries()) {
+      for (const p of Object.values(r.players)) {
+        customPlayers.push(formatPlayer(p, `custom_${code}`, `Aréna #${code}`));
+      }
     }
+
+    const allPlayers = [...dailyPlayers, ...unlimitedPlayers, ...customPlayers];
+
     return {
-      daily: dailyCount,
-      unlimited: unlimitedCount,
-      custom: customCount,
-      customPlayers: customCount,
+      daily: dailyPlayers.length,
+      unlimited: unlimitedPlayers.length,
+      custom: customPlayers.length,
+      customPlayers: customPlayers.length,
       customRooms: this.customRooms.size,
-      total: dailyCount + unlimitedCount + customCount
+      total: allPlayers.length,
+      players: allPlayers
     };
   }
 

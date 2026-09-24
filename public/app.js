@@ -1,7 +1,9 @@
 const socket = io();
 
-// ── Přepínač Light / Dark módu ───────────────────────────────────────────
+// ── Přepínač Light / Dark módu (Slunce vlevo, posuvník, Měsíc vpravo) ─────
 const btnThemeToggle = document.getElementById('btn-theme-toggle');
+const themeSunBtn = document.getElementById('theme-sun-btn');
+const themeMoonBtn = document.getElementById('theme-moon-btn');
 
 function getPreferredTheme() {
   const saved = localStorage.getItem('slovotecka_theme');
@@ -15,17 +17,14 @@ function applyTheme(theme) {
     localStorage.setItem('slovotecka_theme', theme);
   } catch (e) {}
 
-  const themeToggleText = document.getElementById('theme-toggle-text');
-  const themeToggleIcon = document.getElementById('theme-toggle-icon');
-
-  if (themeToggleIcon) {
-    themeToggleIcon.textContent = theme === 'dark' ? '☼' : '☾';
-  }
-  if (themeToggleText) {
-    themeToggleText.textContent = theme === 'dark' ? 'SVĚTLÝ' : 'TMAVÝ';
-  }
   if (btnThemeToggle) {
+    btnThemeToggle.setAttribute('aria-checked', theme === 'dark' ? 'false' : 'true');
     btnThemeToggle.title = theme === 'dark' ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim';
+  }
+
+  const metaColorScheme = document.querySelector('meta[name="color-scheme"]');
+  if (metaColorScheme) {
+    metaColorScheme.setAttribute('content', theme === 'dark' ? 'dark' : 'light');
   }
 }
 
@@ -37,6 +36,26 @@ if (btnThemeToggle) {
     SoundFx.playKeyClick();
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
     applyTheme(currentTheme);
+  });
+}
+
+if (themeSunBtn) {
+  themeSunBtn.addEventListener('click', () => {
+    if (currentTheme !== 'light') {
+      SoundFx.playKeyClick();
+      currentTheme = 'light';
+      applyTheme(currentTheme);
+    }
+  });
+}
+
+if (themeMoonBtn) {
+  themeMoonBtn.addEventListener('click', () => {
+    if (currentTheme !== 'dark') {
+      SoundFx.playKeyClick();
+      currentTheme = 'dark';
+      applyTheme(currentTheme);
+    }
   });
 }
 
@@ -310,6 +329,8 @@ const btnCopyRoomLink = document.getElementById('btn-copy-room-link');
 
 function setLobbyMode(mode) {
   selectedLobbyMode = mode;
+  const navTop50 = document.getElementById('btn-nav-top50');
+  if (navTop50) navTop50.style.display = 'none';
   if (mode === 'daily') {
     currentMode = 'daily';
     if (tabDaily) tabDaily.classList.add('active');
@@ -602,15 +623,44 @@ fetch('/api/yesterday-recap')
   .then(data => { if (data) renderYesterdayRecap(data); })
   .catch(() => {});
 
+let latestGlobalOnlineData = null;
+
+function updateHeaderPlayersCount() {
+  const inGame = gameSection && gameSection.style.display !== 'none' && latestGameState?.players;
+  let count = 1;
+  if (inGame) {
+    count = latestGameState.players.length;
+  } else if (latestGlobalOnlineData && typeof latestGlobalOnlineData.total === 'number') {
+    count = latestGlobalOnlineData.total;
+  }
+  if (headerPlayersCount) headerPlayersCount.textContent = count;
+  const floatingPlayersCount = document.getElementById('floating-players-count');
+  if (floatingPlayersCount) floatingPlayersCount.textContent = count;
+}
+
 // Posluchač socketu pro živé aktualizace počtů hráčů v aréně
 socket.on('arena_counts', (counts) => {
+  latestGlobalOnlineData = counts;
   updateLobbyArenaStats(counts);
+  updateHeaderPlayersCount();
+  if (playersPopover && playersPopover.style.display !== 'none') {
+    renderPlayersPopover();
+  }
 });
 
 // Počáteční načtení statistik arény přes API
 fetch('/api/arena-stats')
   .then(res => res.ok ? res.json() : null)
-  .then(data => { if (data) updateLobbyArenaStats(data); })
+  .then(data => {
+    if (data) {
+      latestGlobalOnlineData = data;
+      updateLobbyArenaStats(data);
+      updateHeaderPlayersCount();
+      if (playersPopover && playersPopover.style.display !== 'none') {
+        renderPlayersPopover();
+      }
+    }
+  })
   .catch(() => {});
 
 // DOM – Popup Whats New
@@ -962,16 +1012,24 @@ function renderTop50Modal(data) {
   }
 }
 
+function triggerTop50() {
+  SoundFx.playKeyClick();
+  if (currentTop50Data && currentTop50Data.top50 && currentTop50Data.top50.length > 0) {
+    renderTop50Modal(currentTop50Data);
+    showTop50Modal();
+  } else {
+    socket.emit('get_top_50');
+    showTop50Modal();
+  }
+}
+
 if (btnShowTop50) {
-  btnShowTop50.addEventListener('click', () => {
-    if (currentTop50Data && currentTop50Data.top50 && currentTop50Data.top50.length > 0) {
-      renderTop50Modal(currentTop50Data);
-      showTop50Modal();
-    } else {
-      socket.emit('get_top_50');
-      showTop50Modal();
-    }
-  });
+  btnShowTop50.addEventListener('click', triggerTop50);
+}
+
+const btnNavTop50 = document.getElementById('btn-nav-top50');
+if (btnNavTop50) {
+  btnNavTop50.addEventListener('click', triggerTop50);
 }
 
 // DOM – Chat Ankety (!poll)
@@ -1329,7 +1387,414 @@ const emotePicker = document.getElementById('emote-picker');
 const emoteSearch = document.getElementById('emote-search');
 const emotePickerGrid = document.getElementById('emote-picker-grid');
 const emotePickerCount = document.getElementById('emote-picker-count');
-const chatEmoteCountBadge = document.getElementById('chat-emote-count');
+// DOM – Chat Drawer & Hráči online popover
+const chatPanel = document.getElementById('chat-panel');
+const btnToggleChat = document.getElementById('btn-toggle-chat');
+const btnCloseChat = document.getElementById('btn-close-chat');
+const chatBackdrop = document.getElementById('chat-backdrop');
+const headerChatDot = document.getElementById('header-chat-dot');
+
+const btnTogglePlayers = document.getElementById('btn-toggle-players');
+const btnClosePlayers = document.getElementById('btn-close-players');
+const playersPopover = document.getElementById('players-popover');
+const headerPlayersCount = document.getElementById('header-players-count');
+
+// ── DYNAMICKÉ OMEZENÍ VÝŠKY A POZICE POSTRANNÍCH PANELŮ (CHAT & ONLINE) ─────
+// Zabraňuje lezení chatu a online panelu pod hlavičku a přes patičku při scrollování
+let sidebarBoundsRaf = null;
+
+function updateSidebarBounds() {
+  if (typeof window === 'undefined') return;
+
+  // Na mobilu (< 960px) jsou panely spodní výsuvné lišty (bottom sheet)
+  if (window.innerWidth < 960) {
+    document.documentElement.style.removeProperty('--site-top-height');
+    document.documentElement.style.removeProperty('--site-bottom-clearance');
+    return;
+  }
+
+  // 1. Spočítat spodní hranu sticky hlavičky / hudební lišty
+  const topContainer = document.getElementById('site-top-container') || document.querySelector('.site-header');
+  let topHeight = 68;
+  if (topContainer) {
+    const topRect = topContainer.getBoundingClientRect();
+    topHeight = Math.max(50, Math.round(topRect.bottom));
+  }
+  document.documentElement.style.setProperty('--site-top-height', `${topHeight}px`);
+
+  // 2. Spočítat kolik patičky (.site-footer) je vidět v okně a zvednout spodní okraj panelů
+  const footer = document.querySelector('.site-footer');
+  let bottomClearance = 18;
+  if (footer) {
+    const footerRect = footer.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const footerVisibleHeight = Math.max(0, viewportHeight - footerRect.top);
+    bottomClearance = 18 + footerVisibleHeight;
+  }
+  document.documentElement.style.setProperty('--site-bottom-clearance', `${bottomClearance}px`);
+}
+
+function scheduleSidebarBoundsUpdate() {
+  if (sidebarBoundsRaf) return;
+  sidebarBoundsRaf = requestAnimationFrame(() => {
+    sidebarBoundsRaf = null;
+    updateSidebarBounds();
+  });
+}
+
+window.addEventListener('scroll', scheduleSidebarBoundsUpdate, { passive: true });
+window.addEventListener('resize', scheduleSidebarBoundsUpdate, { passive: true });
+
+if (typeof ResizeObserver !== 'undefined') {
+  const topCont = document.getElementById('site-top-container') || document.querySelector('.site-header');
+  if (topCont) {
+    new ResizeObserver(scheduleSidebarBoundsUpdate).observe(topCont);
+  }
+  const siteFooter = document.querySelector('.site-footer');
+  if (siteFooter) {
+    new ResizeObserver(scheduleSidebarBoundsUpdate).observe(siteFooter);
+  }
+}
+updateSidebarBounds();
+
+function isChatOpen() {
+  return document.body.classList.contains('chat-is-open') || (chatPanel && chatPanel.classList.contains('is-open'));
+}
+
+function setChatOpen(open, shouldFocus = false) {
+  const isOpen = !!open;
+  if (chatPanel) chatPanel.classList.toggle('is-open', isOpen);
+  document.body.classList.toggle('chat-is-open', isOpen);
+  if (chatBackdrop) chatBackdrop.classList.toggle('is-open', isOpen);
+  if (btnToggleChat) {
+    btnToggleChat.classList.toggle('is-active', isOpen);
+    btnToggleChat.setAttribute('aria-expanded', String(isOpen));
+  }
+  if (isOpen) {
+    if (headerChatDot) headerChatDot.style.display = 'none';
+    if (shouldFocus && chatInput) {
+      setTimeout(() => chatInput.focus(), 80);
+    }
+  }
+  scheduleSidebarBoundsUpdate();
+  try {
+    localStorage.setItem('slovotecka_chat_docked', isOpen ? '1' : '0');
+  } catch (err) {
+    // localStorage might not be available
+  }
+}
+
+function openChatDrawer() {
+  setChatOpen(true, true);
+}
+
+function closeChatDrawer() {
+  setChatOpen(false, false);
+}
+
+function toggleChatDrawer() {
+  SoundFx.playKeyClick();
+  setChatOpen(!isChatOpen(), true);
+}
+
+if (btnToggleChat) btnToggleChat.addEventListener('click', toggleChatDrawer);
+if (btnCloseChat) btnCloseChat.addEventListener('click', () => {
+  SoundFx.playKeyClick();
+  closeChatDrawer();
+});
+if (chatBackdrop) chatBackdrop.addEventListener('click', closeChatDrawer);
+
+// Inicializace stavu chatu z localStorage (nebo výchozí otevření na širokém desktopu)
+(function initChatDockState() {
+  try {
+    const saved = localStorage.getItem('slovotecka_chat_docked');
+    const defaultOpen = saved !== null ? (saved === '1') : (window.innerWidth >= 1150);
+    setChatOpen(defaultOpen, false);
+  } catch (e) {
+    setChatOpen(window.innerWidth >= 1150, false);
+  }
+})();
+
+// ── ROZTAHOVÁNÍ CHAT PANELU (DRAG RESIZE) ───────────────────────────────────
+(function initChatResize() {
+  const handle = document.getElementById('chat-resize-handle');
+  if (!handle || !chatPanel) return;
+
+  const DEFAULT_WIDTH = 320;
+  const MIN_WIDTH = 260;
+
+  function getMaxWidth() {
+    return Math.max(MIN_WIDTH, Math.min(750, window.innerWidth - 420));
+  }
+
+  function applyChatWidth(widthPx, save = false) {
+    const clamped = Math.max(MIN_WIDTH, Math.min(widthPx, getMaxWidth()));
+    document.documentElement.style.setProperty('--chat-width', `${clamped}px`);
+    chatPanel.style.width = `${clamped}px`;
+    if (save) {
+      try {
+        localStorage.setItem('slovotecka_chat_width', String(clamped));
+      } catch (e) {}
+    }
+  }
+
+  // Obnovení uložené šířky z localStorage
+  try {
+    const saved = localStorage.getItem('slovotecka_chat_width');
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (!isNaN(parsed) && parsed >= MIN_WIDTH) {
+        applyChatWidth(parsed, false);
+      }
+    }
+  } catch (e) {}
+
+  let isDragging = false;
+  let startX = 0;
+  let startWidth = 0;
+
+  function onPointerDown(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    if (window.innerWidth < 960) return;
+
+    isDragging = true;
+    startX = e.clientX;
+    const rect = chatPanel.getBoundingClientRect();
+    startWidth = rect.width;
+
+    document.body.classList.add('is-resizing-chat');
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+  }
+
+  function onPointerMove(e) {
+    if (!isDragging) return;
+    const clientX = e.clientX;
+    // Tažení doleva rozšiřuje chat, tažení doprava ho zužuje
+    const deltaX = startX - clientX;
+    const newWidth = Math.round(startWidth + deltaX);
+    applyChatWidth(newWidth, false);
+  }
+
+  function onPointerUp() {
+    if (!isDragging) return;
+    isDragging = false;
+    document.body.classList.remove('is-resizing-chat');
+
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+    window.removeEventListener('pointercancel', onPointerUp);
+
+    const rect = chatPanel.getBoundingClientRect();
+    applyChatWidth(rect.width, true);
+  }
+
+  handle.addEventListener('pointerdown', onPointerDown);
+
+  // Dvojklik vrátí výchozí šířku 320px
+  handle.addEventListener('dblclick', () => {
+    applyChatWidth(DEFAULT_WIDTH, true);
+    SoundFx.playKeyClick();
+  });
+
+  // Přizpůsobení při změně velikosti okna prohlížeče
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 960) {
+      const rect = chatPanel.getBoundingClientRect();
+      applyChatWidth(rect.width, false);
+    }
+  });
+})();
+
+function buildPlayerItemHtml(p, isInCurrentRoom, showRoomTag) {
+  const isMe = myPlayerName && p.name && (p.name.toLowerCase() === myPlayerName.toLowerCase());
+  const pColor = p.color || '#3b82f6';
+  let cls = 'player-item';
+  if (isMe) cls += ' is-me';
+  if (p.solved) cls += ' solved';
+  if (p.gaveUp) cls += ' gave-up';
+
+  let statusText = '';
+  if (p.solved) {
+    statusText = '<span class="player-status status-solved">UHODL(A)</span>';
+  } else if (p.gaveUp) {
+    statusText = '<span class="player-status status-gave-up">VZDÁNO</span>';
+  } else {
+    const count = p.guessCount || 0;
+    const pPlural = count === 1 ? 'tip' : (count >= 2 && count <= 4 ? 'tipy' : 'tipů');
+    statusText = `<span class="player-status">${count} ${pPlural}</span>`;
+  }
+
+  const clown = p.usedHint ? ' 🤡' : '';
+  const votedBadge = p.votedForNewWord ? ' <span class="badge-voted" title="Hlasuje pro nové slovo">🗳️</span>' : '';
+  const isMeTag = isMe ? ' <span style="font-size: 0.72rem; color: var(--color-base-600);">(ty)</span>' : '';
+  const adminBadge = p.isAdmin ? ' <span class="badge-admin" title="Administrátor"><span class="badge-admin-crown">👑</span> ADMIN</span>' : '';
+  const roomTag = showRoomTag && p.roomTitle ? `<span class="player-room-tag">${escapeHtml(p.roomTitle)}</span>` : '';
+
+  return `
+    <li class="${cls}">
+      <span class="player-name" style="color: ${escapeHtml(pColor)};">
+        <span class="player-color-dot" style="background-color: ${escapeHtml(pColor)};"></span>
+        ${escapeHtml(p.name)}${adminBadge}${clown}${votedBadge}${isMeTag}${roomTag}
+      </span>
+      ${statusText}
+    </li>
+  `;
+}
+
+function renderPlayersPopover() {
+  if (!playersList) return;
+  const popoverTitle = document.getElementById('players-popover-title');
+  const inGame = gameSection && gameSection.style.display !== 'none' && latestGameState?.players;
+
+  if (inGame) {
+    const roomPlayers = latestGameState.players || [];
+    const globalPlayers = latestGlobalOnlineData?.players || [];
+    const roomPlayerNames = new Set(roomPlayers.map(p => (p.name || '').toLowerCase()));
+    const otherPlayers = globalPlayers.filter(p => !roomPlayerNames.has((p.name || '').toLowerCase()));
+
+    if (popoverTitle) {
+      popoverTitle.textContent = `HRÁČI V TÉTO ARÉNĚ (${roomPlayers.length})`;
+    }
+
+    if (roomPlayers.length === 0 && otherPlayers.length === 0) {
+      playersList.innerHTML = '<li class="players-empty">V aréně jsi zatím sám.</li>';
+      return;
+    }
+
+    let html = '';
+    roomPlayers.forEach(p => {
+      html += buildPlayerItemHtml(p, true, false);
+    });
+
+    if (otherPlayers.length > 0) {
+      html += `<li class="players-section-title">V dalších arénách (${otherPlayers.length})</li>`;
+      otherPlayers.forEach(p => {
+        html += buildPlayerItemHtml(p, false, true);
+      });
+    }
+
+    playersList.innerHTML = html;
+  } else {
+    // We are in Lobby
+    const globalPlayers = latestGlobalOnlineData?.players || [];
+    const totalCount = (latestGlobalOnlineData && typeof latestGlobalOnlineData.total === 'number')
+      ? latestGlobalOnlineData.total
+      : globalPlayers.length;
+
+    if (popoverTitle) {
+      popoverTitle.textContent = `HRÁČI ONLINE (${totalCount})`;
+    }
+
+    if (globalPlayers.length === 0) {
+      playersList.innerHTML = '<li class="players-empty">V arénách momentálně nikdo nehraje. Zadej přezdívku a začni hrát!</li>';
+      return;
+    }
+
+    const groups = {};
+    globalPlayers.forEach(p => {
+      const key = p.roomTitle || p.mode || 'Aréna';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    });
+
+    let html = '';
+    for (const [groupTitle, groupPlayers] of Object.entries(groups)) {
+      html += `<li class="players-section-title">${escapeHtml(groupTitle)} (${groupPlayers.length})</li>`;
+      groupPlayers.forEach(p => {
+        html += buildPlayerItemHtml(p, false, false);
+      });
+    }
+    playersList.innerHTML = html;
+  }
+}
+
+function isPlayersOpen() {
+  return document.body.classList.contains('players-is-open') || (playersPopover && playersPopover.style.display !== 'none');
+}
+
+function setPlayersOpen(open) {
+  const isOpen = !!open;
+  if (playersPopover) {
+    playersPopover.style.display = isOpen ? 'flex' : 'none';
+    playersPopover.classList.toggle('is-open', isOpen);
+  }
+  document.body.classList.toggle('players-is-open', isOpen);
+  if (btnTogglePlayers) {
+    btnTogglePlayers.classList.toggle('is-active', isOpen);
+    btnTogglePlayers.setAttribute('aria-expanded', String(isOpen));
+  }
+  if (isOpen) {
+    renderPlayersPopover();
+    socket.emit('get_online_players');
+    fetch('/api/arena-stats')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          latestGlobalOnlineData = data;
+          updateHeaderPlayersCount();
+          renderPlayersPopover();
+        }
+      })
+      .catch(() => {});
+  }
+  try {
+    localStorage.setItem('slovotecka_players_open', isOpen ? '1' : '0');
+  } catch (e) {}
+  scheduleSidebarBoundsUpdate();
+}
+
+function togglePlayersPanel() {
+  SoundFx.playKeyClick();
+  setPlayersOpen(!isPlayersOpen());
+}
+
+if (btnTogglePlayers) {
+  btnTogglePlayers.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePlayersPanel();
+  });
+}
+
+const btnFloatingPlayers = document.getElementById('btn-floating-players');
+if (btnFloatingPlayers) {
+  btnFloatingPlayers.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePlayersPanel();
+  });
+}
+
+if (btnClosePlayers) {
+  btnClosePlayers.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    setPlayersOpen(false);
+  });
+}
+
+// Na mobilu (< 960px) zavřít kliknutím mimo panel
+document.addEventListener('click', (e) => {
+  if (window.innerWidth < 960 && isPlayersOpen()) {
+    if (
+      playersPopover &&
+      !playersPopover.contains(e.target) &&
+      !btnTogglePlayers?.contains(e.target) &&
+      !btnFloatingPlayers?.contains(e.target)
+    ) {
+      setPlayersOpen(false);
+    }
+  }
+});
+
+// Inicializace stavu otevření panelu hráčů z localStorage na širokém monitoru
+(function initPlayersDockState() {
+  try {
+    const saved = localStorage.getItem('slovotecka_players_open');
+    if (saved === '1' && window.innerWidth >= 1400) {
+      setPlayersOpen(true);
+    }
+  } catch (e) {}
+})();
 
 // Předvyplnění přezdívky pokud již hráč hrál dříve
 if (myPlayerName) {
@@ -1591,8 +2056,19 @@ guessInput.addEventListener('keydown', (e) => {
   }
 });
 
-// Globální klávesová zkratka: stisk "/" zaměří pole pro hádání
+// Globální klávesová zkratka: stisk "/" zaměří pole pro hádání, Escape zavře modal
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (giveUpModal && giveUpModal.style.display === 'flex') {
+      hideGiveUpModal();
+      return;
+    }
+    if (top50Modal && top50Modal.style.display === 'flex') {
+      hideTop50Modal();
+      return;
+    }
+  }
+
   const activeTag = document.activeElement?.tagName;
   const isInputActive = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || document.activeElement?.isContentEditable;
 
@@ -1606,12 +2082,61 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ── 3. Vzdát se a odhalit dnešní slovo ────────────────
-btnRevealWord.addEventListener('click', () => {
-  SoundFx.playKeyClick();
-  const ok = confirm('Opravdu se chceš vzdát?\nUvidíš tajné slovo, ale ztratíš možnost dále v tomto kole hádat.');
-  if (ok) socket.emit('reveal_word');
-});
+// ── 3. Vzdát se a odhalit dnešní slovo (s potvrzovacím oknem) ──────────
+const giveUpModal = document.getElementById('give-up-modal');
+const btnCloseGiveUp = document.getElementById('btn-close-give-up');
+const btnCancelGiveUp = document.getElementById('btn-cancel-give-up');
+const btnConfirmGiveUp = document.getElementById('btn-confirm-give-up');
+
+function showGiveUpModal() {
+  if (giveUpModal) {
+    giveUpModal.style.display = 'flex';
+    if (btnCancelGiveUp) btnCancelGiveUp.focus();
+  }
+}
+
+function hideGiveUpModal() {
+  if (giveUpModal) {
+    giveUpModal.style.display = 'none';
+    if (guessInput && !guessInput.disabled) {
+      guessInput.focus();
+    }
+  }
+}
+
+if (btnRevealWord) {
+  btnRevealWord.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    showGiveUpModal();
+  });
+}
+
+if (btnCancelGiveUp) {
+  btnCancelGiveUp.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    hideGiveUpModal();
+  });
+}
+
+if (btnCloseGiveUp) {
+  btnCloseGiveUp.addEventListener('click', () => {
+    hideGiveUpModal();
+  });
+}
+
+if (btnConfirmGiveUp) {
+  btnConfirmGiveUp.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    hideGiveUpModal();
+    socket.emit('reveal_word');
+  });
+}
+
+if (giveUpModal) {
+  giveUpModal.addEventListener('click', (e) => {
+    if (e.target === giveUpModal) hideGiveUpModal();
+  });
+}
 
 // ── 4. Odhalit nápovědu (získá 🤡) ────────────────────
 btnShowHint.addEventListener('click', () => {
@@ -1822,6 +2347,14 @@ document.addEventListener('click', (e) => {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    if (window.innerWidth <= 959 && isChatOpen()) {
+      closeChatDrawer();
+      return;
+    }
+    if (isPlayersOpen()) {
+      setPlayersOpen(false);
+      return;
+    }
     if (whatsNewModal && whatsNewModal.style.display !== 'none') {
       hideWhatsNew();
       return;
@@ -2287,6 +2820,10 @@ function appendGlobalChatMessage(data) {
   } else {
     if (globalUnreadDot) globalUnreadDot.style.display = 'inline-block';
   }
+
+  if (!isMe && chatPanel && !chatPanel.classList.contains('is-open')) {
+    if (headerChatDot) headerChatDot.style.display = 'inline-block';
+  }
 }
 
 socket.on('global_chat_history', (history) => {
@@ -2502,6 +3039,10 @@ function appendChatMessage(data) {
   } else {
     if (chatUnreadBadge) chatUnreadBadge.style.display = 'block';
   }
+
+  if (!isMe && chatPanel && !chatPanel.classList.contains('is-open')) {
+    if (headerChatDot) headerChatDot.style.display = 'inline-block';
+  }
 }
 
 // ── Vykreslení stavu denní hry ────────────────────────
@@ -2673,6 +3214,13 @@ function renderGameState(state) {
     guessesTitle.textContent = '[ ODHALENÁ SLOVA ]';
   }
 
+  // TOP 50 tlačítko v horní liště – zobrazit POUZE pokud se hráč vzdal nebo heslo uhodl
+  const canSeeTop50 = !!(state.myStatus && (state.myStatus.solved || state.myStatus.gaveUp));
+  const navTop50 = document.getElementById('btn-nav-top50');
+  if (navTop50) {
+    navTop50.style.display = canSeeTop50 ? 'inline-flex' : 'none';
+  }
+
   if (top50Modal && top50Modal.style.display === 'flex' && currentTop50Data) {
     renderTop50Modal(currentTop50Data);
   }
@@ -2728,36 +3276,10 @@ function renderGameState(state) {
   initialGameStateRendered = true;
 
   // Hráči online
-  playersList.innerHTML = '';
-  state.players.forEach((p) => {
-    const isMe = p.name === myPlayerName;
-    const pColor = p.color || '#3b82f6';
-    const li = document.createElement('li');
-    let cls = 'player-item';
-    if (isMe)      cls += ' is-me';
-    if (p.solved)  cls += ' solved';
-    if (p.gaveUp)  cls += ' gave-up';
-    li.className = cls;
-
-    let statusText = `${p.guessCount} tipů`;
-    if (p.solved)  statusText = 'UHODL(A)';
-    if (p.gaveUp)  statusText = 'VZDÁNO';
-
-    const clown = p.usedHint ? ' 🤡' : '';
-    const votedBadge = p.votedForNewWord ? ' <span class="badge-voted" title="Hlasuje pro nové slovo">🗳️</span>' : '';
-    const isMeTag = isMe ? ' (ty)' : '';
-    const adminBadge = p.isAdmin ? ' <span class="badge-admin" title="Administrátor místnosti"><span class="badge-admin-crown">👑</span> ADMIN</span>' : '';
-    const nameLabel = `${escapeHtml(p.name)}${adminBadge}${clown}${votedBadge}${isMeTag}`;
-
-    li.innerHTML = `
-      <span class="player-name" style="color: ${escapeHtml(pColor)};">
-        <span class="player-color-dot" style="background-color: ${escapeHtml(pColor)};"></span>
-        ${nameLabel}
-      </span>
-      <span class="player-status">${statusText}</span>
-    `;
-    playersList.appendChild(li);
-  });
+  updateHeaderPlayersCount();
+  if (playersPopover && playersPopover.style.display !== 'none') {
+    renderPlayersPopover();
+  }
 
   // Filtrování tipů pro zobrazení (v diváckém módu podle záložky: všechny vs pouze moje)
   const displayGuesses = (isSpectator && spectatorFilterMode === 'mine')
@@ -2849,6 +3371,7 @@ function renderGameState(state) {
   if (!isCustom) {
     if (floatingGramophone) floatingGramophone.style.display = 'none';
     if (musicBar) musicBar.style.display = 'none';
+    scheduleSidebarBoundsUpdate();
     if (activeTrack) stopMusicLocal();
   } else if (state.currentMusic) {
     if (state.currentMusic.serverTime) {
@@ -3130,6 +3653,7 @@ function playTrack(track) {
 
   activeTrack = track;
   if (musicBar) musicBar.style.display = 'block';
+  scheduleSidebarBoundsUpdate();
   if (floatingGramophone) floatingGramophone.style.display = 'flex';
   if (musicTitle) {
     musicTitle.textContent = track.title || `YouTube video (${track.videoId})`;
@@ -3296,6 +3820,7 @@ function stopMusicLocal() {
     } catch (e) {}
   }
   if (musicBar) musicBar.style.display = 'none';
+  scheduleSidebarBoundsUpdate();
   if (floatingGramophone) {
     floatingGramophone.style.display = 'none';
     floatingGramophone.classList.add('is-minimized');
