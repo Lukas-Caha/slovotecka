@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /health
+Disallow: /ping
+
+Sitemap: https://slovotecka.onrender.com/sitemap.xml
