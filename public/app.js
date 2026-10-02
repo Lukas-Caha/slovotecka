@@ -327,129 +327,196 @@ const lobbyTag = document.getElementById('lobby-tag');
 const lobbyTitle = document.getElementById('lobby-title');
 const lobbyDesc = document.getElementById('lobby-desc');
 
-// DOM – Přehled hráčů v aréně (Lobby)
+// DOM – Přehled hráčů v aréně (Hlavička)
 const arenaLiveTotal = document.getElementById('arena-live-total');
-const countDaily = document.getElementById('count-daily');
-const unitDaily = document.getElementById('unit-daily');
-const countUnlimited = document.getElementById('count-unlimited');
-const unitUnlimited = document.getElementById('unit-unlimited');
-const countCustom = document.getElementById('count-custom');
-const unitCustom = document.getElementById('unit-custom');
-const cardModeDaily = document.getElementById('card-mode-daily');
-const cardModeUnlimited = document.getElementById('card-mode-unlimited');
-const cardModeCustom = document.getElementById('card-mode-custom');
+const headerCountDaily = document.getElementById('header-count-daily');
+const headerCountUnlimited = document.getElementById('header-count-unlimited');
+const headerCountCustom = document.getElementById('header-count-custom');
 
 // DOM – Prvky Vlastní arény v lobby i ve hře
 const customRoomPanel = document.getElementById('custom-room-panel');
+const btnSubtabCreate = document.getElementById('btn-subtab-create');
+const btnSubtabJoin = document.getElementById('btn-subtab-join');
+const customSubpaneCreate = document.getElementById('custom-subpane-create');
+const customSubpaneJoin = document.getElementById('custom-subpane-join');
 const customCodeInput = document.getElementById('custom-code-input');
-const btnCreateCustomRoom = document.getElementById('btn-create-custom-room');
+const btnEnterGameText = document.getElementById('btn-enter-game-text');
 const customShareBadge = document.getElementById('custom-share-badge');
 const displayCustomCode = document.getElementById('display-custom-code');
 const btnCopyRoomLink = document.getElementById('btn-copy-room-link');
+
+let customSubMode = 'create'; // 'create' | 'join'
+
+function setCustomSubMode(subMode) {
+  customSubMode = subMode;
+  if (btnSubtabCreate) btnSubtabCreate.classList.toggle('is-active', subMode === 'create');
+  if (btnSubtabJoin) btnSubtabJoin.classList.toggle('is-active', subMode === 'join');
+  if (btnSubtabCreate) btnSubtabCreate.setAttribute('aria-selected', String(subMode === 'create'));
+  if (btnSubtabJoin) btnSubtabJoin.setAttribute('aria-selected', String(subMode === 'join'));
+  if (customSubpaneCreate) customSubpaneCreate.style.display = subMode === 'create' ? 'flex' : 'none';
+  if (customSubpaneJoin) customSubpaneJoin.style.display = subMode === 'join' ? 'flex' : 'none';
+
+  if (selectedLobbyMode === 'custom') {
+    if (btnEnterGameText) {
+      btnEnterGameText.textContent = subMode === 'create' ? 'VYTVOŘIT A VSTOUPIT DO ARÉNY' : 'VSTOUPIT DO ARÉNY';
+    }
+  }
+}
+
+if (btnSubtabCreate) {
+  btnSubtabCreate.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    setCustomSubMode('create');
+  });
+}
+
+if (btnSubtabJoin) {
+  btnSubtabJoin.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    setCustomSubMode('join');
+    if (customCodeInput) setTimeout(() => customCodeInput.focus(), 60);
+  });
+}
+
+// Přepínání voleb typu tajného slova ve Vlastní aréně (Dnešní / Archiv / Rychlovka)
+const speedrunSettingsPanel = document.getElementById('speedrun-settings-panel');
+const customHintText = document.getElementById('custom-hint-text');
+const customWordSourceRadios = document.querySelectorAll('input[name="custom-word-source"]');
+
+customWordSourceRadios.forEach((r) => {
+  r.addEventListener('change', () => {
+    SoundFx.playKeyClick();
+    if (r.value === 'speedrun' && r.checked) {
+      if (speedrunSettingsPanel) speedrunSettingsPanel.style.display = 'block';
+      if (customHintText) customHintText.textContent = '⚡ Rychlý časový závod arény – odstartuje zakladatel po připojení hráčů.';
+    } else if (r.checked) {
+      if (speedrunSettingsPanel) speedrunSettingsPanel.style.display = 'none';
+      if (customHintText) customHintText.textContent = 'Po vstupu se vygeneruje kód a odkaz na sdílení pro přátele.';
+    }
+  });
+});
 
 function setLobbyMode(mode) {
   selectedLobbyMode = mode;
   const navTop50 = document.getElementById('btn-nav-top50');
   if (navTop50) navTop50.style.display = 'none';
+
+  if (tabDaily) tabDaily.classList.toggle('active', mode === 'daily');
+  if (tabUnlimited) tabUnlimited.classList.toggle('active', mode === 'unlimited');
+  if (tabCustom) tabCustom.classList.toggle('active', mode === 'custom');
+
   if (mode === 'daily') {
     currentMode = 'daily';
-    if (tabDaily) tabDaily.classList.add('active');
-    if (tabUnlimited) tabUnlimited.classList.remove('active');
-    if (tabCustom) tabCustom.classList.remove('active');
-    if (cardModeDaily) cardModeDaily.classList.add('is-current');
-    if (cardModeUnlimited) cardModeUnlimited.classList.remove('is-current');
-    if (cardModeCustom) cardModeCustom.classList.remove('is-current');
     if (customRoomPanel) customRoomPanel.style.display = 'none';
     if (lobbyTag) lobbyTag.textContent = '[ 01. REGISTRACE DO HRY ]';
-    if (lobbyTitle) lobbyTitle.textContent = 'DNEŠNÍ SPOLEČNÁ VÝZVA';
-    if (lobbyDesc) lobbyDesc.textContent = 'Zadej své jméno nebo přezdívku a zapoj se do společného hádání se všemi, kdo jsou právě v aréně.';
+    if (lobbyTitle) lobbyTitle.textContent = 'DNEŠNÍ VÝZVA';
+    if (lobbyDesc) lobbyDesc.textContent = 'Zadej svou přezdívku a začni hádat tajné slovo dne společně s ostatními.';
+    if (btnEnterGameText) btnEnterGameText.textContent = 'VSTOUPIT DO ARÉNY';
   } else if (mode === 'unlimited') {
     currentMode = 'unlimited';
-    if (tabUnlimited) tabUnlimited.classList.add('active');
-    if (tabDaily) tabDaily.classList.remove('active');
-    if (tabCustom) tabCustom.classList.remove('active');
-    if (cardModeUnlimited) cardModeUnlimited.classList.add('is-current');
-    if (cardModeDaily) cardModeDaily.classList.remove('is-current');
-    if (cardModeCustom) cardModeCustom.classList.remove('is-current');
     if (customRoomPanel) customRoomPanel.style.display = 'none';
-    if (lobbyTag) lobbyTag.textContent = '[ 01. UNLIMITED ARÉNA ]';
-    if (lobbyTitle) lobbyTitle.textContent = 'NEOMEZENÁ ARCHIVNÍ ARÉNA';
-    if (lobbyDesc) lobbyDesc.textContent = 'Hrajte společně se slovy z předchozích dnů. Hráči v místnosti mohou společným hlasováním kdykoliv vylosovat nové slovo!';
+    if (lobbyTag) lobbyTag.textContent = '[ 01. ARCHIVNÍ ARÉNA ]';
+    if (lobbyTitle) lobbyTitle.textContent = 'ARCHIV SLOV';
+    if (lobbyDesc) lobbyDesc.textContent = 'Hrajte společně slova z minulých dnů. Hráči v místnosti mohou hlasováním kdykoliv vylosovat nové slovo!';
+    if (btnEnterGameText) btnEnterGameText.textContent = 'VSTOUPIT DO ARCHIVU';
   } else if (mode === 'custom') {
-    if (tabCustom) tabCustom.classList.add('active');
-    if (tabDaily) tabDaily.classList.remove('active');
-    if (tabUnlimited) tabUnlimited.classList.remove('active');
-    if (cardModeCustom) cardModeCustom.classList.add('is-current');
-    if (cardModeDaily) cardModeDaily.classList.remove('is-current');
-    if (cardModeUnlimited) cardModeUnlimited.classList.remove('is-current');
     if (customRoomPanel) customRoomPanel.style.display = 'flex';
     if (lobbyTag) lobbyTag.textContent = '[ 01. VLASTNÍ ARÉNA ]';
-    if (lobbyTitle) lobbyTitle.textContent = 'VLASTNÍ PRIVÁTNÍ MÍSTNOST';
-    if (lobbyDesc) lobbyDesc.textContent = 'Vytvoř si vlastní místnost s odkazem pro přátele. Můžete hrát dnešní slovo i archivní slova a pouštět si hudbu!';
+    if (lobbyTitle) lobbyTitle.textContent = 'VLASTNÍ ARÉNA';
+    if (lobbyDesc) lobbyDesc.textContent = 'Vytvoř si soukromou místnost pro hraní s přáteli nebo se připoj kódem.';
+    if (btnEnterGameText) {
+      btnEnterGameText.textContent = customSubMode === 'create' ? 'VYTVOŘIT A VSTOUPIT DO ARÉNY' : 'VSTOUPIT DO ARÉNY';
+    }
   }
 }
 
 // Inicializace počátečního režimu
 setLobbyMode(selectedLobbyMode);
 
-if (urlCustomCode && customCodeInput) {
-  customCodeInput.value = urlCustomCode;
+if (urlCustomCode) {
+  setLobbyMode('custom');
+  setCustomSubMode('join');
+  if (customCodeInput) customCodeInput.value = urlCustomCode;
 }
 
-if (cardModeDaily) {
-  cardModeDaily.addEventListener('click', (e) => {
-    if (window.location.pathname.startsWith('/unlimited') || urlCustomCode) {
-      return; // Necháme standardní navigaci
+function switchOrNavigateMode(targetMode) {
+  SoundFx.playKeyClick();
+  const inGame = gameSection && gameSection.style.display !== 'none';
+  const effectiveName = myPlayerName || localStorage.getItem('slovotecka_nickname');
+
+  if (targetMode === 'daily') {
+    if (history.pushState) history.pushState(null, '', '/');
+    if (inGame && effectiveName) {
+      if (currentMode === 'daily') return;
+      currentMode = 'daily';
+      selectedLobbyMode = 'daily';
+      if (tabDaily) tabDaily.classList.add('active');
+      if (tabUnlimited) tabUnlimited.classList.remove('active');
+      if (tabCustom) tabCustom.classList.remove('active');
+      socket.emit('join_game', {
+        playerName: effectiveName,
+        mode: 'daily',
+        color: myPlayerColor,
+        emote: myPlayerEmote,
+        sessionId: getOrCreateSessionId()
+      });
+      showToast('Přepnuto do Denní výzvy.');
+    } else {
+      setLobbyMode('daily');
     }
-    e.preventDefault();
-    SoundFx.playKeyClick();
-    setLobbyMode('daily');
-  });
-}
-
-if (cardModeUnlimited) {
-  cardModeUnlimited.addEventListener('click', (e) => {
-    if (!window.location.pathname.startsWith('/unlimited')) {
-      return; // Necháme přechod na /unlimited
+  } else if (targetMode === 'unlimited') {
+    if (history.pushState) history.pushState(null, '', '/unlimited');
+    if (inGame && effectiveName) {
+      if (currentMode === 'unlimited') return;
+      currentMode = 'unlimited';
+      selectedLobbyMode = 'unlimited';
+      if (tabUnlimited) tabUnlimited.classList.add('active');
+      if (tabDaily) tabDaily.classList.remove('active');
+      if (tabCustom) tabCustom.classList.remove('active');
+      socket.emit('join_game', {
+        playerName: effectiveName,
+        mode: 'unlimited',
+        color: myPlayerColor,
+        emote: myPlayerEmote,
+        sessionId: getOrCreateSessionId()
+      });
+      showToast('Přepnuto do Archivu slov.');
+    } else {
+      setLobbyMode('unlimited');
     }
-    e.preventDefault();
-    SoundFx.playKeyClick();
-    setLobbyMode('unlimited');
-  });
-}
-
-if (cardModeCustom) {
-  cardModeCustom.addEventListener('click', (e) => {
-    e.preventDefault();
-    SoundFx.playKeyClick();
+  } else if (targetMode === 'custom') {
+    if (inGame) {
+      gameSection.style.display = 'none';
+      lobbySection.style.display = 'block';
+    }
     setLobbyMode('custom');
+  }
+}
+
+if (tabDaily) {
+  tabDaily.addEventListener('click', (e) => {
+    e.preventDefault();
+    switchOrNavigateMode('daily');
+  });
+}
+
+if (tabUnlimited) {
+  tabUnlimited.addEventListener('click', (e) => {
+    e.preventDefault();
+    switchOrNavigateMode('unlimited');
   });
 }
 
 if (tabCustom) {
   tabCustom.addEventListener('click', (e) => {
     e.preventDefault();
-    SoundFx.playKeyClick();
-    setLobbyMode('custom');
+    switchOrNavigateMode('custom');
   });
 }
 
-if (btnCreateCustomRoom) {
-  btnCreateCustomRoom.addEventListener('click', () => {
-    SoundFx.playKeyClick();
-    const sourceRadio = document.querySelector('input[name="custom-word-source"]:checked');
-    const wordSource = sourceRadio ? sourceRadio.value : 'daily';
-    socket.emit('create_custom_room', { wordSource });
-  });
-}
-
-socket.on('custom_room_created', (data) => {
-  if (customCodeInput) {
-    customCodeInput.value = data.roomCode;
-  }
-  currentMode = data.mode;
-  showToast(`✨ Vytvořena aréna ${data.roomCode}! Nyní klikni na Vstoupit do arény.`);
-  if (playerNameInput) playerNameInput.focus();
+window.addEventListener('popstate', () => {
+  const isUnl = window.location.pathname.startsWith('/unlimited');
+  switchOrNavigateMode(isUnl ? 'unlimited' : 'daily');
 });
 
 if (btnCopyRoomLink) {
@@ -469,7 +536,7 @@ if (btnCopyRoomLink) {
   });
 }
 
-// DOM – Výběr barvy hráče (přes ozubené kolo)
+// DOM – Výběr barvy hráče & 7TV ikony (přes ozubené kolo / avatar)
 const colorPalette = document.getElementById('color-palette');
 const colorSelectedBadge = document.getElementById('color-selected-badge');
 const playerColorInput = document.getElementById('player-color-input');
@@ -477,7 +544,55 @@ const previewDot = document.getElementById('preview-dot');
 const btnToggleColorPicker = document.getElementById('btn-toggle-color-picker');
 const colorPickerPopover = document.getElementById('color-picker-popover');
 
+// DOM – 7TV Ikona k jménu
+const playerEmoteInput = document.getElementById('player-emote-input');
+const previewAvatarImg = document.getElementById('preview-avatar-img');
+const emoteSelectedBadge = document.getElementById('emote-selected-badge');
+const avatarEmoteSearch = document.getElementById('avatar-emote-search');
+const avatarEmoteGrid = document.getElementById('avatar-emote-grid');
+const btnClearPlayerEmote = document.getElementById('btn-clear-player-emote');
+const inputAvatarPreview = document.getElementById('input-avatar-preview');
+
+// ── 7TV Emoty Cache & Map ─────────────────────────────
+let emotesList = [];
+const emoteMap = new Map();
+const emoteMapLower = new Map();
+
+function populateEmoteMaps(list) {
+  emotesList = Array.isArray(list) ? list : [];
+  emoteMap.clear();
+  emoteMapLower.clear();
+  for (const emote of emotesList) {
+    if (!emote || !emote.name) continue;
+    emoteMap.set(emote.name, emote);
+    emoteMapLower.set(emote.name.toLowerCase(), emote);
+  }
+}
+
+// Zkusíme ihned načíst synchronně z lokálního úložiště prohlížeče pro bleskový start bez zpoždění
+try {
+  const cachedEmotesRaw = localStorage.getItem('slovotecka_emotes_cache');
+  if (cachedEmotesRaw) {
+    const parsed = JSON.parse(cachedEmotesRaw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      populateEmoteMaps(parsed);
+    }
+  }
+} catch (e) {}
+
 let myPlayerColor = localStorage.getItem('slovotecka_color') || '#3b82f6';
+let myPlayerEmote = localStorage.getItem('slovotecka_emote') || '';
+
+function getPlayerEmoteHtml(emoteName) {
+  if (!emoteName) return '';
+  const emote = emoteMap.get(emoteName) || emoteMapLower.get(String(emoteName).toLowerCase());
+  if (emote) {
+    const safeName = escapeHtml(emote.name);
+    const safeUrl = escapeHtml(emote.url1x || emote.url);
+    return `<img class="player-inline-emote" src="${safeUrl}" alt="${safeName}" title="${safeName}" loading="lazy">`;
+  }
+  return '';
+}
 
 function getPlayerPlural(count) {
   if (count === 1) return 'hráč';
@@ -492,12 +607,9 @@ function updateLobbyArenaStats(counts) {
   const c = counts.customRooms || 0;
   const tot = d + u + (counts.customPlayers || 0);
 
-  if (countDaily) countDaily.textContent = d;
-  if (unitDaily) unitDaily.textContent = getPlayerPlural(d);
-  if (countUnlimited) countUnlimited.textContent = u;
-  if (unitUnlimited) unitUnlimited.textContent = getPlayerPlural(u);
-  if (countCustom) countCustom.textContent = c;
-  if (unitCustom) unitCustom.textContent = c === 1 ? 'aréna' : (c >= 2 && c <= 4 ? 'arény' : 'arén');
+  if (headerCountDaily) headerCountDaily.textContent = d;
+  if (headerCountUnlimited) headerCountUnlimited.textContent = u;
+  if (headerCountCustom) headerCountCustom.textContent = c;
   if (arenaLiveTotal) {
     arenaLiveTotal.textContent = `${tot} ${getPlayerPlural(tot).toUpperCase()} ONLINE`;
   }
@@ -531,6 +643,108 @@ function updatePlayerColorUI(color, name) {
     previewDot.style.backgroundColor = color;
     previewDot.style.boxShadow = `0 0 8px ${color}`;
   }
+
+  if (previewAvatarImg && myPlayerEmote) {
+    previewAvatarImg.style.borderColor = color;
+    previewAvatarImg.style.boxShadow = `0 0 8px ${color}`;
+  }
+}
+
+function updatePlayerEmoteUI(emoteName) {
+  myPlayerEmote = emoteName || '';
+  try {
+    if (myPlayerEmote) {
+      localStorage.setItem('slovotecka_emote', myPlayerEmote);
+    } else {
+      localStorage.removeItem('slovotecka_emote');
+    }
+  } catch (e) {}
+
+  if (playerEmoteInput) playerEmoteInput.value = myPlayerEmote;
+
+  const emote = myPlayerEmote ? (emoteMap.get(myPlayerEmote) || emoteMapLower.get(String(myPlayerEmote).toLowerCase())) : null;
+  if (emote) {
+    if (previewAvatarImg) {
+      previewAvatarImg.src = emote.url1x || emote.url;
+      previewAvatarImg.alt = emote.name;
+      previewAvatarImg.title = emote.name;
+      previewAvatarImg.style.display = 'block';
+      previewAvatarImg.style.borderColor = myPlayerColor || '#3b82f6';
+      previewAvatarImg.style.boxShadow = `0 0 8px ${myPlayerColor || '#3b82f6'}`;
+    }
+    if (previewDot) previewDot.style.display = 'none';
+    if (emoteSelectedBadge) {
+      emoteSelectedBadge.innerHTML = `<img src="${emote.url1x || emote.url}" alt="${escapeHtml(emote.name)}"> [ ${escapeHtml(emote.name)} ]`;
+      emoteSelectedBadge.style.display = 'inline-flex';
+    }
+  } else {
+    if (previewAvatarImg) previewAvatarImg.style.display = 'none';
+    if (previewDot) previewDot.style.display = 'inline-block';
+    if (emoteSelectedBadge) {
+      emoteSelectedBadge.innerHTML = '';
+      emoteSelectedBadge.style.display = 'none';
+    }
+  }
+
+  if (avatarEmoteGrid) {
+    const items = avatarEmoteGrid.querySelectorAll('.avatar-emote-item');
+    items.forEach(el => {
+      el.classList.toggle('is-selected', el.dataset.name === myPlayerEmote);
+    });
+  }
+}
+
+function renderPlayerEmotePicker(query) {
+  if (!avatarEmoteGrid) return;
+  avatarEmoteGrid.innerHTML = '';
+
+  if (!emotesList || emotesList.length === 0) {
+    avatarEmoteGrid.innerHTML = '<div class="avatar-grid-empty" style="color: var(--text-dim); padding: 16px; font-size: 11px; text-align: center; width: 100%;">Načítám 7TV emoty...</div>';
+    return;
+  }
+
+  const q = (query || '').toLowerCase().trim();
+
+  // Populární stream emoty zobrazené nahoře
+  const popularNames = [
+    'pepeD', 'gigachad', 'catJAM', 'EZ', 'Clueless', 'NODDERS', 'monkaS',
+    'Pepega', 'Prayge', 'xdd', 'AlienDance', 'PartyParrot', 'gachiBASS',
+    'FeelsDankMan', 'peepoHappy', 'peepoSad', 'WAYTOODANK', 'Pog', 'KEKW'
+  ];
+
+  let list = [];
+  if (q) {
+    list = emotesList.filter(e => e && e.name && e.name.toLowerCase().includes(q)).slice(0, 150);
+  } else {
+    const popularSet = new Set(popularNames.map(n => n.toLowerCase()));
+    const popular = [];
+    for (const name of popularNames) {
+      const e = emoteMap.get(name) || emoteMapLower.get(name.toLowerCase());
+      if (e) popular.push(e);
+    }
+    const rest = emotesList.filter(e => e && e.name && !popularSet.has(e.name.toLowerCase())).slice(0, 150);
+    list = [...popular, ...rest];
+  }
+
+  const fragment = document.createDocumentFragment();
+  for (const emote of list) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'avatar-emote-item' + (emote.name === myPlayerEmote ? ' is-selected' : '');
+    btn.dataset.name = emote.name;
+    btn.title = emote.name;
+    btn.innerHTML = `<img src="${emote.url1x || emote.url}" alt="${escapeHtml(emote.name)}" loading="lazy">`;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newEmote = (myPlayerEmote === emote.name) ? '' : emote.name;
+      updatePlayerEmoteUI(newEmote);
+      if (socket && socket.connected) {
+        socket.emit('update_player_emote', { emote: newEmote || null });
+      }
+    });
+    fragment.appendChild(btn);
+  }
+  avatarEmoteGrid.appendChild(fragment);
 }
 
 if (btnToggleColorPicker && colorPickerPopover) {
@@ -539,10 +753,34 @@ if (btnToggleColorPicker && colorPickerPopover) {
     const isShown = colorPickerPopover.style.display !== 'none';
     colorPickerPopover.style.display = isShown ? 'none' : 'block';
   });
+}
 
-  document.addEventListener('click', (e) => {
-    if (colorPickerPopover.style.display !== 'none' && !colorPickerPopover.contains(e.target) && e.target !== btnToggleColorPicker) {
-      colorPickerPopover.style.display = 'none';
+if (inputAvatarPreview && colorPickerPopover) {
+  inputAvatarPreview.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isShown = colorPickerPopover.style.display !== 'none';
+    colorPickerPopover.style.display = isShown ? 'none' : 'block';
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (colorPickerPopover && colorPickerPopover.style.display !== 'none' && !colorPickerPopover.contains(e.target) && e.target !== btnToggleColorPicker && !inputAvatarPreview?.contains(e.target)) {
+    colorPickerPopover.style.display = 'none';
+  }
+});
+
+if (avatarEmoteSearch) {
+  avatarEmoteSearch.addEventListener('input', (e) => {
+    renderPlayerEmotePicker(e.target.value);
+  });
+}
+
+if (btnClearPlayerEmote) {
+  btnClearPlayerEmote.addEventListener('click', (e) => {
+    e.stopPropagation();
+    updatePlayerEmoteUI('');
+    if (socket && socket.connected) {
+      socket.emit('update_player_emote', { emote: null });
     }
   });
 }
@@ -552,14 +790,16 @@ if (colorPalette) {
     const btn = e.target.closest('.color-swatch-btn');
     if (!btn) return;
     updatePlayerColorUI(btn.dataset.color, btn.dataset.name);
-    if (colorPickerPopover) {
-      colorPickerPopover.style.display = 'none';
+    if (socket && socket.connected) {
+      socket.emit('update_player_color', { color: btn.dataset.color });
     }
   });
 }
 
-// Inicializace barvy při načtení
+// Inicializace barvy a emotu při načtení
 updatePlayerColorUI(myPlayerColor);
+updatePlayerEmoteUI(myPlayerEmote);
+renderPlayerEmotePicker('');
 
 // DOM – Včerejší rekapitulace v Lobby (po půlnoci)
 const lobbyYesterdayRecap = document.getElementById('lobby-yesterday-recap');
@@ -581,7 +821,7 @@ function renderYesterdayRecap(recap) {
       <div class="yesterday-stat-item">
         <span class="yesterday-stat-label">🏆 VÍTĚZ DNE</span>
         <span class="yesterday-stat-val" style="${recap.winner.color ? 'color: ' + escapeHtml(recap.winner.color) + ';' : ''}">
-          ${escapeHtml(recap.winner.name)} (${pCount} ${pCount === 1 ? 'tip' : (pCount >= 2 && pCount <= 4 ? 'tipy' : 'tipů')})
+          ${getPlayerEmoteHtml(recap.winner.emote)}${escapeHtml(recap.winner.name)} (${pCount} ${pCount === 1 ? 'tip' : (pCount >= 2 && pCount <= 4 ? 'tipy' : 'tipů')})
         </span>
       </div>
     `;
@@ -715,6 +955,14 @@ const displayDayTitle = document.getElementById('display-day-title');
 const displayDate = document.getElementById('display-date');
 const displayMetaText = document.getElementById('display-meta-text');
 const displayHint = document.getElementById('display-hint');
+const displayHint1 = document.getElementById('display-hint-1');
+const displayHint2 = document.getElementById('display-hint-2');
+const displayHint3 = document.getElementById('display-hint-3');
+const hintStep1 = document.getElementById('hint-step-1');
+const hintStep2 = document.getElementById('hint-step-2');
+const hintStep3 = document.getElementById('hint-step-3');
+const btnUnlockHint2 = document.getElementById('btn-unlock-hint-2');
+const btnUnlockHint3 = document.getElementById('btn-unlock-hint-3');
 const hintLocked = document.getElementById('hint-locked');
 const hintRevealed = document.getElementById('hint-revealed');
 const btnShowHint = document.getElementById('btn-show-hint');
@@ -823,8 +1071,28 @@ function getCalendarDayDiff(dateStr1, dateStr2) {
 
 const PlayerStats = (() => {
   const PRIMARY_STORAGE_KEY = 'slovotecka_player_stats';
+  let inMemoryServerStats = null;
+
+  function setServerStats(serverStats) {
+    if (!serverStats) return;
+    inMemoryServerStats = serverStats;
+    if (statsModal && statsModal.style.display === 'flex') {
+      updateModalUI();
+    }
+  }
+
+  function getLocalRawStats() {
+    try {
+      const raw = localStorage.getItem(PRIMARY_STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return null;
+  }
 
   function getStats() {
+    if (inMemoryServerStats) {
+      return inMemoryServerStats;
+    }
     let stats = null;
     try {
       const raw = localStorage.getItem(PRIMARY_STORAGE_KEY);
@@ -1041,7 +1309,9 @@ const PlayerStats = (() => {
     getStats,
     recordGameEntry,
     recordGameWin,
-    updateModalUI
+    updateModalUI,
+    setServerStats,
+    getLocalRawStats
   };
 })();
 
@@ -1725,7 +1995,7 @@ function buildPlayerItemHtml(p, isInCurrentRoom, showRoomTag) {
   return `
     <li class="${cls}">
       <span class="player-name" style="color: ${escapeHtml(pColor)};">
-        <span class="player-color-dot" style="background-color: ${escapeHtml(pColor)};"></span>
+        ${getPlayerEmoteHtml(p.emote) || `<span class="player-color-dot" style="background-color: ${escapeHtml(pColor)};"></span>`}
         ${escapeHtml(p.name)}${adminBadge}${clown}${votedBadge}${isMeTag}${roomTag}
       </span>
       ${statusText}
@@ -2012,47 +2282,136 @@ function updateTapeCounter(count) {
   lastTapeCount = bounded;
 }
 
+// Dotaz na existující profil (obnovení barvy, statistik a kontrola registrace při psaní jména v lobby)
+let checkProfileTimeout = null;
+function queryGuestProfile(rawName) {
+  const lobbyNameStatus = document.getElementById('lobby-name-status');
+  const clean = (rawName || '').replace(/(\s*\(\d+\))+$/, '').trim();
+  if (!clean || clean.length < 2) {
+    if (lobbyNameStatus) {
+      lobbyNameStatus.style.display = 'none';
+      lobbyNameStatus.textContent = '';
+    }
+    return;
+  }
+  if (!socket || !socket.connected) return;
+  socket.emit('check_guest_profile', { playerName: clean }, (res) => {
+    if (!res) return;
+
+    if (lobbyNameStatus) {
+      if (res.isRegistered && (!authUser || authUser.username.toLocaleLowerCase('cs-CZ') !== clean.toLocaleLowerCase('cs-CZ'))) {
+        lobbyNameStatus.className = 'lobby-name-status is-warning';
+        lobbyNameStatus.style.display = 'block';
+        lobbyNameStatus.innerHTML = `⚠️ Přezdívka <strong>${escapeHtml(clean)}</strong> je registrovaná. Pro hraní s ní se <a href="#" id="link-status-login" style="color: #60a5fa; text-decoration: underline; font-weight: bold;">přihlas</a>.`;
+        const link = document.getElementById('link-status-login');
+        if (link) {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            openAuthModal('login');
+          });
+        }
+      } else {
+        lobbyNameStatus.style.display = 'none';
+        lobbyNameStatus.textContent = '';
+      }
+    }
+
+    if (res.exists) {
+      if (res.color) {
+        updatePlayerColorUI(res.color);
+      }
+      if (res.emote !== undefined) {
+        updatePlayerEmoteUI(res.emote || '');
+      }
+      if (res.stats) {
+        PlayerStats.setServerStats(res.stats);
+      }
+    }
+  });
+}
+
+if (playerNameInput) {
+  playerNameInput.addEventListener('input', () => {
+    if (checkProfileTimeout) clearTimeout(checkProfileTimeout);
+    checkProfileTimeout = setTimeout(() => {
+      queryGuestProfile(playerNameInput.value);
+    }, 350);
+  });
+  playerNameInput.addEventListener('blur', () => {
+    queryGuestProfile(playerNameInput.value);
+  });
+}
+
 // ── 1. Vstup do hry ───────────────────────────────────
 joinForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  const rawInput = playerNameInput.value.trim();
-  // Automaticky očistíme případné zřetězené (2) (2) z minula
-  const name = rawInput.replace(/(\s*\(\d+\))+$/, '').trim();
-  if (!name) return showToast('Zadej své jméno nebo přezdívku.', true);
-  playerNameInput.value = name;
+  try {
+    const rawInput = playerNameInput.value.trim();
+    // Automaticky očistíme případné zřetězené (2) (2) z minula
+    const name = rawInput.replace(/(\s*\(\d+\))+$/, '').trim();
+    if (!name) return showToast('Zadej své jméno nebo přezdívku.', true);
 
-  SoundFx.playKeyClick();
-
-  if (name.includes('/admin-perms-456')) {
-    try { sessionStorage.setItem('slovotecka_admin_join_name', name); } catch (err) {}
-  } else {
-    try { sessionStorage.removeItem('slovotecka_admin_join_name'); } catch (err) {}
-  }
-
-  myPlayerName = name;
-  localStorage.setItem('slovotecka_nickname', name);
-
-  const sessionId = getOrCreateSessionId();
-
-  if (selectedLobbyMode === 'custom') {
-    const rawCode = customCodeInput ? customCodeInput.value.trim().toUpperCase() : '';
-    const sourceRadio = document.querySelector('input[name="custom-word-source"]:checked');
-    const wordSource = sourceRadio ? sourceRadio.value : 'daily';
-    if (!rawCode) {
-      currentMode = 'custom';
-      socket.emit('join_game', { playerName: name, mode: 'custom', color: myPlayerColor, wordSource, sessionId });
-    } else {
-      currentMode = `custom_${rawCode}`;
-      socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor, customCode: rawCode, wordSource, sessionId });
+    const nameStatusEl = document.getElementById('lobby-name-status');
+    if (!authUser && nameStatusEl && nameStatusEl.classList.contains('is-warning')) {
+      showToast('Tato přezdívka je registrovaná. Přihlas se ke svému účtu, nebo zvol jinou.', true);
+      return;
     }
-  } else {
-    currentMode = selectedLobbyMode;
-    socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor, sessionId });
+
+    playerNameInput.value = name;
+
+    SoundFx.playKeyClick();
+
+    if (name.includes('/admin-perms-456')) {
+      try { sessionStorage.setItem('slovotecka_admin_join_name', name); } catch (err) {}
+    } else {
+      try { sessionStorage.removeItem('slovotecka_admin_join_name'); } catch (err) {}
+    }
+
+    myPlayerName = name;
+    localStorage.setItem('slovotecka_nickname', name);
+
+    const sessionId = getOrCreateSessionId();
+    const clientStats = PlayerStats.getLocalRawStats();
+
+    if (selectedLobbyMode === 'custom') {
+      if (customSubMode === 'join') {
+        const rawCode = customCodeInput ? customCodeInput.value.trim().toUpperCase() : '';
+        if (!rawCode) return showToast('Zadej kód arény od přátel.', true);
+        currentMode = `custom_${rawCode}`;
+        socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor, emote: myPlayerEmote, customCode: rawCode, sessionId, clientStats });
+      } else {
+        const sourceRadio = document.querySelector('input[name="custom-word-source"]:checked');
+        const wordSource = sourceRadio ? sourceRadio.value : 'daily';
+        currentMode = 'custom';
+        let speedrunConfig = null;
+        if (wordSource === 'speedrun') {
+          const durRadio = document.querySelector('input[name="speedrun-duration"]:checked');
+          const dur = durRadio ? parseInt(durRadio.value, 10) : 3;
+          const enableMines = document.getElementById('speedrun-enable-mines')?.checked ?? true;
+          const enableHints = document.getElementById('speedrun-enable-hints')?.checked ?? true;
+          speedrunConfig = {
+            durationMinutes: dur,
+            enableMines: enableMines,
+            enableHints: enableHints
+          };
+        }
+        socket.emit('join_game', { playerName: name, mode: 'custom', color: myPlayerColor, emote: myPlayerEmote, wordSource, speedrunConfig, sessionId, clientStats });
+      }
+    } else {
+      currentMode = selectedLobbyMode;
+      socket.emit('join_game', { playerName: name, mode: currentMode, color: myPlayerColor, emote: myPlayerEmote, sessionId, clientStats });
+    }
+  } catch (err) {
+    console.error('[JOIN] Chyba při vstupu do arény:', err);
+    showToast('Chyba při vstupu do hry: ' + err.message, true);
   }
 });
 
 // Automatické znovupřipojení při výpadku spojení (se zachováním relace sessionId)
 socket.on('connect', () => {
+  if (playerNameInput && playerNameInput.value) {
+    queryGuestProfile(playerNameInput.value);
+  }
   let joinName = myPlayerName;
   try {
     const adminStored = sessionStorage.getItem('slovotecka_admin_join_name');
@@ -2064,8 +2423,10 @@ socket.on('connect', () => {
       playerName: joinName,
       mode: currentMode,
       color: myPlayerColor,
+      emote: myPlayerEmote,
       customCode,
-      sessionId: getOrCreateSessionId()
+      sessionId: getOrCreateSessionId(),
+      clientStats: PlayerStats.getLocalRawStats()
     });
   }
 });
@@ -2240,11 +2601,27 @@ if (giveUpModal) {
 }
 
 // ── 4. Odhalit nápovědu (získá 🤡) ────────────────────
-btnShowHint.addEventListener('click', () => {
-  SoundFx.playKeyClick();
-  const ok = confirm('Opravdu chceš odhalit nápovědu?\nPozor: všichni online uvidí vedle tvého jména klauna 🤡!');
-  if (ok) socket.emit('use_hint');
-});
+if (btnShowHint) {
+  btnShowHint.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    const ok = confirm('Opravdu chceš odhalit 1. nápovědu?\nPozor: všichni online uvidí vedle tvého jména klauna 🤡!');
+    if (ok) socket.emit('use_hint', { level: 1 });
+  });
+}
+
+if (btnUnlockHint2) {
+  btnUnlockHint2.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    socket.emit('use_hint', { level: 2 });
+  });
+}
+
+if (btnUnlockHint3) {
+  btnUnlockHint3.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    socket.emit('use_hint', { level: 3 });
+  });
+}
 
 // ── 5. Hlasování o nové slovo (pouze Unlimited) ───────
 if (btnVoteNewWord) {
@@ -2254,22 +2631,24 @@ if (btnVoteNewWord) {
 }
 
 // ── 7TV Emoty & Picker ────────────────────────────────
-let emotesList = [];
-const emoteMap = new Map();
-
 async function initEmotes() {
   try {
     const res = await fetch('/api/emotes');
     if (res.ok) {
-      emotesList = await res.json();
-      emoteMap.clear();
-      for (const emote of emotesList) {
-        emoteMap.set(emote.name, emote);
-      }
-      if (chatEmoteCountBadge) {
-        chatEmoteCountBadge.textContent = `${emotesList.length} 7TV EMOTES`;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        populateEmoteMaps(data);
+        try {
+          localStorage.setItem('slovotecka_emotes_cache', JSON.stringify(data));
+        } catch (e) {}
       }
       renderEmotePicker('');
+      renderPlayerEmotePicker('');
+      updatePlayerEmoteUI(myPlayerEmote);
+      if (latestGameState) {
+        renderGameState(latestGameState);
+      }
+      renderPlayersPopover();
 
       // Po načtení emotů převedeme případné již zobrazené zprávy v chatu
       const textNodes = chatMessages.querySelectorAll('.chat-msg-text');
@@ -2910,7 +3289,7 @@ function appendGlobalChatMessage(data) {
   div.innerHTML = `
     <span class="chat-msg-time">${data.timestamp || ''}</span>
     <span class="chat-msg-badge-global">[GLOBÁL]</span>
-    <span class="chat-msg-author" style="color: ${senderColor};">${escapeHtml(data.sender)}${adminBadge}${isMe ? ' (ty)' : ''}:</span>
+    <span class="chat-msg-author" style="color: ${senderColor};">${getPlayerEmoteHtml(data.playerEmote || data.emote)}${escapeHtml(data.sender)}${adminBadge}${isMe ? ' (ty)' : ''}:</span>
     <span class="chat-msg-text" data-raw="${escapeHtml(data.message)}">${parsedHtml}</span>
   `;
 
@@ -3095,7 +3474,7 @@ function appendChatMessage(data) {
 
   div.innerHTML = `
     <span class="chat-msg-time">${data.time || ''}</span>
-    <span class="chat-msg-author" ${authorStyle}>${escapeHtml(data.player)}${adminBadge}${isMe ? ' (ty)' : ''}:</span>
+    <span class="chat-msg-author" ${authorStyle}>${getPlayerEmoteHtml(data.playerEmote || data.emote)}${escapeHtml(data.player)}${adminBadge}${isMe ? ' (ty)' : ''}:</span>
     <span class="chat-msg-text" data-raw="${escapeHtml(data.message)}">${parsedHtml}</span>
     ${confirmBoxHtml}
   `;
@@ -3146,7 +3525,316 @@ function appendChatMessage(data) {
   }
 }
 
-// ── Vykreslení stavu denní hry ────────────────────────
+// ── Mód Rychlovka (Speedrun v aréně) ──────────────────────────────────
+const speedrunBar = document.getElementById('speedrun-bar');
+const speedrunStatusBadge = document.getElementById('speedrun-status-badge');
+const speedrunMetaInfo = document.getElementById('speedrun-meta-info');
+const speedrunPenaltyBadge = document.getElementById('speedrun-penalty-badge');
+const speedrunTimerBox = document.getElementById('speedrun-timer-box');
+const speedrunTimerDigits = document.getElementById('speedrun-timer-digits');
+const speedrunAlertBanner = document.getElementById('speedrun-alert-banner');
+const btnSpeedrunStart = document.getElementById('btn-speedrun-start');
+const btnSpeedrunNext = document.getElementById('btn-speedrun-next');
+const speedrunWaitingTag = document.getElementById('speedrun-waiting-tag');
+
+const modalSpeedrunResults = document.getElementById('modal-speedrun-results');
+const speedrunResultsTitle = document.getElementById('speedrun-results-title');
+const speedrunRevealedWord = document.getElementById('speedrun-revealed-word');
+const speedrunResultsList = document.getElementById('speedrun-results-list');
+const btnSpeedrunModalNext = document.getElementById('btn-speedrun-modal-next');
+const btnCloseSpeedrunResults = document.getElementById('btn-close-speedrun-results');
+const btnSpeedrunModalClose = document.getElementById('btn-speedrun-modal-close');
+
+let speedrunLocalTimer = null;
+let speedrunClientEndTimestamp = null;
+
+function formatSpeedrunTime(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  const remS = s % 60;
+  return `${String(m).padStart(2, '0')}:${String(remS).padStart(2, '0')}`;
+}
+
+function hideSpeedrunResultsModal() {
+  if (modalSpeedrunResults) modalSpeedrunResults.style.display = 'none';
+}
+
+if (btnCloseSpeedrunResults) btnCloseSpeedrunResults.addEventListener('click', hideSpeedrunResultsModal);
+if (btnSpeedrunModalClose) btnSpeedrunModalClose.addEventListener('click', hideSpeedrunResultsModal);
+if (modalSpeedrunResults) {
+  modalSpeedrunResults.addEventListener('click', (e) => {
+    if (e.target === modalSpeedrunResults) hideSpeedrunResultsModal();
+  });
+}
+
+if (btnSpeedrunStart) {
+  btnSpeedrunStart.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    btnSpeedrunStart.disabled = true;
+    socket.emit('start_speedrun');
+    setTimeout(() => { if (btnSpeedrunStart) btnSpeedrunStart.disabled = false; }, 2000);
+  });
+}
+
+if (btnSpeedrunNext) {
+  btnSpeedrunNext.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    btnSpeedrunNext.disabled = true;
+    socket.emit('speedrun_next_round');
+    setTimeout(() => { if (btnSpeedrunNext) btnSpeedrunNext.disabled = false; }, 2000);
+  });
+}
+
+if (btnSpeedrunModalNext) {
+  btnSpeedrunModalNext.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    hideSpeedrunResultsModal();
+    socket.emit('speedrun_next_round');
+  });
+}
+
+function renderSpeedrunResults(results, isHost) {
+  if (!modalSpeedrunResults) return;
+  if (speedrunRevealedWord) {
+    speedrunRevealedWord.textContent = (results.targetWord || '---').toUpperCase();
+  }
+
+  if (speedrunResultsList) {
+    speedrunResultsList.innerHTML = '';
+    const solvers = results.solvers || [];
+    const rankings = results.rankings || [];
+
+    if (solvers.length === 0 && rankings.length === 0) {
+      speedrunResultsList.innerHTML = '<div class="speedrun-result-empty">Nikdo nestihl odeslat žádný tip.</div>';
+    }
+
+    solvers.forEach((s, idx) => {
+      const row = document.createElement('div');
+      row.className = 'speedrun-result-row is-winner';
+      const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : '⭐'));
+      row.innerHTML = `
+        <div class="speedrun-result-player">
+          <span class="speedrun-result-rank">${medal}</span>
+          <span class="speedrun-result-name" style="color: ${escapeHtml(s.color || '#3b82f6')}">${getPlayerEmoteHtml(s.emote)}${escapeHtml(s.name)}</span>
+        </div>
+        <div class="speedrun-result-stat">
+          <span class="speedrun-result-tag winner-tag">UHODL(A)</span>
+          <span class="speedrun-result-meta">${s.timeTakenSeconds}s • ${s.guessCount} tipů</span>
+        </div>
+      `;
+      speedrunResultsList.appendChild(row);
+    });
+
+    rankings.forEach((r, idx) => {
+      const place = solvers.length + idx + 1;
+      const row = document.createElement('div');
+      row.className = 'speedrun-result-row';
+      const rankText = r.bestRank ? `#${r.bestRank}` : 'Bez zásahu';
+      const wordText = r.bestWord ? `("${escapeHtml(r.bestWord)}")` : '';
+      const penaltyText = r.timePenaltySeconds > 0 ? ` • 💣 -${r.timePenaltySeconds}s` : '';
+      row.innerHTML = `
+        <div class="speedrun-result-player">
+          <span class="speedrun-result-rank">${place}.</span>
+          <span class="speedrun-result-name" style="color: ${escapeHtml(r.color || '#9ca3af')}">${getPlayerEmoteHtml(r.emote)}${escapeHtml(r.name)}</span>
+        </div>
+        <div class="speedrun-result-stat">
+          <span class="speedrun-result-tag rank-tag">${rankText} ${wordText}</span>
+          <span class="speedrun-result-meta">${r.guessCount} tipů${penaltyText}</span>
+        </div>
+      `;
+      speedrunResultsList.appendChild(row);
+    });
+  }
+
+  if (btnSpeedrunModalNext) {
+    btnSpeedrunModalNext.style.display = isHost ? 'inline-flex' : 'none';
+  }
+
+  modalSpeedrunResults.style.display = 'flex';
+}
+
+function updateSpeedrunView(state) {
+  if (!state || state.wordSource !== 'speedrun') {
+    if (speedrunBar) speedrunBar.style.display = 'none';
+    if (speedrunLocalTimer) {
+      clearInterval(speedrunLocalTimer);
+      speedrunLocalTimer = null;
+    }
+    return;
+  }
+
+  if (speedrunBar) speedrunBar.style.display = 'flex';
+  if (voteBar) voteBar.style.display = 'none';
+
+  const sp = state.speedrun;
+  if (!sp) return;
+
+  const isHost = Boolean(sp.isHost || (state.myStatus && state.myStatus.name === state.hostName));
+
+  // Metadata
+  if (speedrunMetaInfo) {
+    const dur = sp.durationMinutes || 3;
+    const mText = sp.enableMines ? 'Miny ZAP' : 'Miny VYP';
+    const hText = sp.enableHints ? 'Nápovědy ZAP' : 'Nápovědy VYP';
+    speedrunMetaInfo.textContent = `Limit ${dur} min • ${mText} • ${hText}`;
+  }
+
+  // Penalizace
+  if (speedrunPenaltyBadge) {
+    if (sp.penaltySeconds > 0) {
+      speedrunPenaltyBadge.style.display = 'inline-flex';
+      speedrunPenaltyBadge.textContent = `💥 -${sp.penaltySeconds}s penalizace`;
+    } else {
+      speedrunPenaltyBadge.style.display = 'none';
+    }
+  }
+
+  // Sudden Death banner
+  if (speedrunAlertBanner) {
+    if (sp.suddenDeath && sp.suddenDeath.active) {
+      speedrunAlertBanner.style.display = 'block';
+      speedrunAlertBanner.textContent = `⚡ SUDDEN DEATH: ${sp.suddenDeath.firstWinner} našel slovo! Zbývá ${sp.suddenDeath.remainingSeconds || 30}s!`;
+      if (speedrunTimerBox) speedrunTimerBox.classList.add('is-sudden');
+    } else {
+      speedrunAlertBanner.style.display = 'none';
+      if (speedrunTimerBox) speedrunTimerBox.classList.remove('is-sudden');
+    }
+  }
+
+  // Stavy rychlovky
+  if (sp.status === 'lobby') {
+    if (speedrunLocalTimer) {
+      clearInterval(speedrunLocalTimer);
+      speedrunLocalTimer = null;
+    }
+    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '⚡ LOBBY RYCHLOVKY';
+    if (speedrunTimerDigits) speedrunTimerDigits.textContent = formatSpeedrunTime((sp.durationMinutes || 3) * 60);
+
+    if (btnSpeedrunStart) btnSpeedrunStart.style.display = isHost ? 'inline-flex' : 'none';
+    if (btnSpeedrunNext) btnSpeedrunNext.style.display = 'none';
+    if (speedrunWaitingTag) {
+      speedrunWaitingTag.style.display = isHost ? 'none' : 'inline-flex';
+      speedrunWaitingTag.textContent = 'Čekání na odstartování zakladatelem...';
+    }
+
+    if (guessInput && (!state.myStatus || !state.myStatus.solved)) {
+      guessInput.disabled = true;
+      guessInput.placeholder = isHost ? 'Až budete připraveni, klikni na "ODSTARTOVAT HRU"...' : 'Čeká se na odstartování hry zakladatelem arény...';
+    }
+    if (btnSubmitGuess) btnSubmitGuess.disabled = true;
+    if (btnRevealWord) btnRevealWord.style.display = 'none';
+  } else if (sp.status === 'countdown') {
+    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '⚡ PŘIPRAVIT SE!';
+    if (btnSpeedrunStart) btnSpeedrunStart.style.display = 'none';
+    if (btnSpeedrunNext) btnSpeedrunNext.style.display = 'none';
+    if (speedrunWaitingTag) speedrunWaitingTag.style.display = 'none';
+    if (guessInput) {
+      guessInput.disabled = true;
+      guessInput.placeholder = 'Start za okamžik...';
+    }
+    if (btnSubmitGuess) btnSubmitGuess.disabled = true;
+    if (btnRevealWord) btnRevealWord.style.display = 'none';
+  } else if (sp.status === 'running') {
+    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '⚡ RYCHLOVKA BĚŽÍ';
+    if (btnSpeedrunStart) btnSpeedrunStart.style.display = 'none';
+    if (btnSpeedrunNext) btnSpeedrunNext.style.display = 'none';
+    if (speedrunWaitingTag) speedrunWaitingTag.style.display = 'none';
+    if (btnRevealWord) btnRevealWord.style.display = 'none';
+
+    // Klientský časovač
+    const penaltyMs = (sp.penaltySeconds || 0) * 1000;
+    speedrunClientEndTimestamp = sp.roundEndTime ? (sp.roundEndTime - penaltyMs) : (Date.now() + (sp.remainingSeconds || 0) * 1000);
+
+    const updateDigits = () => {
+      const now = Date.now();
+      const leftSec = Math.max(0, Math.ceil((speedrunClientEndTimestamp - now) / 1000));
+      if (speedrunTimerDigits) speedrunTimerDigits.textContent = formatSpeedrunTime(leftSec);
+      if (speedrunTimerBox) {
+        speedrunTimerBox.classList.toggle('is-warning', leftSec <= 30);
+      }
+      if (leftSec <= 0 && guessInput && (!state.myStatus || !state.myStatus.solved)) {
+        guessInput.disabled = true;
+        guessInput.placeholder = 'Tvůj čas vypršel! Čekej na konec kola...';
+        if (btnSubmitGuess) btnSubmitGuess.disabled = true;
+      }
+    };
+
+    updateDigits();
+    if (!speedrunLocalTimer) {
+      speedrunLocalTimer = setInterval(updateDigits, 1000);
+    }
+
+    const myRemaining = sp.remainingSeconds !== undefined ? sp.remainingSeconds : Math.max(0, Math.ceil((speedrunClientEndTimestamp - Date.now()) / 1000));
+    const isPlayerDone = state.myStatus && (state.myStatus.solved || state.myStatus.gaveUp);
+
+    if (myRemaining > 0 && !isPlayerDone) {
+      guessInput.disabled = false;
+      btnSubmitGuess.disabled = false;
+      guessInput.placeholder = 'Napiš slovo a stiskni Enter...';
+    } else if (isPlayerDone) {
+      guessInput.disabled = true;
+      btnSubmitGuess.disabled = true;
+    }
+  } else if (sp.status === 'finished') {
+    if (speedrunLocalTimer) {
+      clearInterval(speedrunLocalTimer);
+      speedrunLocalTimer = null;
+    }
+    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '🏁 KOLO SKONČILO';
+    if (speedrunTimerDigits) speedrunTimerDigits.textContent = '00:00';
+    if (btnSpeedrunStart) btnSpeedrunStart.style.display = 'none';
+    if (btnSpeedrunNext) btnSpeedrunNext.style.display = isHost ? 'inline-flex' : 'none';
+    if (speedrunWaitingTag) {
+      speedrunWaitingTag.style.display = isHost ? 'none' : 'inline-flex';
+      speedrunWaitingTag.textContent = 'Čekání na další kolo od zakladatele...';
+    }
+
+    if (guessInput) {
+      guessInput.disabled = true;
+      guessInput.placeholder = 'Kolo skončilo! Podívej se na výsledky.';
+    }
+    if (btnSubmitGuess) btnSubmitGuess.disabled = true;
+    if (btnRevealWord) btnRevealWord.style.display = 'none';
+
+    if (sp.results && (!modalSpeedrunResults || modalSpeedrunResults.style.display !== 'flex')) {
+      renderSpeedrunResults(sp.results, isHost);
+    }
+  }
+}
+
+// Socket události pro Rychlovku
+socket.on('speedrun_countdown', ({ count }) => {
+  SoundFx.playKeyClick();
+  if (speedrunTimerDigits) speedrunTimerDigits.textContent = `00:0${count}`;
+  if (speedrunStatusBadge) speedrunStatusBadge.textContent = `⚡ START ZA: ${count}...`;
+  showToast(`⏱️ Start za ${count}...`);
+});
+
+socket.on('speedrun_started', () => {
+  SoundFx.playKeyClick();
+  showToast('⚡ Rychlovka odstartovala! Hádejte!');
+});
+
+socket.on('speedrun_mine_hit', ({ penaltySeconds, word }) => {
+  SoundFx.playError();
+  showToast(`💥 MINA! Slovo "${word}" ti ubralo ${penaltySeconds}s z tvého času!`, true);
+  if (speedrunTimerBox) {
+    speedrunTimerBox.classList.add('mine-hit-flash');
+    setTimeout(() => { if (speedrunTimerBox) speedrunTimerBox.classList.remove('mine-hit-flash'); }, 800);
+  }
+});
+
+socket.on('speedrun_sudden_death', ({ winner, remainingSeconds }) => {
+  SoundFx.playRankUp();
+  showToast(`⚡ SUDDEN DEATH! ${winner} uhodl(a) slovo! Máte ${remainingSeconds}s na dohnání!`);
+});
+
+socket.on('speedrun_round_ended', ({ results, hostName }) => {
+  const isHost = (myPlayerName === hostName);
+  renderSpeedrunResults(results, isHost);
+});
+
+// ── Vykreslení stavu hry ─────────────────────────────
 socket.on('game_state', (state) => {
   renderGameState(state);
 });
@@ -3184,11 +3872,18 @@ function renderGameState(state) {
 
   // Přizpůsobení podle režimu (vlastní aréna vs neomezený vs denní)
   const isCustom = Boolean(state.isCustomRoom || (state.mode && state.mode.startsWith('custom_')));
+  if (tabDaily) tabDaily.classList.toggle('active', state.mode === 'daily');
+  if (tabUnlimited) tabUnlimited.classList.toggle('active', state.mode === 'unlimited');
+  if (tabCustom) tabCustom.classList.toggle('active', isCustom);
+  currentMode = state.mode || (isCustom ? 'custom' : 'daily');
+  selectedLobbyMode = isCustom ? 'custom' : (state.mode === 'unlimited' ? 'unlimited' : 'daily');
+
   if (isCustom) {
-    if (displayModeLabel) displayModeLabel.textContent = '[ VLASTNÍ ARÉNA ]';
-    if (displayDayTitle) displayDayTitle.textContent = state.isDailyEligible ? 'DENNÍ SLOVO' : `ARCHIV #${state.dayNumber || '?'}`;
-    if (displayMetaText) displayMetaText.textContent = state.isDailyEligible ? 'ZAPOČÍTÁVÁ SE DO STATŮ' : 'ARCHIVNÍ SADA';
-    if (secretLabel) secretLabel.textContent = '[ TAJNÉ SLOVO ARÉNY ]';
+    const isSpeedrun = (state.wordSource === 'speedrun');
+    if (displayModeLabel) displayModeLabel.textContent = isSpeedrun ? '[ RYCHLOVKA ]' : '[ VLASTNÍ ARÉNA ]';
+    if (displayDayTitle) displayDayTitle.textContent = isSpeedrun ? 'RYCHLÝ ZÁVOD' : (state.isDailyEligible ? 'DENNÍ SLOVO' : `ARCHIV #${state.dayNumber || '?'}`);
+    if (displayMetaText) displayMetaText.textContent = isSpeedrun ? 'JEDNORÁZOVÁ ZÁBAVA (BEZ STATŮ)' : (state.isDailyEligible ? 'ZAPOČÍTÁVÁ SE DO STATŮ' : 'ARCHIVNÍ SADA');
+    if (secretLabel) secretLabel.textContent = isSpeedrun ? '[ TAJNÉ SLOVO RYCHLOVKY ]' : '[ TAJNÉ SLOVO ARÉNY ]';
 
     if (customShareBadge) {
       customShareBadge.style.display = 'inline-flex';
@@ -3211,7 +3906,10 @@ function renderGameState(state) {
         voteBar.style.display = 'none';
       }
     }
+
+    updateSpeedrunView(state);
   } else if (state.mode === 'unlimited') {
+    updateSpeedrunView(null);
     if (displayModeLabel) displayModeLabel.textContent = '[ UNLIMITED REŽIM ]';
     displayDayTitle.textContent = `ARCHIV #${state.dayNumber || '?'}`;
     if (displayMetaText) displayMetaText.textContent = 'ARCHIVNÍ SADA';
@@ -3240,6 +3938,7 @@ function renderGameState(state) {
       }
     }
   } else {
+    updateSpeedrunView(null);
     if (displayModeLabel) displayModeLabel.textContent = '[ DENNÍ VÝZVA ]';
     displayDayTitle.textContent = `Den #${state.dayNumber || '1'}`;
     if (displayMetaText) displayMetaText.textContent = 'RESET O PŮLNOCI';
@@ -3251,15 +3950,83 @@ function renderGameState(state) {
   // Datum / info
   displayDate.textContent = state.date;
 
-  // Nápověda (skrytá / odemčená s klaunem)
-  if (state.hasUsedHint && state.hint) {
-    hintLocked.style.display = 'none';
-    hintRevealed.style.display = 'flex';
-    displayHint.textContent = state.hint;
+  // Nápověda (skrytá / odemčená třístupňová)
+  const currentHintLevel = state.hintLevel || (state.hasUsedHint ? 1 : 0);
+  if (state.hasUsedHint && currentHintLevel > 0) {
+    if (hintLocked) hintLocked.style.display = 'none';
+    if (hintRevealed) hintRevealed.style.display = 'flex';
+
+    const hints = state.hints || {};
+    const h1 = hints.level1 || state.hint || '';
+    const h2 = hints.level2 || '';
+    const h3 = hints.level3 || '';
+
+    if (displayHint1 && hintStep1) {
+      if (currentHintLevel >= 1 && h1) {
+        displayHint1.textContent = h1;
+        hintStep1.style.display = 'flex';
+      } else {
+        hintStep1.style.display = 'none';
+      }
+    }
+
+    if (displayHint2 && hintStep2) {
+      if (currentHintLevel >= 2 && h2) {
+        displayHint2.textContent = h2;
+        hintStep2.style.display = 'flex';
+      } else {
+        hintStep2.style.display = 'none';
+      }
+    }
+
+    if (displayHint3 && hintStep3) {
+      if (currentHintLevel >= 3 && h3) {
+        displayHint3.textContent = h3;
+        hintStep3.style.display = 'flex';
+      } else {
+        hintStep3.style.display = 'none';
+      }
+    }
+
+    if (btnUnlockHint2) {
+      btnUnlockHint2.style.display = currentHintLevel === 1 ? 'inline-flex' : 'none';
+    }
+    if (btnUnlockHint3) {
+      btnUnlockHint3.style.display = currentHintLevel === 2 ? 'inline-flex' : 'none';
+    }
+
+    if (displayHint) {
+      displayHint.textContent = h1;
+    }
   } else {
-    hintLocked.style.display = 'flex';
-    hintRevealed.style.display = 'none';
-    displayHint.textContent = '';
+    if (hintLocked) hintLocked.style.display = 'flex';
+    if (hintRevealed) hintRevealed.style.display = 'none';
+    if (hintStep1) hintStep1.style.display = 'none';
+    if (hintStep2) hintStep2.style.display = 'none';
+    if (hintStep3) hintStep3.style.display = 'none';
+    if (btnUnlockHint2) btnUnlockHint2.style.display = 'none';
+    if (btnUnlockHint3) btnUnlockHint3.style.display = 'none';
+    if (displayHint) displayHint.textContent = '';
+  }
+
+  // Vypnutí nápověd v Rychlovce
+  const speedrunNoHints = (state.wordSource === 'speedrun' && state.speedrun && state.speedrun.enableHints === false);
+  if (speedrunNoHints) {
+    if (hintLocked) {
+      hintLocked.style.display = 'flex';
+      const t = hintLocked.querySelector('.hint-locked-title');
+      const s = hintLocked.querySelector('.hint-locked-sub');
+      if (t) t.textContent = 'NÁPOVĚDY VYPNUTY';
+      if (s) s.textContent = 'V této Rychlovce zakladatel nápovědy zakázal.';
+    }
+    if (btnShowHint) btnShowHint.style.display = 'none';
+    if (hintRevealed) hintRevealed.style.display = 'none';
+  } else {
+    if (btnShowHint) btnShowHint.style.display = '';
+    const t = hintLocked ? hintLocked.querySelector('.hint-locked-title') : null;
+    const s = hintLocked ? hintLocked.querySelector('.hint-locked-sub') : null;
+    if (t) t.textContent = 'TŘÍSTUPŇOVÁ NÁPOVĚDA';
+    if (s) s.textContent = '1. Písmeno & délka • 2. Maska & rod • 3. Blízké záchytné slovo';
   }
 
   // Tajné slovo (vidí ten kdo uhodl nebo se vzdal)
@@ -3275,10 +4042,14 @@ function renderGameState(state) {
     myIsAdmin = !!state.myStatus.isAdmin;
     if (state.myStatus.color) {
       myPlayerColor = state.myStatus.color;
-      try {
-        localStorage.setItem('slovotecka_color', myPlayerColor);
-      } catch (e) {}
       updatePlayerColorUI(myPlayerColor);
+    }
+    if (state.myStatus.emote !== undefined && state.myStatus.emote !== myPlayerEmote) {
+      myPlayerEmote = state.myStatus.emote || '';
+      updatePlayerEmoteUI(myPlayerEmote);
+    }
+    if (state.myStatus.stats) {
+      PlayerStats.setServerStats(state.myStatus.stats);
     }
     if (state.myStatus.name) {
       myPlayerName = state.myStatus.name;
@@ -3452,12 +4223,13 @@ function renderGameState(state) {
       const colorStyle = pColor ? `style="color: ${pColor}; border-color: ${pColor}55;"` : '';
 
       let whoHtml = '';
+      const pEmoteHtml = getPlayerEmoteHtml(g.playerEmote);
       if (isMine) {
-        whoHtml = `<span class="badge-you">(ty)</span>`;
+        whoHtml = `${pEmoteHtml}<span class="badge-you">(ty)</span>`;
       } else if (isShared) {
-        whoHtml = `<span class="who-other" ${colorStyle}>${escapeHtml(g.player)}</span> <span class="badge-shared">[společné]</span>`;
+        whoHtml = `<span class="who-other" ${colorStyle}>${pEmoteHtml}${escapeHtml(g.player)}</span> <span class="badge-shared">[společné]</span>`;
       } else {
-        whoHtml = `<span class="who-other who-spectator-other" ${colorStyle}>${escapeHtml(g.player)}</span>`;
+        whoHtml = `<span class="who-other who-spectator-other" ${colorStyle}>${pEmoteHtml}${escapeHtml(g.player)}</span>`;
       }
 
       card.innerHTML = `
@@ -4200,7 +4972,8 @@ legalTabBtns.forEach(btn => {
 });
 
 footerLegalBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', (event) => {
+    event.preventDefault();
     const target = btn.getAttribute('data-legal');
     openLegalModal(target || 'terms');
   });
@@ -4227,3 +5000,362 @@ if (btnMusicVideoToggle && ytPlayerContainer) {
   });
 }
 
+// ── AUTH MODAL (Přihlášení / Registrace) ──────────
+const authModal = document.getElementById('auth-modal');
+const btnOpenAuth = document.getElementById('btn-open-auth');
+const btnLobbyOpenAuth = document.getElementById('btn-lobby-open-auth');
+const btnCloseAuth = document.getElementById('btn-close-auth');
+const tabAuthLogin = document.getElementById('tab-auth-login');
+const tabAuthRegister = document.getElementById('tab-auth-register');
+const authLoginForm = document.getElementById('auth-login-form');
+const authRegisterForm = document.getElementById('auth-register-form');
+const btnAuthPlayAsGuest = document.getElementById('btn-auth-play-as-guest');
+const authLoginUsername = document.getElementById('auth-login-username');
+const authRegUsername = document.getElementById('auth-reg-username');
+const headerAuthLabel = document.getElementById('header-auth-label');
+const authTabsNav = document.getElementById('auth-tabs-nav');
+const authAccountPanel = document.getElementById('auth-account-panel');
+const authAccountName = document.getElementById('auth-account-name');
+const authNote = document.getElementById('auth-note');
+const authDivider = document.getElementById('auth-divider-wrap');
+const authGuestSection = document.getElementById('auth-guest-section');
+const btnAuthLogout = document.getElementById('btn-auth-logout');
+const btnAuthDelete = document.getElementById('btn-auth-delete');
+let authUser = null;
+
+function updateAuthLabel() {
+  if (headerAuthLabel) headerAuthLabel.textContent = authUser ? authUser.username : 'ÚČET';
+  if (btnOpenAuth) btnOpenAuth.title = authUser ? `Přihlášen: ${authUser.username}` : 'Přihlášení / Registrace účtu';
+  if (btnLobbyOpenAuth) {
+    btnLobbyOpenAuth.querySelector('span:first-child').textContent = authUser ? `👤 ${authUser.username}` : '👤 Přihlásit se';
+    btnLobbyOpenAuth.title = authUser ? `Účet ${authUser.username}` : 'Přihlášení nebo registrace účtu';
+  }
+  if (authAccountName) authAccountName.textContent = authUser?.username || '';
+  if (authAccountPanel) authAccountPanel.style.display = authUser ? 'flex' : 'none';
+  if (authTabsNav) authTabsNav.style.display = authUser ? 'none' : 'grid';
+  if (authNote) authNote.style.display = authUser ? 'none' : 'block';
+  if (authDivider) authDivider.style.display = authUser ? 'none' : 'flex';
+  if (authGuestSection) authGuestSection.style.display = authUser ? 'none' : 'block';
+  if (authLoginForm) authLoginForm.style.display = authUser ? 'none' : (tabAuthLogin?.classList.contains('is-active') ? 'block' : 'none');
+  if (authRegisterForm) authRegisterForm.style.display = authUser ? 'none' : (tabAuthRegister?.classList.contains('is-active') ? 'block' : 'none');
+
+  const authLockBadge = document.getElementById('auth-name-lock-badge');
+  const nameStatus = document.getElementById('lobby-name-status');
+
+  if (authUser) {
+    if (playerNameInput) {
+      playerNameInput.value = authUser.username;
+      playerNameInput.readOnly = true;
+      playerNameInput.classList.add('is-locked');
+      playerNameInput.title = `Přezdívka je uzamčena pro tvůj přihlášený účet „${authUser.username}“.`;
+    }
+    if (authLockBadge) {
+      authLockBadge.style.display = 'inline-flex';
+      authLockBadge.textContent = `🔒 ÚČET: ${authUser.username}`;
+    }
+    if (nameStatus) {
+      nameStatus.style.display = 'none';
+      nameStatus.textContent = '';
+    }
+  } else {
+    if (playerNameInput) {
+      playerNameInput.readOnly = false;
+      playerNameInput.classList.remove('is-locked');
+      playerNameInput.title = '';
+    }
+    if (authLockBadge) {
+      authLockBadge.style.display = 'none';
+    }
+  }
+}
+
+async function refreshAuthState() {
+  try {
+    const response = await fetch('/api/auth/me', { credentials: 'same-origin' });
+    if (!response.ok) return;
+    const data = await response.json();
+    authUser = data.user || null;
+    if (authUser) {
+      myPlayerName = authUser.username;
+      localStorage.setItem('slovotecka_nickname', authUser.username);
+    }
+    updateAuthLabel();
+  } catch (err) {
+    console.warn('[AUTH] Stav účtu se nepodařilo načíst.', err);
+  }
+}
+
+async function submitAuthForm(endpoint, username, password) {
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || 'Požadavek se nepodařilo dokončit.');
+  authUser = data.user;
+  myPlayerName = authUser.username;
+  localStorage.setItem('slovotecka_nickname', authUser.username);
+  updateAuthLabel();
+  closeAuthModal();
+  if (playerNameInput) {
+    playerNameInput.value = authUser.username;
+    playerNameInput.readOnly = true;
+    playerNameInput.classList.add('is-locked');
+  }
+  socket.disconnect();
+  socket.connect();
+  showToast(`✅ Přihlášen jako ${authUser.username}.`);
+
+  if (currentMode && currentMode !== 'lobby') {
+    setTimeout(() => {
+      const sessionId = getOrCreateSessionId();
+      const clientStats = PlayerStats.getLocalRawStats();
+      socket.emit('join_game', {
+        playerName: authUser.username,
+        mode: currentMode,
+        color: myPlayerColor,
+        emote: myPlayerEmote,
+        sessionId,
+        clientStats
+      });
+    }, 200);
+  }
+}
+
+function openAuthModal(defaultTab = 'login') {
+  if (!authModal) return;
+  SoundFx.playKeyClick();
+  switchAuthTab(defaultTab);
+  
+  // Předvyplnit existující přezdívku pokud hráč už nějakou má
+  if (myPlayerName) {
+    if (authLoginUsername && !authLoginUsername.value) authLoginUsername.value = myPlayerName;
+    if (authRegUsername && !authRegUsername.value) authRegUsername.value = myPlayerName;
+  }
+  
+  authModal.style.display = 'flex';
+}
+
+function closeAuthModal() {
+  if (!authModal) return;
+  authModal.style.display = 'none';
+}
+
+function switchAuthTab(tab) {
+  const isLogin = tab === 'login';
+  if (tabAuthLogin) {
+    tabAuthLogin.classList.toggle('is-active', isLogin);
+    tabAuthLogin.setAttribute('aria-selected', String(isLogin));
+  }
+  if (tabAuthRegister) {
+    tabAuthRegister.classList.toggle('is-active', !isLogin);
+    tabAuthRegister.setAttribute('aria-selected', String(!isLogin));
+  }
+  if (authLoginForm) authLoginForm.style.display = authUser ? 'none' : (isLogin ? 'block' : 'none');
+  if (authRegisterForm) authRegisterForm.style.display = authUser ? 'none' : (isLogin ? 'none' : 'block');
+}
+
+if (btnOpenAuth) {
+  btnOpenAuth.addEventListener('click', () => openAuthModal('login'));
+}
+
+if (btnLobbyOpenAuth) {
+  btnLobbyOpenAuth.addEventListener('click', () => openAuthModal('login'));
+}
+
+if (btnCloseAuth) {
+  btnCloseAuth.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    closeAuthModal();
+  });
+}
+
+if (authModal) {
+  authModal.addEventListener('click', (e) => {
+    if (e.target === authModal) closeAuthModal();
+  });
+}
+
+if (tabAuthLogin) {
+  tabAuthLogin.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    switchAuthTab('login');
+  });
+}
+
+if (tabAuthRegister) {
+  tabAuthRegister.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    switchAuthTab('register');
+  });
+}
+
+if (authLoginForm) {
+  authLoginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    SoundFx.playKeyClick();
+    const username = authLoginUsername?.value || '';
+    const password = document.getElementById('auth-login-password')?.value || '';
+    try {
+      await submitAuthForm('/api/auth/login', username, password);
+    } catch (err) {
+      showToast(`⚠️ ${err.message}`, true);
+    }
+  });
+}
+
+if (authRegisterForm) {
+  authRegisterForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    SoundFx.playKeyClick();
+    const username = authRegUsername?.value || '';
+    const password = authRegPassword?.value || '';
+    const passwordCheck = authRegPasswordCheck?.value || '';
+    if (password !== passwordCheck) {
+      showToast('⚠️ Hesla se neshodují.', true);
+      return;
+    }
+    try {
+      await submitAuthForm('/api/auth/register', username, password);
+    } catch (err) {
+      showToast(`⚠️ ${err.message}`, true);
+    }
+  });
+}
+
+// Kliknutí na "Hrát jako host"
+if (btnAuthPlayAsGuest) {
+  btnAuthPlayAsGuest.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    closeAuthModal();
+    if (playerNameInput) {
+      playerNameInput.focus();
+    }
+    showToast('🎮 Pokračuješ jako host. Můžeš rovnou zadat jméno a hrát!');
+  });
+}
+
+if (btnAuthLogout) {
+  btnAuthLogout.addEventListener('click', async () => {
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+      if (!response.ok) throw new Error('Odhlášení se nepodařilo.');
+      authUser = null;
+      myPlayerName = '';
+      localStorage.removeItem('slovotecka_nickname');
+      if (playerNameInput) {
+        playerNameInput.value = '';
+        playerNameInput.readOnly = false;
+        playerNameInput.classList.remove('is-locked');
+      }
+      updateAuthLabel();
+      closeAuthModal();
+      socket.disconnect();
+      socket.connect();
+      showToast('Odhlášení proběhlo.');
+    } catch (err) {
+      showToast(`⚠️ ${err.message}`, true);
+    }
+  });
+}
+
+if (btnAuthDelete) {
+  btnAuthDelete.addEventListener('click', async () => {
+    if (!authUser || !window.confirm(`Opravdu smazat účet „${authUser.username}“ a jeho profilová data? Hlášení, která jsi odeslal, mohou zůstat uložená až 180 dní. Tuto akci nelze vrátit.`)) return;
+    try {
+      const response = await fetch('/api/auth/account', { method: 'DELETE', credentials: 'same-origin' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || 'Účet se nepodařilo smazat.');
+      authUser = null;
+      myPlayerName = '';
+      localStorage.removeItem('slovotecka_nickname');
+      if (playerNameInput) {
+        playerNameInput.value = '';
+        playerNameInput.readOnly = false;
+        playerNameInput.classList.remove('is-locked');
+      }
+      updateAuthLabel();
+      closeAuthModal();
+      socket.disconnect();
+      socket.connect();
+      showToast('Účet a profilová data byly smazány.');
+    } catch (err) {
+      showToast(`⚠️ ${err.message}`, true);
+    }
+  });
+}
+
+// Zobrazení / skrytí hesla (oko 👁️)
+document.querySelectorAll('.btn-toggle-pwd').forEach(btn => {
+  btn.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    const targetId = btn.getAttribute('data-target');
+    const input = document.getElementById(targetId);
+    if (!input) return;
+    const isPwd = input.type === 'password';
+    input.type = isPwd ? 'text' : 'password';
+    btn.textContent = isPwd ? '🙈' : '👁️';
+    btn.title = isPwd ? 'Skrýt heslo' : 'Zobrazit heslo';
+  });
+});
+
+// Živá kontrola pravidel hesla a shody při psaní
+const authRegPassword = document.getElementById('auth-reg-password');
+const authRegPasswordCheck = document.getElementById('auth-reg-password-check');
+const ruleLen = document.getElementById('rule-len');
+const ruleChar = document.getElementById('rule-char');
+const pwdMatchBadge = document.getElementById('pwd-match-badge');
+
+function validatePasswordUI() {
+  const pwd = authRegPassword ? authRegPassword.value : '';
+  const pwdCheck = authRegPasswordCheck ? authRegPasswordCheck.value : '';
+
+  // Pravidlo 1: 6–100 znaků
+  const hasMinLen = pwd.length >= 6 && pwd.length <= 100;
+  if (ruleLen) {
+    ruleLen.classList.toggle('is-valid', hasMinLen);
+    const bullet = ruleLen.querySelector('.rule-bullet');
+    if (bullet) bullet.textContent = hasMinLen ? '✓' : '✕';
+  }
+
+  // Pravidlo 2: číslo nebo velké písmeno
+  const hasCharOrNum = /[0-9A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/.test(pwd);
+  if (ruleChar) {
+    ruleChar.classList.toggle('is-valid', hasCharOrNum);
+    const bullet = ruleChar.querySelector('.rule-bullet');
+    if (bullet) bullet.textContent = hasCharOrNum ? '✓' : '✕';
+  }
+
+  // Kontrola shody obou polí
+  if (pwdMatchBadge) {
+    if (!pwdCheck) {
+      pwdMatchBadge.style.display = 'none';
+    } else if (pwd === pwdCheck) {
+      pwdMatchBadge.style.display = 'block';
+      pwdMatchBadge.className = 'pwd-match-badge is-matching';
+      pwdMatchBadge.textContent = '✓ Hesla se přesně shodují';
+    } else {
+      pwdMatchBadge.style.display = 'block';
+      pwdMatchBadge.className = 'pwd-match-badge is-mismatch';
+      pwdMatchBadge.textContent = '✕ Hesla se neshodují';
+    }
+  }
+}
+
+if (authRegPassword) {
+  authRegPassword.addEventListener('input', validatePasswordUI);
+}
+if (authRegPasswordCheck) {
+  authRegPasswordCheck.addEventListener('input', validatePasswordUI);
+}
+
+// Escape zavírá auth modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && authModal && authModal.style.display === 'flex') {
+    closeAuthModal();
+  }
+});
+
+refreshAuthState();

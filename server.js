@@ -7,15 +7,126 @@ const { Server } = require('socket.io');
 const gameManager = require('./src/roomManager');
 const emoteService = require('./src/emoteService');
 const wordService = require('./src/wordService');
+const playerProfileManager = require('./src/playerProfileManager');
+const authService = require('./src/authService');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
+const AUTH_COOKIE = 'slovo_session';
+const REPORT_LOG_PATH = path.join(__dirname, 'src', 'data', 'reports.log');
+const REPORT_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
 
 // Důvěra v reverzní proxy (Render, Nginx, Cloudflare)
 app.set('trust proxy', 1);
+app.use(express.json({ limit: '20kb' }));
+
+function getSessionToken(req) {
+  try {
+    const cookies = String(req?.headers?.cookie || '').split(';');
+    const item = cookies.find((entry) => entry.trim().startsWith(`${AUTH_COOKIE}=`));
+    return item ? decodeURIComponent(item.trim().slice(AUTH_COOKIE.length + 1)) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+// Ochrana před brute-force a DoS útoky na autentizační endpointy (bcrypt ochrana)
+function createAuthRateLimiter({ windowMs, maxRequests, message }) {
+  const hits = new Map();
+  const cleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [ip, entry] of hits.entries()) {
+      if (now > entry.resetTime) {
+        hits.delete(ip);
+      }
+    }
+  }, 5 * 60 * 1000);
+  if (cleanupTimer.unref) cleanupTimer.unref();
+
+  return (req, res, next) => {
+    const clientIp = req.ip || req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    let entry = hits.get(clientIp);
+
+    if (!entry || now > entry.resetTime) {
+      entry = { count: 1, resetTime: now + windowMs };
+      hits.set(clientIp, entry);
+      return next();
+    }
+
+    entry.count++;
+    if (entry.count > maxRequests) {
+      const retryAfterSec = Math.ceil((entry.resetTime - now) / 1000);
+      res.setHeader('Retry-After', retryAfterSec);
+      return res.status(429).json({
+        error: 'RATE_LIMIT_EXCEEDED',
+        message: message || `Příliš mnoho pokusů. Zkus to znovu za ${retryAfterSec} s.`
+      });
+    }
+
+    next();
+  };
+}
+
+const loginLimiter = createAuthRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  message: 'Příliš mnoho pokusů o přihlášení. Chvíli počkej (limit 10/min).'
+});
+
+const registerLimiter = createAuthRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 5,
+  message: 'Příliš mnoho pokusů o registraci. Chvíli počkej (limit 5/min).'
+});
+
+function setSessionCookie(res, token, maxAgeSeconds) {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `${AUTH_COOKIE}=${encodeURIComponent(token)}; Max-Age=${maxAgeSeconds}; Path=/; HttpOnly; SameSite=Lax${secure}`);
+}
+
+function clearSessionCookie(res) {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `${AUTH_COOKIE}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax${secure}`);
+}
+
+function pruneReportLog() {
+  try {
+    if (!fs.existsSync(REPORT_LOG_PATH)) return;
+    const now = Date.now();
+    const rows = fs.readFileSync(REPORT_LOG_PATH, 'utf8').split(/\r?\n/).filter(Boolean);
+    const retained = rows.filter((row) => {
+      try {
+        const reportDate = Date.parse(JSON.parse(row).date);
+        return !Number.isFinite(reportDate) || now - reportDate <= REPORT_RETENTION_MS;
+      } catch (err) {
+        return true;
+      }
+    });
+    if (retained.length !== rows.length) {
+      const tempPath = `${REPORT_LOG_PATH}.tmp`;
+      fs.writeFileSync(tempPath, retained.length ? `${retained.join('\n')}\n` : '', 'utf8');
+      fs.renameSync(tempPath, REPORT_LOG_PATH);
+    }
+  } catch (err) {
+    console.error('[DSA REPORT] Automatické čištění hlášení selhalo:', err.message);
+  }
+}
+
+io.use(async (socket, next) => {
+  try {
+    socket.data = socket.data || {};
+    socket.data.authUser = await authService.getUserByToken(socket.handshake.headers.cookie
+      ? getSessionToken({ headers: socket.handshake.headers })
+      : null);
+    next();
+  } catch (err) {
+    next();
+  }
+});
 
 // Bezpečnostní HTTP hlavičky (Helmet)
 app.use(
@@ -73,6 +184,79 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Ping / Health endpoint pro UptimeRobot a Render keep-alive
 app.get(['/ping', '/health'], (req, res) => {
   res.status(200).send('pong');
+});
+
+// Účty jsou volitelné; bez DATABASE_URL zůstává funkční guest režim.
+app.get('/api/auth/me', async (req, res) => {
+  try {
+    const user = await authService.getUserByToken(getSessionToken(req));
+    res.json({ authenticated: Boolean(user), user });
+  } catch (err) {
+    console.error('[AUTH] Chyba při načítání session:', err);
+    res.status(503).json({ error: 'AUTH_UNAVAILABLE', message: 'Přihlášení je momentálně nedostupné.' });
+  }
+});
+
+app.post('/api/auth/register', registerLimiter, async (req, res) => {
+  try {
+    const user = await authService.register(req.body?.username, req.body?.password);
+    const session = await authService.createSession(user.id);
+    playerProfileManager.markAsRegistered(user.username);
+    setSessionCookie(res, session.token, 30 * 24 * 60 * 60);
+    res.status(201).json({ user });
+  } catch (err) {
+    const known = {
+      DATABASE_NOT_CONFIGURED: [503, 'AUTH_UNAVAILABLE', 'Databáze účtů není nakonfigurovaná.'],
+      INVALID_USERNAME: [400, 'INVALID_USERNAME', 'Přezdívka musí mít 3–30 znaků a může obsahovat písmena, čísla, mezery, tečku, pomlčku a podtržítko.'],
+      INVALID_PASSWORD: [400, 'INVALID_PASSWORD', 'Heslo musí mít 6–100 znaků a obsahovat číslo nebo velké písmeno.'],
+      USERNAME_TAKEN: [409, 'USERNAME_TAKEN', 'Tato přezdívka už je registrovaná.']
+    }[err.message];
+    if (!known) console.error('[AUTH] Registrace selhala:', err);
+    const [status, code, message] = known || [500, 'AUTH_ERROR', 'Registraci se nepodařilo dokončit.'];
+    res.status(status).json({ error: code, message });
+  }
+});
+
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
+  try {
+    const user = await authService.login(req.body?.username, req.body?.password);
+    const session = await authService.createSession(user.id);
+    playerProfileManager.markAsRegistered(user.username);
+    setSessionCookie(res, session.token, 30 * 24 * 60 * 60);
+    res.json({ user });
+  } catch (err) {
+    const known = {
+      DATABASE_NOT_CONFIGURED: [503, 'AUTH_UNAVAILABLE', 'Databáze účtů není nakonfigurovaná.'],
+      INVALID_CREDENTIALS: [401, 'INVALID_CREDENTIALS', 'Přezdívka nebo heslo není správně.']
+    }[err.message];
+    if (!known) console.error('[AUTH] Přihlášení selhalo:', err);
+    const [status, code, message] = known || [500, 'AUTH_ERROR', 'Přihlášení se nepodařilo dokončit.'];
+    res.status(status).json({ error: code, message });
+  }
+});
+
+app.post('/api/auth/logout', async (req, res) => {
+  try {
+    await authService.deleteSession(getSessionToken(req));
+    clearSessionCookie(res);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[AUTH] Odhlášení selhalo:', err);
+    res.status(500).json({ error: 'AUTH_ERROR' });
+  }
+});
+
+app.delete('/api/auth/account', async (req, res) => {
+  try {
+    const username = await authService.deleteAccount(getSessionToken(req));
+    if (!username) return res.status(401).json({ error: 'NOT_AUTHENTICATED', message: 'Pro smazání účtu se nejdřív přihlas.' });
+    playerProfileManager.deleteProfile(username);
+    clearSessionCookie(res);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[AUTH] Smazání účtu selhalo:', err);
+    res.status(500).json({ error: 'AUTH_ERROR', message: 'Účet se nepodařilo smazat.' });
+  }
 });
 
 // 7TV Emotes API pro herní chat
@@ -494,11 +678,78 @@ io.on('connection', (socket) => {
       globalChatHistory.shift();
     }
 
+    playerProfileManager.touchActivity(senderName);
     io.emit('global_chat_message', globalEntry);
   });
 
+  // Dotaz na existující profil (barva a statistiky) při zadání jména v lobby
+  socket.on('check_guest_profile', async ({ playerName }, callback) => {
+    if (typeof callback !== 'function') return;
+    if (!playerName || typeof playerName !== 'string') {
+      return callback({ exists: false, isRegistered: false });
+    }
+    const clean = playerName.replace(/(\s*\(\d+\))+$/, '').trim();
+    if (!clean) return callback({ exists: false, isRegistered: false });
+
+    try {
+      const isRegistered = await authService.isUsernameTaken(clean);
+      const prof = playerProfileManager.getProfile(clean);
+      if (prof) {
+        return callback({
+          exists: true,
+          isRegistered,
+          name: prof.name,
+          color: prof.color,
+          emote: prof.emote || null,
+          stats: prof.stats
+        });
+      }
+      return callback({ exists: false, isRegistered });
+    } catch (err) {
+      return callback({ exists: false, isRegistered: false });
+    }
+  });
+
+  // Aktualizace barvy hráče
+  socket.on('update_player_color', ({ color }) => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    if (room && room.players && room.players[socket.id]) {
+      const player = room.players[socket.id];
+      player.color = color;
+      playerProfileManager.updateColor(player.name, color);
+      const mode = gameManager.getModeForSocket(socket.id);
+      if (mode) broadcastGameState(mode);
+    }
+  });
+
+  // Aktualizace 7TV ikony / emotu hráče
+  socket.on('update_player_emote', ({ emote }) => {
+    const room = gameManager.getRoomForSocket(socket.id);
+    if (room && room.players && room.players[socket.id]) {
+      const player = room.players[socket.id];
+      player.emote = emote || null;
+      playerProfileManager.updateEmote(player.name, emote);
+      const mode = gameManager.getModeForSocket(socket.id);
+      if (mode) broadcastGameState(mode);
+    }
+  });
+
   // 1. Vstup do hry (denní, unlimited, nebo vlastní aréna)
-  socket.on('join_game', ({ playerName, mode, color, customCode, wordSource, sessionId }) => {
+  socket.on('join_game', async ({ playerName, mode, color, emote, customCode, wordSource, speedrunConfig, sessionId, clientStats }) => {
+    const cleanRequestedName = String(playerName || '').replace(/(\s*\(\d+\))+$/, '').trim();
+    const accountUser = socket.data?.authUser;
+    if (accountUser) {
+      authService.touchActivity(accountUser.id);
+      playerProfileManager.markAsRegistered(accountUser.username);
+    }
+    if (accountUser && cleanRequestedName.toLocaleLowerCase('cs-CZ') !== accountUser.username.toLocaleLowerCase('cs-CZ')) {
+      socket.emit('error_message', { message: `Tento účet musí hrát pod přezdívkou „${accountUser.username}“.` });
+      return;
+    }
+    if (!accountUser && await authService.isUsernameTaken(cleanRequestedName)) {
+      socket.emit('error_message', { message: 'Tato přezdívka je registrovaná. Přihlas se ke svému účtu, nebo zvol jinou.' });
+      return;
+    }
     let gameMode = 'daily';
     if (mode === 'unlimited') {
       gameMode = 'unlimited';
@@ -506,11 +757,16 @@ io.on('connection', (socket) => {
       const rawCode = (customCode || (mode && mode.startsWith('custom_') ? mode.replace('custom_', '') : '')).toUpperCase().trim();
       let customRoom = rawCode ? gameManager.getCustomRoom(rawCode) : null;
       if (!customRoom && rawCode) {
-        customRoom = gameManager.createCustomRoom(wordSource || 'daily', rawCode);
+        customRoom = gameManager.createCustomRoom(wordSource || 'daily', rawCode, playerName, speedrunConfig);
       } else if (!customRoom) {
-        customRoom = gameManager.createCustomRoom(wordSource || 'daily');
+        customRoom = gameManager.createCustomRoom(wordSource || 'daily', null, playerName, speedrunConfig);
       }
       gameMode = customRoom.mode;
+    }
+
+    // Případná migrace statistik z klienta do profilu na serveru
+    if (clientStats && playerName) {
+      playerProfileManager.getOrCreateProfile(playerName, color, clientStats, emote);
     }
 
     // Opuštění předchozích místností
@@ -531,7 +787,9 @@ io.on('connection', (socket) => {
       customCode,
       wordSource,
       sessionId,
-      clientIp
+      clientIp,
+      speedrunConfig,
+      emote
     );
     socket.data = socket.data || {};
     socket.data.playerName = player.name;
@@ -601,6 +859,23 @@ io.on('connection', (socket) => {
       }
     }
 
+    if (result.isMine) {
+      socket.emit('speedrun_mine_hit', { penaltySeconds: 10, word: result.guess.word });
+      socket.to(mode).emit('notification', {
+        message: `💣 ${result.player.name} šlápl(a) na minu se slovem "${result.guess.word}"! (-10s)`
+      });
+    }
+
+    if (result.triggeredSuddenDeath) {
+      io.to(mode).emit('speedrun_sudden_death', {
+        winner: result.player.name,
+        remainingSeconds: 30
+      });
+      io.to(mode).emit('notification', {
+        message: `⚡ SUDDEN DEATH! ${result.player.name} uhodl(a) slovo! Ostatní mají 30 sekund na dohnání!`
+      });
+    }
+
     broadcastGameState(mode);
     return result;
   }
@@ -639,22 +914,33 @@ io.on('connection', (socket) => {
   });
 
   // 4. Odhalení nápovědy (získání 🤡)
-  socket.on('use_hint', () => {
+  socket.on('use_hint', (data) => {
+    const requestedLevel = data && data.level ? parseInt(data.level, 10) : null;
     const room = gameManager.getRoomForSocket(socket.id);
     const mode = gameManager.getModeForSocket(socket.id);
-    const result = room.useHint(socket.id);
+    if (!room) return;
+
+    const hadHintBefore = Boolean(room.players?.[socket.id]?.usedHint);
+    const result = room.useHint(socket.id, requestedLevel);
 
     if (result.error) {
       socket.emit('error_message', { message: result.error });
       return;
     }
 
-    socket.to(mode).emit('notification', {
-      message: `🤡 ${result.player.name} si zobrazil(a) nápovědu a získal(a) klauna!`
-    });
-    socket.emit('notification', {
-      message: `Nápověda odhalena! Získal(a) jsi 🤡 vedle svého jména.`
-    });
+    const lvl = result.hintLevel || 1;
+    if (!hadHintBefore) {
+      socket.to(mode).emit('notification', {
+        message: `🤡 ${result.player.name} si zobrazil(a) ${lvl}. nápovědu a získal(a) klauna!`
+      });
+      socket.emit('notification', {
+        message: `${lvl}. nápověda odhalena! Získal(a) jsi 🤡 vedle svého jména.`
+      });
+    } else {
+      socket.emit('notification', {
+        message: `${lvl}. nápověda odhalena!`
+      });
+    }
 
     broadcastGameState(mode);
   });
@@ -688,6 +974,53 @@ io.on('connection', (socket) => {
       });
     }
 
+    broadcastGameState(mode);
+  });
+
+  // 6. Odstartování Rychlovky zakladatelem
+  socket.on('start_speedrun', () => {
+    const mode = gameManager.getModeForSocket(socket.id);
+    const room = gameManager.getRoomForSocket(socket.id);
+    if (!room || room.wordSource !== 'speedrun') {
+      socket.emit('error_message', { message: 'Tato akce je dostupná pouze v režimu Rychlovka.' });
+      return;
+    }
+    const player = room.players[socket.id];
+    if (!player || (player.name !== room.hostName && !player.isAdmin)) {
+      socket.emit('error_message', { message: 'Odstartovat hru může pouze zakladatel arény.' });
+      return;
+    }
+
+    const res = room.startSpeedrunCountdown(io, () => {
+      broadcastGameState(mode);
+    });
+
+    if (res.error) {
+      socket.emit('error_message', { message: res.error });
+      return;
+    }
+
+    broadcastGameState(mode);
+  });
+
+  // 7. Další kolo v Rychlovce zakladatelem
+  socket.on('speedrun_next_round', () => {
+    const mode = gameManager.getModeForSocket(socket.id);
+    const room = gameManager.getRoomForSocket(socket.id);
+    if (!room || room.wordSource !== 'speedrun') {
+      socket.emit('error_message', { message: 'Tato akce je dostupná pouze v režimu Rychlovka.' });
+      return;
+    }
+    const player = room.players[socket.id];
+    if (!player || (player.name !== room.hostName && !player.isAdmin)) {
+      socket.emit('error_message', { message: 'Nové kolo může spustit pouze zakladatel arény.' });
+      return;
+    }
+
+    room.resetWithNewWord();
+    io.to(mode).emit('notification', {
+      message: '⚡ Zakladatel připravil nové kolo Rychlovky! Vyčkej na odstartování.'
+    });
     broadcastGameState(mode);
   });
 
@@ -1572,16 +1905,47 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server běží na portu ${PORT}: http://localhost:${PORT}`);
-});
+async function startServer() {
+  pruneReportLog();
+  const reportCleanupTimer = setInterval(pruneReportLog, 24 * 60 * 60 * 1000);
+  if (reportCleanupTimer.unref) reportCleanupTimer.unref();
+
+  const onUserDeleted = (deletedUsername) => {
+    playerProfileManager.deleteProfile(deletedUsername);
+  };
+
+  try {
+    await authService.init(onUserDeleted);
+    // Periodické čištění expirovaných relací (> 30 dní) a neaktivních účtů (> 21 dní / 3 týdny)
+    const authCleanupTimer = setInterval(() => {
+      authService.pruneExpiredData(onUserDeleted);
+    }, 24 * 60 * 60 * 1000);
+    if (authCleanupTimer.unref) authCleanupTimer.unref();
+  } catch (err) {
+    console.error('[AUTH] Databázi se nepodařilo inicializovat; server poběží bez účtů:', err.message);
+  }
+  server.listen(PORT, () => {
+    console.log(`Server běží na portu ${PORT}: http://localhost:${PORT}`);
+  });
+}
+
+startServer();
 
 // Uložení stavu při vypnutí serveru (Ctrl+C nebo SIGTERM)
 function handleShutdown(signal) {
-  console.log(`\n[SERVER] Přijat signál ${signal}. Ukládám stav hry před vypnutím...`);
+  console.log(`\n[SERVER] Přijat signál ${signal}. Ukládám stav hry a guest profily před vypnutím...`);
   gameManager.saveStateToFile(true);
+  playerProfileManager.saveProfiles(true);
   process.exit(0);
 }
 
 process.on('SIGINT', () => handleShutdown('SIGINT'));
 process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+
+process.on('uncaughtException', (err) => {
+  console.error('[SERVER] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[SERVER] Unhandled Rejection at:', promise, 'reason:', reason);
+});

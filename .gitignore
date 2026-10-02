@@ -6,6 +6,8 @@ template/
 newTemplate/
 src/data/savedState.json*
 src/data/yesterdayRecap.json
+src/data/playerProfiles.json*
+src/data/reports.log*
 *.template-backup.*
 filelist.txt
 find_*

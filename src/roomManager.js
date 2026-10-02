@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const wordService = require('./wordService');
+const playerProfileManager = require('./playerProfileManager');
 
 const STATE_FILE_PATH = path.join(__dirname, 'data', 'savedState.json');
 
@@ -48,6 +49,13 @@ class BaseGameRoom {
     this.lastPollCreatedAt = 0;
     this.onStateChange = null;
     this.currentRoundId = Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 6);
+  }
+
+  getRoundId() {
+    if (this.mode === 'daily') return `daily_${this.activeDate || wordService.getCzechDateStr()}`;
+    if (this.mode === 'unlimited') return `unlimited_${this.currentRoundId}`;
+    if (this.wordSource === 'daily') return `custom_daily_${wordService.getCzechDateStr()}`;
+    return `custom_${this.roomCode || 'arena'}_${this.currentRoundId}`;
   }
 
   // Výpočet potřebné většiny pro přeskočení hudby: Math.floor(počet / 2) + 1
@@ -163,10 +171,13 @@ class BaseGameRoom {
     this.playerProfiles[player.name.toLowerCase()] = {
       name: player.name,
       color: player.color || DEFAULT_COLOR,
+      emote: player.emote || null,
       isAdmin: !!player.isAdmin,
       solved: !!player.solved,
       gaveUp: !!player.gaveUp,
       usedHint: !!player.usedHint,
+      hintLevel: player.hintLevel || (player.usedHint ? 1 : 0),
+      customHint3: player.customHint3 || null,
       guessCount: player.guessCount || 0,
       solvedAt: player.solvedAt || null
     };
@@ -176,7 +187,7 @@ class BaseGameRoom {
   }
 
   // Připojení hráče do místnosti (s podporou rychlého reconnectu a zamezení řetězení (2))
-  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null) {
+  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null, playerEmote = null) {
     let raw = (playerName || '').trim().slice(0, 40);
     let isAdmin = false;
 
@@ -214,7 +225,7 @@ class BaseGameRoom {
         p.clientIp === clientIp
       );
 
-      if (sameSession || sameNameAndSession || sameNameAndIp) {
+      if (sameSession || sameNameAndSession || sameNameAndIp || sameName) {
         existingPlayer = p;
         oldSocketId = sId;
         break;
@@ -222,7 +233,7 @@ class BaseGameRoom {
     }
 
     if (existingPlayer) {
-      // Jde o rychlý reconnect stejného hráče
+      // Jde o rychlý reconnect nebo převzetí relace stejného hráče (např. přechod z PC na mobil)
       if (this.gameManager && oldSocketId) {
         this.gameManager.markSocketReplaced(oldSocketId);
         this.gameManager.socketToRoom.delete(oldSocketId);
@@ -236,7 +247,14 @@ class BaseGameRoom {
       if (sessionId) existingPlayer.sessionId = sessionId;
       if (clientIp) existingPlayer.clientIp = clientIp;
       if (isAdmin) existingPlayer.isAdmin = true;
-      if (playerColor) existingPlayer.color = sanitizeColor(playerColor);
+      if (playerColor && playerColor !== DEFAULT_COLOR) {
+        existingPlayer.color = sanitizeColor(playerColor);
+        playerProfileManager.updateColor(existingPlayer.name, existingPlayer.color);
+      }
+      if (playerEmote !== undefined) {
+        existingPlayer.emote = playerEmote || null;
+        playerProfileManager.updateEmote(existingPlayer.name, existingPlayer.emote);
+      }
       existingPlayer.name = baseCleanName;
 
       // Přenesení hlasů a čekajících potvrzení
@@ -256,11 +274,16 @@ class BaseGameRoom {
           g.socketId = socketId;
           g.player = existingPlayer.name;
           g.playerColor = existingPlayer.color;
+          g.playerEmote = existingPlayer.emote || null;
         }
       }
 
       this.players[socketId] = existingPlayer;
       this.savePlayerProfile(existingPlayer);
+
+      playerProfileManager.touchActivity(existingPlayer.name);
+      const roundId = typeof this.getRoundId === 'function' ? this.getRoundId() : this.currentRoundId;
+      playerProfileManager.recordGameEntry(existingPlayer.name, roundId);
 
       return {
         player: existingPlayer,
@@ -289,7 +312,17 @@ class BaseGameRoom {
     if (!existingProfile || (cleanProfile && (cleanProfile.guessCount || 0) > (existingProfile.guessCount || 0))) {
       existingProfile = cleanProfile || existingProfile;
     }
-    const chosenColor = sanitizeColor(playerColor || (existingProfile ? existingProfile.color : null));
+
+    // Persistentní profil ze serveru (pro barvu a statistiky přenesené mezi zařízeními)
+    const persistentProfile = playerProfileManager.getOrCreateProfile(baseCleanName, playerColor, null, playerEmote);
+    let chosenColor = sanitizeColor(
+      (playerColor && playerColor !== DEFAULT_COLOR)
+        ? playerColor
+        : (persistentProfile ? persistentProfile.color : null) || (existingProfile ? existingProfile.color : null) || playerColor
+    );
+    let chosenEmote = (playerEmote !== null && playerEmote !== undefined)
+      ? (playerEmote || null)
+      : (persistentProfile ? persistentProfile.emote : null) || (existingProfile ? existingProfile.emote : null) || null;
 
     const player = {
       id: socketId,
@@ -297,10 +330,13 @@ class BaseGameRoom {
       clientIp: clientIp || null,
       name: finalName,
       color: chosenColor,
+      emote: chosenEmote,
       isAdmin: existingProfile && existingProfile.isAdmin !== undefined ? (existingProfile.isAdmin || !!isAdmin) : !!isAdmin,
       solved: existingProfile ? !!existingProfile.solved : false,
       gaveUp: existingProfile ? !!existingProfile.gaveUp : false,
       usedHint: existingProfile ? !!existingProfile.usedHint : false,
+      hintLevel: existingProfile ? (existingProfile.hintLevel || (existingProfile.usedHint ? 1 : 0)) : 0,
+      customHint3: existingProfile ? (existingProfile.customHint3 || null) : null,
       guessCount: existingProfile ? existingProfile.guessCount : 0,
       solvedAt: existingProfile ? existingProfile.solvedAt : null,
       votedForNewWord: false
@@ -313,11 +349,17 @@ class BaseGameRoom {
         g.socketId = socketId;
         g.player = player.name;
         g.playerColor = player.color;
+        g.playerEmote = player.emote || null;
       }
     }
 
     this.players[socketId] = player;
     this.savePlayerProfile(player);
+
+    playerProfileManager.touchActivity(player.name);
+    const roundId = typeof this.getRoundId === 'function' ? this.getRoundId() : this.currentRoundId;
+    playerProfileManager.recordGameEntry(player.name, roundId);
+
     return {
       player,
       isReconnect: false,
@@ -361,12 +403,17 @@ class BaseGameRoom {
     if (isWinner) {
       player.solved = true;
       player.solvedAt = Date.now();
+      const roundId = typeof this.getRoundId === 'function' ? this.getRoundId() : this.currentRoundId;
+      const isDaily = (this.mode === 'daily') || (this.wordSource === 'daily');
+      playerProfileManager.recordGameWin(player.name, roundId, player.guessCount, isDaily);
     }
+    playerProfileManager.touchActivity(player.name);
 
     const guessEntry = {
       id: Date.now() + '-' + Math.random().toString(36).substr(2, 5),
       player: player.name,
       playerColor: player.color || DEFAULT_COLOR,
+      playerEmote: player.emote || null,
       socketId: socketId,
       word: rankResult.word,
       rank: rankResult.rank,
@@ -395,6 +442,7 @@ class BaseGameRoom {
 
     player.gaveUp = true;
     this.savePlayerProfile(player);
+    playerProfileManager.touchActivity(player.name);
     if (typeof this.onStateChange === 'function') {
       this.onStateChange();
     }
@@ -406,26 +454,108 @@ class BaseGameRoom {
     };
   }
 
-  // Hráč odhalí nápovědu (získá 🤡)
-  useHint(socketId) {
+  // Zjištění nejlepšího (nejnižšího) ranku, kterého hráč v tomto kole dosáhl
+  getPlayerBestRank(socketId) {
+    const player = this.players[socketId];
+    if (!player) return null;
+    let best = null;
+    const pNameNorm = player.name ? player.name.replace(/(\s*\(\d+\))+$/, '').trim().toLowerCase() : '';
+    for (const g of this.guesses) {
+      const gNameNorm = g.player ? g.player.replace(/(\s*\(\d+\))+$/, '').trim().toLowerCase() : '';
+      if ((g.socketId === socketId || (pNameNorm && gNameNorm === pNameNorm)) && typeof g.rank === 'number') {
+        if (best === null || g.rank < best) {
+          best = g.rank;
+        }
+      }
+    }
+    return best;
+  }
+
+  // Zjištění všech slov, která hráč v tomto kole již tipoval
+  getPlayerGuessedWords(socketId) {
+    const player = this.players[socketId];
+    const words = new Set();
+    if (!player) return words;
+    const pNameNorm = player.name ? player.name.replace(/(\s*\(\d+\))+$/, '').trim().toLowerCase() : '';
+    for (const g of this.guesses) {
+      const gNameNorm = g.player ? g.player.replace(/(\s*\(\d+\))+$/, '').trim().toLowerCase() : '';
+      if ((g.socketId === socketId || (pNameNorm && gNameNorm === pNameNorm)) && g.word) {
+        words.add(g.word.toLowerCase());
+      }
+    }
+    return words;
+  }
+
+  // Vygenerování 3. nápovědy specifické pro hráče (musí být striktně lepší než jeho dosavadní nejlepší rank)
+  generateHint3ForPlayer(socketId) {
+    const player = this.players[socketId];
+    if (!player) return null;
+    if (player.customHint3) return player.customHint3;
+
+    const bestRank = this.getPlayerBestRank(socketId);
+    const guessedWords = Array.from(this.getPlayerGuessedWords(socketId));
+    const dayData = this.targetWordObj?.dayData;
+
+    if (!dayData) {
+      return this.targetWordObj?.hints?.level3 || null;
+    }
+
+    const better = wordService.getBetterHintWord(dayData, bestRank, guessedWords);
+    let hint3Text = '';
+    if (better.isAtRankTwo) {
+      hint3Text = 'Už jsi na 2. místě (#2)! Zbývá ti uhodnout pouze vítězné slovo (#1).';
+    } else if (typeof bestRank === 'number' && bestRank <= 300) {
+      hint3Text = `Blízké tématické slovo (lepší než tvé dosud nejlepší #${bestRank}): "${better.word}" (pořadí #${better.rank}).`;
+    } else {
+      hint3Text = `Blízké tématické slovo: "${better.word}" (pořadí #${better.rank}).`;
+    }
+
+    player.customHint3 = hint3Text;
+    this.savePlayerProfile(player);
+    return hint3Text;
+  }
+
+  // Hráč odhalí nápovědu (získá 🤡) – podpora 3 úrovní
+  useHint(socketId, requestedLevel = null) {
     const player = this.players[socketId];
     if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
 
+    const currentLevel = player.hintLevel || (player.usedHint ? 1 : 0);
+    const targetLevel = requestedLevel ? Math.min(3, Math.max(1, parseInt(requestedLevel, 10))) : Math.min(3, currentLevel + 1);
+
+    player.hintLevel = Math.max(currentLevel, targetLevel);
     player.usedHint = true;
+
+    if (player.hintLevel >= 3 && !player.customHint3) {
+      this.generateHint3ForPlayer(socketId);
+    }
+
     this.savePlayerProfile(player);
     if (typeof this.onStateChange === 'function') {
       this.onStateChange();
     }
 
+    const hints = this.targetWordObj?.hints || {
+      level1: this.targetWordObj?.hint || '',
+      level2: '',
+      level3: ''
+    };
+
     return {
       success: true,
-      hint: this.targetWordObj.hint,
+      hintLevel: player.hintLevel,
+      hints: {
+        level1: player.hintLevel >= 1 ? (hints.level1 || this.targetWordObj?.hint) : null,
+        level2: player.hintLevel >= 2 ? hints.level2 : null,
+        level3: player.hintLevel >= 3 ? (player.customHint3 || hints.level3) : null
+      },
+      hint: this.targetWordObj?.hint,
       player: player
     };
   }
 
   // Uložení zprávy do chatu
-  addChatMessage(player, message, isAdmin = false, confirmAction = null, color = null) {
+  addChatMessage(player, message, isAdmin = false, confirmAction = null, color = null, emote = null) {
     const time = new Date().toLocaleTimeString('cs-CZ', {
       timeZone: 'Europe/Prague',
       hour: '2-digit',
@@ -433,19 +563,23 @@ class BaseGameRoom {
     });
 
     let playerColor = color;
-    if (!playerColor && player) {
+    let playerEmote = emote;
+    if (player) {
       const norm = player.toLowerCase();
       const p = Object.values(this.players).find(x => x.name && x.name.toLowerCase() === norm);
-      if (p && p.color) {
-        playerColor = p.color;
-      } else if (this.playerProfiles[norm] && this.playerProfiles[norm].color) {
-        playerColor = this.playerProfiles[norm].color;
+      if (p) {
+        if (!playerColor && p.color) playerColor = p.color;
+        if (!playerEmote && p.emote) playerEmote = p.emote;
+      } else if (this.playerProfiles[norm]) {
+        if (!playerColor && this.playerProfiles[norm].color) playerColor = this.playerProfiles[norm].color;
+        if (!playerEmote && this.playerProfiles[norm].emote) playerEmote = this.playerProfiles[norm].emote;
       }
     }
 
     const entry = {
       player,
       playerColor: playerColor || null,
+      playerEmote: playerEmote || null,
       isAdmin: !!isAdmin,
       message: message.slice(0, 500),
       time
@@ -453,6 +587,10 @@ class BaseGameRoom {
 
     if (confirmAction) {
       entry.confirmAction = confirmAction;
+    }
+
+    if (player && typeof player === 'string' && !player.startsWith('🤖') && !player.startsWith('⚡') && !player.startsWith('⚙️')) {
+      playerProfileManager.touchActivity(player);
     }
 
     this.chatHistory.push(entry);
@@ -687,6 +825,7 @@ class BaseGameRoom {
           id: g.id,
           player: g.player,
           playerColor: g.playerColor || DEFAULT_COLOR,
+          playerEmote: g.playerEmote || null,
           word: g.word,
           rank: g.rank,
           isWinner: g.isWinner,
@@ -818,6 +957,8 @@ class DailyGameRoom extends BaseGameRoom {
         this.players[pid].solved = false;
         this.players[pid].gaveUp = false;
         this.players[pid].usedHint = false;
+        this.players[pid].hintLevel = 0;
+        this.players[pid].customHint3 = null;
         this.players[pid].guessCount = 0;
         this.players[pid].solvedAt = null;
         this.players[pid].votedForNewWord = false;
@@ -837,9 +978,9 @@ class DailyGameRoom extends BaseGameRoom {
     return { isNewDay: false };
   }
 
-  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null) {
+  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null, playerEmote = null) {
     this.checkMidnightRoll();
-    return super.joinPlayer(socketId, playerName, playerColor, sessionId, clientIp);
+    return super.joinPlayer(socketId, playerName, playerColor, sessionId, clientIp, playerEmote);
   }
 
   submitGuess(socketId, rawWord) {
@@ -849,6 +990,9 @@ class DailyGameRoom extends BaseGameRoom {
 
   getGameStateForPlayer(socketId) {
     const player = this.players[socketId];
+    if (player && player.hintLevel >= 3 && !player.customHint3) {
+      this.generateHint3ForPlayer(socketId);
+    }
     const canSeeSecret = player && (player.solved || player.gaveUp);
 
     return {
@@ -859,15 +1003,24 @@ class DailyGameRoom extends BaseGameRoom {
       isSpectator: !!canSeeSecret,
       hint: player && player.usedHint ? this.targetWordObj.hint : null,
       hasUsedHint: player ? !!player.usedHint : false,
+      hintLevel: player ? (player.hintLevel || (player.usedHint ? 1 : 0)) : 0,
+      hints: player && player.usedHint ? {
+        level1: (player.hintLevel || 1) >= 1 ? (this.targetWordObj.hints?.level1 || this.targetWordObj.hint) : null,
+        level2: (player.hintLevel || 1) >= 2 ? this.targetWordObj.hints?.level2 : null,
+        level3: (player.hintLevel || 1) >= 3 ? (player.customHint3 || this.targetWordObj.hints?.level3) : null
+      } : null,
       myStatus: player
         ? {
             name: player.name,
             color: player.color || DEFAULT_COLOR,
+            emote: player.emote || null,
             isAdmin: !!player.isAdmin,
             solved: player.solved,
             gaveUp: player.gaveUp,
             usedHint: !!player.usedHint,
-            guessCount: player.guessCount
+            hintLevel: player.hintLevel || (player.usedHint ? 1 : 0),
+            guessCount: player.guessCount,
+            stats: player ? (playerProfileManager.getProfile(player.name)?.stats || null) : null
           }
         : null,
       secretWord: canSeeSecret ? this.targetWordObj.word : null,
@@ -877,10 +1030,12 @@ class DailyGameRoom extends BaseGameRoom {
         id: p.id,
         name: p.name,
         color: p.color || DEFAULT_COLOR,
+        emote: p.emote || null,
         isAdmin: !!p.isAdmin,
         solved: p.solved,
         gaveUp: p.gaveUp,
         usedHint: !!p.usedHint,
+        hintLevel: p.hintLevel || (p.usedHint ? 1 : 0),
         guessCount: p.guessCount,
         votedForNewWord: false
       })),
@@ -937,6 +1092,8 @@ class UnlimitedGameRoom extends BaseGameRoom {
       this.players[pid].solved = false;
       this.players[pid].gaveUp = false;
       this.players[pid].usedHint = false;
+      this.players[pid].hintLevel = 0;
+      this.players[pid].customHint3 = null;
       this.players[pid].guessCount = 0;
       this.players[pid].solvedAt = null;
       this.players[pid].votedForNewWord = false;
@@ -1025,6 +1182,9 @@ class UnlimitedGameRoom extends BaseGameRoom {
 
   getGameStateForPlayer(socketId) {
     const player = this.players[socketId];
+    if (player && player.hintLevel >= 3 && !player.customHint3) {
+      this.generateHint3ForPlayer(socketId);
+    }
     const canSeeSecret = player && (player.solved || player.gaveUp);
     const requiredVotes = this.getRequiredVotes();
 
@@ -1036,16 +1196,25 @@ class UnlimitedGameRoom extends BaseGameRoom {
       isSpectator: !!canSeeSecret,
       hint: player && player.usedHint ? this.targetWordObj.hint : null,
       hasUsedHint: player ? !!player.usedHint : false,
+      hintLevel: player ? (player.hintLevel || (player.usedHint ? 1 : 0)) : 0,
+      hints: player && player.usedHint ? {
+        level1: (player.hintLevel || 1) >= 1 ? (this.targetWordObj.hints?.level1 || this.targetWordObj.hint) : null,
+        level2: (player.hintLevel || 1) >= 2 ? this.targetWordObj.hints?.level2 : null,
+        level3: (player.hintLevel || 1) >= 3 ? (player.customHint3 || this.targetWordObj.hints?.level3) : null
+      } : null,
       myStatus: player
         ? {
             name: player.name,
             color: player.color || DEFAULT_COLOR,
+            emote: player.emote || null,
             isAdmin: !!player.isAdmin,
             solved: player.solved,
             gaveUp: player.gaveUp,
             usedHint: !!player.usedHint,
+            hintLevel: player.hintLevel || (player.usedHint ? 1 : 0),
             guessCount: player.guessCount,
-            votedForNewWord: this.votes.has(socketId)
+            votedForNewWord: this.votes.has(socketId),
+            stats: player ? (playerProfileManager.getProfile(player.name)?.stats || null) : null
           }
         : null,
       secretWord: canSeeSecret ? this.targetWordObj.word : null,
@@ -1055,10 +1224,12 @@ class UnlimitedGameRoom extends BaseGameRoom {
         id: p.id,
         name: p.name,
         color: p.color || DEFAULT_COLOR,
+        emote: p.emote || null,
         isAdmin: !!p.isAdmin,
         solved: p.solved,
         gaveUp: p.gaveUp,
         usedHint: !!p.usedHint,
+        hintLevel: p.hintLevel || (p.usedHint ? 1 : 0),
         guessCount: p.guessCount,
         votedForNewWord: this.votes.has(p.id)
       })),
@@ -1083,15 +1254,30 @@ class UnlimitedGameRoom extends BaseGameRoom {
 // Custom mód (Soukromé místnosti přátel, kód místnosti, volba slova)
 // ─────────────────────────────────────────────────────────────
 class CustomGameRoom extends BaseGameRoom {
-  constructor(roomCode, hostName = '', wordSource = 'daily') {
+  constructor(roomCode, hostName = '', wordSource = 'daily', speedrunConfig = null) {
     const upperCode = roomCode.toUpperCase();
     super(`custom_${upperCode}`);
     this.roomCode = upperCode;
     this.mode = `custom_${upperCode}`;
     this.isCustomRoom = true;
     this.hostName = hostName;
-    this.wordSource = wordSource === 'archive' ? 'archive' : 'daily';
+    this.wordSource = ['archive', 'speedrun'].includes(wordSource) ? wordSource : 'daily';
     this.isDailyEligible = (this.wordSource === 'daily');
+    this.speedrunConfig = this.wordSource === 'speedrun' ? {
+      durationMinutes: Number(speedrunConfig?.durationMinutes) || 3,
+      enableMines: speedrunConfig?.enableMines !== false,
+      enableHints: speedrunConfig?.enableHints !== false
+    } : null;
+    this.speedrunStatus = this.wordSource === 'speedrun' ? 'lobby' : 'idle';
+    this.roundStartTime = null;
+    this.roundEndTime = null;
+    this.suddenDeathStarted = false;
+    this.suddenDeathEndTime = null;
+    this.firstWinner = null;
+    this.mineWords = [];
+    this.speedrunTimer = null;
+    this.countdownTimer = null;
+    this.speedrunResults = null;
     this.recentWords = [];
     this.targetWordObj = this.selectWord();
     this.votes = new Set();
@@ -1101,6 +1287,15 @@ class CustomGameRoom extends BaseGameRoom {
   selectWord() {
     if (this.wordSource === 'daily') {
       return wordService.getDailyWord();
+    } else if (this.wordSource === 'speedrun') {
+      const wObj = wordService.getSpeedrunWord(this.recentWords);
+      this.recentWords.push(wObj.word);
+      if (this.speedrunConfig?.enableMines) {
+        this.mineWords = wordService.generateMineWords(wObj.word, 4);
+      } else {
+        this.mineWords = [];
+      }
+      return wObj;
     } else {
       const pastPool = wordService.getPastWordsPool();
       if (this.recentWords.length >= pastPool.length) {
@@ -1112,9 +1307,18 @@ class CustomGameRoom extends BaseGameRoom {
     }
   }
 
-  setWordSource(newSource) {
-    this.wordSource = newSource === 'archive' ? 'archive' : 'daily';
+  setWordSource(newSource, newConfig = null) {
+    this.wordSource = ['archive', 'speedrun'].includes(newSource) ? newSource : 'daily';
     this.isDailyEligible = (this.wordSource === 'daily');
+    if (this.wordSource === 'speedrun') {
+      this.speedrunConfig = {
+        durationMinutes: Number(newConfig?.durationMinutes) || 3,
+        enableMines: newConfig?.enableMines !== false,
+        enableHints: newConfig?.enableHints !== false
+      };
+    } else {
+      this.speedrunConfig = null;
+    }
     return this.resetWithNewWord();
   }
 
@@ -1132,13 +1336,38 @@ class CustomGameRoom extends BaseGameRoom {
     this.playerProfiles = {};
     this.votes.clear();
 
+    if (this.speedrunTimer) {
+      clearInterval(this.speedrunTimer);
+      this.speedrunTimer = null;
+    }
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+
+    if (this.wordSource === 'speedrun') {
+      this.speedrunStatus = 'lobby';
+      this.roundStartTime = null;
+      this.roundEndTime = null;
+      this.suddenDeathStarted = false;
+      this.suddenDeathEndTime = null;
+      this.firstWinner = null;
+      this.speedrunResults = null;
+    }
+
     for (const pid of Object.keys(this.players)) {
       this.players[pid].solved = false;
       this.players[pid].gaveUp = false;
       this.players[pid].usedHint = false;
+      this.players[pid].hintLevel = 0;
+      this.players[pid].customHint3 = null;
       this.players[pid].guessCount = 0;
       this.players[pid].solvedAt = null;
       this.players[pid].votedForNewWord = false;
+      this.players[pid].timePenaltySeconds = 0;
+      this.players[pid].hitMines = [];
+      this.players[pid].bestRank = 999999;
+      this.players[pid].bestWord = null;
       this.savePlayerProfile(this.players[pid]);
     }
 
@@ -1153,7 +1382,276 @@ class CustomGameRoom extends BaseGameRoom {
     };
   }
 
+  getPlayerRemainingSeconds(socketId) {
+    if (this.wordSource !== 'speedrun' || this.speedrunStatus !== 'running') return 0;
+    const player = this.players[socketId];
+    const penalty = player?.timePenaltySeconds || 0;
+    const now = Date.now();
+    const effectiveEnd = this.roundEndTime - (penalty * 1000);
+    return Math.max(0, Math.ceil((effectiveEnd - now) / 1000));
+  }
+
+  startSpeedrunCountdown(io, onStart) {
+    if (this.speedrunStatus === 'running' || this.speedrunStatus === 'countdown') {
+      return { error: 'Rychlovka již běží nebo odpočítává!' };
+    }
+    this.speedrunStatus = 'countdown';
+    let count = 3;
+    if (io) {
+      io.to(this.mode).emit('speedrun_countdown', { count });
+    }
+
+    this.countdownTimer = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        if (io) io.to(this.mode).emit('speedrun_countdown', { count });
+      } else {
+        clearInterval(this.countdownTimer);
+        this.countdownTimer = null;
+        this.startSpeedrun(io);
+        if (typeof onStart === 'function') onStart();
+      }
+    }, 1000);
+
+    return { success: true };
+  }
+
+  startSpeedrun(io) {
+    this.speedrunStatus = 'running';
+    this.roundStartTime = Date.now();
+    const durationMs = (this.speedrunConfig?.durationMinutes || 3) * 60 * 1000;
+    this.roundEndTime = this.roundStartTime + durationMs;
+    this.suddenDeathStarted = false;
+    this.suddenDeathEndTime = null;
+    this.firstWinner = null;
+    this.speedrunResults = null;
+
+    if (io) {
+      io.to(this.mode).emit('speedrun_started', {
+        roundStartTime: this.roundStartTime,
+        roundEndTime: this.roundEndTime,
+        durationMinutes: this.speedrunConfig?.durationMinutes || 3,
+        enableMines: this.speedrunConfig?.enableMines ?? true,
+        enableHints: this.speedrunConfig?.enableHints ?? true
+      });
+      for (const pid of Object.keys(this.players)) {
+        io.to(pid).emit('game_state', this.getGameStateForPlayer(pid));
+      }
+    }
+
+    if (this.speedrunTimer) clearInterval(this.speedrunTimer);
+    this.speedrunTimer = setInterval(() => {
+      this.checkSpeedrunTick(io);
+    }, 1000);
+  }
+
+  checkSpeedrunTick(io) {
+    if (this.speedrunStatus !== 'running') return;
+    const now = Date.now();
+
+    if (now >= this.roundEndTime) {
+      this.finishSpeedrun(io);
+      return;
+    }
+
+    const players = Object.values(this.players);
+    if (players.length > 0) {
+      const allDone = players.every(p => {
+        if (p.solved || p.gaveUp) return true;
+        const penalty = p.timePenaltySeconds || 0;
+        const effectiveEnd = this.roundEndTime - (penalty * 1000);
+        return now >= effectiveEnd;
+      });
+      if (allDone) {
+        this.finishSpeedrun(io);
+      }
+    }
+  }
+
+  finishSpeedrun(io) {
+    if (this.speedrunStatus === 'finished') return;
+    this.speedrunStatus = 'finished';
+    if (this.speedrunTimer) {
+      clearInterval(this.speedrunTimer);
+      this.speedrunTimer = null;
+    }
+
+    const playerList = Object.values(this.players);
+    const solvers = playerList
+      .filter(p => p.solved)
+      .sort((a, b) => (a.solvedAt || 0) - (b.solvedAt || 0))
+      .map(p => ({
+        name: p.name,
+        color: p.color,
+        emote: p.emote || null,
+        guessCount: p.guessCount,
+        timeTakenSeconds: Math.max(1, Math.round(((p.solvedAt || Date.now()) - this.roundStartTime) / 1000))
+      }));
+
+    const nonSolvers = playerList
+      .filter(p => !p.solved)
+      .sort((a, b) => (a.bestRank || 999999) - (b.bestRank || 999999))
+      .map(p => ({
+        name: p.name,
+        color: p.color,
+        emote: p.emote || null,
+        bestRank: (p.bestRank && p.bestRank < 999999) ? p.bestRank : null,
+        bestWord: p.bestWord || null,
+        guessCount: p.guessCount,
+        timePenaltySeconds: p.timePenaltySeconds || 0
+      }));
+
+    this.speedrunResults = {
+      targetWord: this.targetWordObj.word,
+      solvers,
+      rankings: nonSolvers,
+      finishedAt: Date.now()
+    };
+
+    if (io) {
+      io.to(this.mode).emit('speedrun_round_ended', {
+        results: this.speedrunResults,
+        hostName: this.hostName
+      });
+      for (const pid of Object.keys(this.players)) {
+        io.to(pid).emit('game_state', this.getGameStateForPlayer(pid));
+      }
+    }
+  }
+
+  submitGuess(socketId, rawWord) {
+    if (this.wordSource === 'speedrun') {
+      if (this.speedrunStatus === 'lobby') {
+        return { error: 'Rychlovka ještě neodstartovala! Čeká se na spuštění zakladatelem.' };
+      }
+      if (this.speedrunStatus === 'countdown') {
+        return { error: 'Hra za okamžik startuje, vyčkej na odpočet!' };
+      }
+      if (this.speedrunStatus === 'finished') {
+        return { error: 'Kolo Rychlovky již skončilo!' };
+      }
+      const remSec = this.getPlayerRemainingSeconds(socketId);
+      if (remSec <= 0) {
+        return { error: 'Tvůj čas pro toto kolo vypršel! Vyčkej na výsledky.' };
+      }
+    }
+
+    const player = this.players[socketId];
+    if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
+
+    if (player.gaveUp) {
+      return { error: 'Vzdal(a) ses a odhalil(a) slovo. Již nemůžeš v tomto kole hádat.' };
+    }
+
+    if (player.solved) {
+      return { error: 'Gratulujeme, již jsi vítězné slovo tohoto kola uhodl(a)!' };
+    }
+
+    const rankResult = wordService.calculateRank(this.targetWordObj, rawWord);
+    if (!rankResult.isValid) {
+      return { error: rankResult.error || 'Neplatné slovo.' };
+    }
+
+    player.guessCount += 1;
+    const isWinner = rankResult.isWinner || rankResult.rank === 1;
+
+    // Sledování nejlepšího ranku pro závěrečné vyhodnocení Rychlovky
+    if (this.wordSource === 'speedrun') {
+      if (!player.bestRank || rankResult.rank < player.bestRank) {
+        player.bestRank = rankResult.rank;
+        player.bestWord = rankResult.word;
+      }
+    }
+
+    let isMine = false;
+    if (this.wordSource === 'speedrun' && this.speedrunConfig?.enableMines && this.mineWords.includes(rankResult.word)) {
+      isMine = true;
+      player.timePenaltySeconds = (player.timePenaltySeconds || 0) + 10;
+      if (!player.hitMines) player.hitMines = [];
+      player.hitMines.push(rankResult.word);
+    }
+
+    let triggeredSuddenDeath = false;
+    if (isWinner) {
+      player.solved = true;
+      player.solvedAt = Date.now();
+      const roundId = typeof this.getRoundId === 'function' ? this.getRoundId() : this.currentRoundId;
+      const isDaily = (this.mode === 'daily') || (this.wordSource === 'daily');
+      if (this.wordSource !== 'speedrun') {
+        playerProfileManager.recordGameWin(player.name, roundId, player.guessCount, isDaily);
+      } else {
+        if (!this.suddenDeathStarted) {
+          this.suddenDeathStarted = true;
+          this.firstWinner = player.name;
+          triggeredSuddenDeath = true;
+          const suddenDeathEnd = Date.now() + 30 * 1000;
+          if (this.roundEndTime > suddenDeathEnd) {
+            this.roundEndTime = suddenDeathEnd;
+          }
+        }
+      }
+    }
+
+    if (this.wordSource !== 'speedrun') {
+      playerProfileManager.touchActivity(player.name);
+    }
+
+    const guessEntry = {
+      id: Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      player: player.name,
+      playerColor: player.color || DEFAULT_COLOR,
+      playerEmote: player.emote || null,
+      socketId: socketId,
+      word: rankResult.word,
+      rank: rankResult.rank,
+      isWinner: isWinner,
+      isMine: isMine,
+      timestamp: Date.now()
+    };
+
+    this.guesses.push(guessEntry);
+    this.savePlayerProfile(player);
+
+    if (typeof this.onStateChange === 'function') {
+      this.onStateChange();
+    }
+
+    return {
+      success: true,
+      guess: guessEntry,
+      player: player,
+      isWinner: isWinner,
+      isMine: isMine,
+      triggeredSuddenDeath: triggeredSuddenDeath
+    };
+  }
+
+  useHint(socketId, requestedLevel = null) {
+    if (this.wordSource === 'speedrun' && this.speedrunConfig && !this.speedrunConfig.enableHints) {
+      return { error: 'Nápovědy jsou v této Rychlovce zakázány!' };
+    }
+    return super.useHint(socketId, requestedLevel);
+  }
+
+  removePlayer(socketId) {
+    const res = super.removePlayer(socketId);
+    if (Object.keys(this.players).length === 0) {
+      if (this.speedrunTimer) {
+        clearInterval(this.speedrunTimer);
+        this.speedrunTimer = null;
+      }
+      if (this.countdownTimer) {
+        clearInterval(this.countdownTimer);
+        this.countdownTimer = null;
+      }
+    }
+    return res;
+  }
+
   voteNewWord(socketId) {
+    if (this.wordSource === 'speedrun') {
+      return { error: 'V Rychlovce nové kolo spouští zakladatel arény.' };
+    }
     const player = this.players[socketId];
     if (!player) return { error: 'Nejsi přihlášen(a) ve hře.' };
 
@@ -1194,7 +1692,10 @@ class CustomGameRoom extends BaseGameRoom {
 
   getGameStateForPlayer(socketId) {
     const player = this.players[socketId];
-    const canSeeSecret = player && (player.solved || player.gaveUp);
+    if (player && player.hintLevel >= 3 && !player.customHint3) {
+      this.generateHint3ForPlayer(socketId);
+    }
+    const canSeeSecret = player && (player.solved || player.gaveUp || (this.wordSource === 'speedrun' && this.speedrunStatus === 'finished'));
     const requiredVotes = this.getRequiredVotes();
     const roundId = this.wordSource === 'daily'
       ? `custom_daily_${wordService.getCzechDateStr()}`
@@ -1208,21 +1709,52 @@ class CustomGameRoom extends BaseGameRoom {
       wordSource: this.wordSource,
       isDailyEligible: this.wordSource === 'daily',
       hostName: this.hostName,
-      date: this.wordSource === 'daily' ? wordService.getCzechDateStr() : `Archivní slovo`,
+      isHost: player ? (player.name === this.hostName) : false,
+      date: this.wordSource === 'daily'
+        ? wordService.getCzechDateStr()
+        : (this.wordSource === 'speedrun' ? 'Rychlovka' : 'Archivní slovo'),
       dayNumber: this.targetWordObj.dayNumber,
-      isSpectator: !!canSeeSecret,
+      isSpectator: !!canSeeSecret && !player?.solved && (this.wordSource !== 'speedrun' || this.speedrunStatus !== 'finished'),
       hint: player && player.usedHint ? this.targetWordObj.hint : null,
       hasUsedHint: player ? !!player.usedHint : false,
+      hintLevel: player ? (player.hintLevel || (player.usedHint ? 1 : 0)) : 0,
+      hints: player && player.usedHint ? {
+        level1: (player.hintLevel || 1) >= 1 ? (this.targetWordObj.hints?.level1 || this.targetWordObj.hint) : null,
+        level2: (player.hintLevel || 1) >= 2 ? this.targetWordObj.hints?.level2 : null,
+        level3: (player.hintLevel || 1) >= 3 ? (player.customHint3 || this.targetWordObj.hints?.level3) : null
+      } : null,
+      speedrun: this.wordSource === 'speedrun' ? {
+        status: this.speedrunStatus,
+        durationMinutes: this.speedrunConfig?.durationMinutes || 3,
+        enableMines: this.speedrunConfig?.enableMines ?? true,
+        enableHints: this.speedrunConfig?.enableHints ?? true,
+        roundStartTime: this.roundStartTime,
+        roundEndTime: this.roundEndTime,
+        remainingSeconds: this.getPlayerRemainingSeconds(socketId),
+        penaltySeconds: player?.timePenaltySeconds || 0,
+        suddenDeath: this.suddenDeathStarted ? {
+          active: true,
+          firstWinner: this.firstWinner,
+          remainingSeconds: Math.max(0, Math.ceil((this.roundEndTime - Date.now()) / 1000))
+        } : { active: false },
+        results: this.speedrunResults,
+        isHost: player ? (player.name === this.hostName) : false
+      } : null,
       myStatus: player
         ? {
             name: player.name,
             color: player.color || DEFAULT_COLOR,
+            emote: player.emote || null,
             isAdmin: !!player.isAdmin,
             solved: player.solved,
             gaveUp: player.gaveUp,
             usedHint: !!player.usedHint,
+            hintLevel: player.hintLevel || (player.usedHint ? 1 : 0),
             guessCount: player.guessCount,
-            votedForNewWord: this.votes.has(socketId)
+            votedForNewWord: this.votes.has(socketId),
+            timePenaltySeconds: player.timePenaltySeconds || 0,
+            bestRank: player.bestRank || null,
+            stats: (this.wordSource !== 'speedrun' && player) ? (playerProfileManager.getProfile(player.name)?.stats || null) : null
           }
         : null,
       secretWord: canSeeSecret ? this.targetWordObj.word : null,
@@ -1232,11 +1764,15 @@ class CustomGameRoom extends BaseGameRoom {
         id: p.id,
         name: p.name,
         color: p.color || DEFAULT_COLOR,
+        emote: p.emote || null,
         isAdmin: !!p.isAdmin,
         solved: p.solved,
         gaveUp: p.gaveUp,
         usedHint: !!p.usedHint,
+        hintLevel: p.hintLevel || (p.usedHint ? 1 : 0),
         guessCount: p.guessCount,
+        timePenaltySeconds: p.timePenaltySeconds || 0,
+        bestRank: p.bestRank || null,
         votedForNewWord: this.votes.has(p.id)
       })),
       guesses: this.getSanitizedGuesses(socketId, canSeeSecret),
@@ -1255,6 +1791,7 @@ class CustomGameRoom extends BaseGameRoom {
     };
   }
 }
+
 
 // ─────────────────────────────────────────────────────────────
 // Správce místností (GameManager)
@@ -1468,12 +2005,12 @@ class RoomManager {
     return code;
   }
 
-  createCustomRoom(wordSource = 'daily', customCode = null, hostName = '') {
+  createCustomRoom(wordSource = 'daily', customCode = null, hostName = '', speedrunConfig = null) {
     const code = (customCode || this.generateRoomCode()).toUpperCase().trim();
     if (this.customRooms.has(code)) {
       return this.customRooms.get(code);
     }
-    const room = new CustomGameRoom(code, hostName, wordSource);
+    const room = new CustomGameRoom(code, hostName, wordSource, speedrunConfig);
     room.gameManager = this;
     this.customRooms.set(code, room);
     return room;
@@ -1519,6 +2056,7 @@ class RoomManager {
     const formatPlayer = (p, modeKey, modeTitle) => ({
       name: p.name,
       color: p.color || '#3b82f6',
+      emote: p.emote || null,
       mode: modeKey,
       roomTitle: modeTitle,
       guessCount: p.guessCount || 0,
@@ -1550,7 +2088,7 @@ class RoomManager {
     };
   }
 
-  joinPlayer(socketId, playerName, mode = 'daily', color = null, customCode = null, wordSource = 'daily', sessionId = null, clientIp = null) {
+  joinPlayer(socketId, playerName, mode = 'daily', color = null, customCode = null, wordSource = 'daily', sessionId = null, clientIp = null, speedrunConfig = null, emote = null) {
     let validMode = 'daily';
     let room = null;
 
@@ -1564,7 +2102,7 @@ class RoomManager {
       }
       let cRoom = this.getCustomRoom(code);
       if (!cRoom) {
-        cRoom = new CustomGameRoom(code, playerName, wordSource);
+        cRoom = new CustomGameRoom(code, playerName, wordSource, speedrunConfig);
         cRoom.gameManager = this;
         this.customRooms.set(code, cRoom);
       }
@@ -1582,7 +2120,7 @@ class RoomManager {
       if (prevRoom) prevRoom.removePlayer(socketId);
     }
 
-    const joinResult = room.joinPlayer(socketId, playerName, color, sessionId, clientIp);
+    const joinResult = room.joinPlayer(socketId, playerName, color, sessionId, clientIp, emote);
     const player = joinResult.player || joinResult;
     this.socketToRoom.set(socketId, validMode);
 

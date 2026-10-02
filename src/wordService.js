@@ -80,6 +80,54 @@ function getDayNumber(dateStr) {
   return diffDays + 1;
 }
 
+// Slovník gramatických rodů pro 93 cílových slov v harmonogramu
+const WORD_GENDERS = {
+  'léto': 'střední', 'zboží': 'střední', 'licence': 'ženský', 'pěstování': 'střední',
+  'růst': 'mužský', 'vůz': 'mužský', 'orgán': 'mužský', 'snaha': 'ženský',
+  'server': 'mužský', 'počítač': 'mužský', 'organizace': 'ženský', 'výzkum': 'mužský',
+  'kněz': 'mužský', 'prvek': 'mužský', 'pomoc': 'ženský', 'televize': 'ženský',
+  'řešení': 'střední', 'průkaz': 'mužský', 'detail': 'mužský', 'těhotenství': 'střední',
+  'vůně': 'ženský', 'prostředek': 'mužský', 'knihovna': 'ženský', 'prohlášení': 'střední',
+  'stanovení': 'střední', 'region': 'mužský', 'klášter': 'mužský', 'památka': 'ženský',
+  'test': 'mužský', 'snížení': 'střední', 'hudebník': 'mužský', 'analýza': 'ženský',
+  'smysl': 'mužský', 'kód': 'mužský', 'cena': 'ženský', 'stanice': 'ženský',
+  'manželka': 'ženský', 'ulice': 'ženský', 'prezident': 'mužský', 'hvězda': 'ženský',
+  'tričko': 'střední', 'vzor': 'mužský', 'vazba': 'ženský', 'kus': 'mužský',
+  'republika': 'ženský', 'skupina': 'ženský', 'instalace': 'ženský', 'příkaz': 'mužský',
+  'obal': 'mužský', 'informace': 'ženský', 'orientace': 'ženský', 'kniha': 'ženský',
+  'maso': 'střední', 'osoba': 'ženský', 'dvojice': 'ženský', 'program': 'mužský',
+  'poslanec': 'mužský', 'vlak': 'mužský', 'soud': 'mužský', 'odpad': 'mužský',
+  'kolo': 'střední', 'odpoledne': 'střední', 'předseda': 'mužský', 'rodina': 'ženský',
+  'režisér': 'mužský', 'rekord': 'mužský', 'časopis': 'mužský', 'odpověď': 'ženský',
+  'baterie': 'ženský', 'recenze': 'ženský', 'vesnice': 'ženský', 'slunce': 'střední',
+  'průběh': 'mužský', 'úvěr': 'mužský', 'věc': 'ženský', 'herečka': 'ženský',
+  'postup': 'mužský', 'krev': 'ženský', 'fotograf': 'mužský', 'říjen': 'mužský',
+  'revize': 'ženský', 'člověk': 'mužský', 'tlačítko': 'střední', 'motor': 'mužský',
+  'poměr': 'mužský', 'dítě': 'střední', 'ústav': 'mužský', 'látka': 'ženský',
+  'disk': 'mužský', 'inzerát': 'mužský', 'jeskyně': 'ženský', 'značka': 'ženský',
+  'duše': 'ženský'
+};
+
+function getWordGender(word) {
+  const w = normalizeWord(word);
+  if (WORD_GENDERS[w]) return WORD_GENDERS[w];
+  if (w.endsWith('o') || w.endsWith('í') || (w.endsWith('e') && (w.endsWith('če') || w.endsWith('ště') || w.endsWith('tě')))) return 'střední';
+  if (w.endsWith('a') || w.endsWith('e') || w.endsWith('ost')) return 'ženský';
+  return 'mužský';
+}
+
+function getMaskedWord(word) {
+  if (!word || word.length <= 1) return (word || '').toUpperCase();
+  const upper = word.toUpperCase();
+  const first = upper[0];
+  const last = upper[upper.length - 1];
+  if (word.length === 2) {
+    return `${first} ${last}`;
+  }
+  const middles = Array(word.length - 2).fill('_').join(' ');
+  return `${first} ${middles} ${last}`;
+}
+
 // Vyrovnávací paměť načtených dnů pro okamžitý lookup
 const dayCache = new Map();
 
@@ -113,7 +161,10 @@ function loadDayData(day, targetWord) {
   const exactMap = new Map();
   const normalizedMap = new Map();
   const top50Map = new Map();
+  const rankToWordMap = new Map();
   let maxRank = 1;
+  let radarCandidate = null;
+  let bestRadarDiff = 999999;
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -135,6 +186,19 @@ function loadDayData(day, targetWord) {
       top50Map.set(rank, word);
     }
 
+    if (rank <= 500 && !rankToWordMap.has(rank)) {
+      rankToWordMap.set(rank, word);
+    }
+
+    // Vyhledání radarového slova v pásmu okolo ranku 150 (v rozmezí 120-250)
+    if (rank >= 100 && rank <= 300) {
+      const diff = Math.abs(rank - 150);
+      if (diff < bestRadarDiff) {
+        bestRadarDiff = diff;
+        radarCandidate = { word, rank };
+      }
+    }
+
     const norm = removeDiacritics(word);
     const existing = normalizedMap.get(norm);
     if (!existing || existing.rank > rank) {
@@ -146,6 +210,7 @@ function loadDayData(day, targetWord) {
   const cleanTarget = normalizeWord(targetWord);
   exactMap.set(cleanTarget, 1);
   top50Map.set(1, cleanTarget);
+  rankToWordMap.set(1, cleanTarget);
   normalizedMap.set(removeDiacritics(cleanTarget), { word: cleanTarget, rank: 1 });
 
   const top50 = [];
@@ -161,11 +226,104 @@ function loadDayData(day, targetWord) {
     exactMap,
     normalizedMap,
     top50,
+    rankToWordMap,
+    radarWord: radarCandidate || { word: 'vzdálené', rank: 150 },
     maxRank
   };
 
   dayCache.set(day, dayData);
   return dayData;
+}
+
+// Získání slova pro 3. nápovědu, které je striktně lepší než dosavadní nejlepší rank hráče
+function getBetterHintWord(dayData, bestRank = 999999, excludedWords = []) {
+  if (!dayData || !dayData.rankToWordMap) {
+    return { word: 'neznámé', rank: 150 };
+  }
+
+  const excluded = new Set(
+    (Array.isArray(excludedWords) ? excludedWords : [])
+      .map((w) => normalizeWord(w))
+      .concat([normalizeWord(dayData.targetWord)])
+  );
+
+  let targetRank = 150;
+  let maxRankLimit = 300;
+
+  if (typeof bestRank === 'number' && bestRank <= 300 && bestRank > 1) {
+    if (bestRank === 2) {
+      return { word: null, rank: 2, isAtRankTwo: true };
+    }
+    // Cílíme na rank přibližně v polovině mezi 1 a hráčovým dosavadním nejlepším rankem
+    targetRank = Math.max(2, Math.floor(bestRank * 0.5));
+    maxRankLimit = bestRank - 1; // Musí být striktně lepší než hráčovo dosud nejlepší slovo!
+  }
+
+  let bestCandidate = null;
+  let bestDiff = 999999;
+
+  for (let r = 2; r <= maxRankLimit; r++) {
+    if (dayData.rankToWordMap.has(r)) {
+      const w = dayData.rankToWordMap.get(r);
+      if (!excluded.has(w)) {
+        const diff = Math.abs(r - targetRank);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestCandidate = { word: w, rank: r };
+        }
+      }
+    }
+  }
+
+  if (bestCandidate) {
+    return bestCandidate;
+  }
+
+  for (let r = maxRankLimit; r >= 2; r--) {
+    if (dayData.rankToWordMap.has(r)) {
+      const w = dayData.rankToWordMap.get(r);
+      if (!excluded.has(w)) {
+        return { word: w, rank: r };
+      }
+    }
+  }
+
+  return dayData.radarWord || { word: 'vzdálené', rank: 150 };
+}
+
+function buildWordPayload(dayNumber, word, dayData, dateStr) {
+  const cleanWord = normalizeWord(word);
+  const firstLetter = cleanWord[0].toUpperCase();
+  const length = cleanWord.length;
+  const gender = getWordGender(cleanWord);
+  const mask = getMaskedWord(cleanWord);
+  const radar = dayData.radarWord || { word: 'vzdálené', rank: 150 };
+
+  const countWord = length === 1 ? 'písmeno' : (length >= 2 && length <= 4 ? 'písmena' : 'písmen');
+  const hint1 = `Slovo začíná na písmeno "${firstLetter}" a má ${length} ${countWord}.`;
+  const hint2 = `Tvar slova: ${mask} (rod ${gender}).`;
+  const hint3 = `Blízké tématické slovo: "${radar.word}" (pořadí #${radar.rank}).`;
+
+  let legacyHint = wordsData.targets?.[cleanWord]?.hint;
+  if (!legacyHint) {
+    legacyHint = hint1;
+  }
+
+  return {
+    key: cleanWord,
+    date: dateStr || getCzechDateStr(),
+    dayNumber: dayNumber,
+    word: cleanWord,
+    hint: legacyHint,
+    category: wordsData.targets?.[cleanWord]?.category || 'obecné',
+    hints: {
+      level1: hint1,
+      level2: hint2,
+      level3: hint3
+    },
+    radarWord: radar,
+    dayData: dayData
+  };
 }
 
 // Získání denního slova a herního balíčku pro daný kalendářní den
@@ -176,21 +334,7 @@ function getDailyWord(dateStr) {
   const scheduleEntry = schedule[scheduleIndex];
 
   const dayData = loadDayData(scheduleEntry.day, scheduleEntry.word);
-
-  let hint = wordsData.targets?.[scheduleEntry.word]?.hint;
-  if (!hint) {
-    hint = `Slovo má ${scheduleEntry.word.length} písmen a začíná na písmeno "${scheduleEntry.word[0].toUpperCase()}".`;
-  }
-
-  return {
-    key: scheduleEntry.word,
-    date: currentDateStr,
-    dayNumber: dayNumber,
-    word: scheduleEntry.word,
-    hint: hint,
-    category: wordsData.targets?.[scheduleEntry.word]?.category || 'obecné',
-    dayData: dayData
-  };
+  return buildWordPayload(dayNumber, scheduleEntry.word, dayData, currentDateStr);
 }
 
 // Náhodná archivní hra (ze starších dnů)
@@ -202,20 +346,7 @@ function getRandomWord() {
   const entry = schedule[randomIndex];
 
   const dayData = loadDayData(entry.day, entry.word);
-  let hint = wordsData.targets?.[entry.word]?.hint;
-  if (!hint) {
-    hint = `Slovo má ${entry.word.length} písmen a začíná na písmeno "${entry.word[0].toUpperCase()}".`;
-  }
-
-  return {
-    key: entry.word,
-    date: 'archivní náhodná hra',
-    dayNumber: entry.day,
-    word: entry.word,
-    hint: hint,
-    category: wordsData.targets?.[entry.word]?.category || 'obecné',
-    dayData: dayData
-  };
+  return buildWordPayload(entry.day, entry.word, dayData, 'archivní náhodná hra');
 }
 
 // Získání fondu archivních slov (dny předcházející dnešnímu dni)
@@ -234,20 +365,32 @@ function getUnlimitedWord(excludeWords = []) {
   }
   const entry = available[Math.floor(Math.random() * available.length)];
   const dayData = loadDayData(entry.day, entry.word);
-  let hint = wordsData.targets?.[entry.word]?.hint;
-  if (!hint) {
-    hint = `Slovo má ${entry.word.length} písmen a začíná na písmeno "${entry.word[0].toUpperCase()}".`;
-  }
+  return buildWordPayload(entry.day, entry.word, dayData, `Archiv (Den #${entry.day})`);
+}
 
-  return {
-    key: entry.word,
-    date: `Archiv (Den #${entry.day})`,
-    dayNumber: entry.day,
-    word: entry.word,
-    hint: hint,
-    category: wordsData.targets?.[entry.word]?.category || 'obecné',
-    dayData: dayData
-  };
+// Získání slova pro mód Rychlovka
+function getSpeedrunWord(excludeWords = []) {
+  // Pro rychlovku vybíráme ze všech slov v harmonogramu
+  let available = schedule.filter((s) => !excludeWords.includes(s.word));
+  if (available.length === 0) {
+    available = schedule;
+  }
+  const entry = available[Math.floor(Math.random() * available.length)];
+  const dayData = loadDayData(entry.day, entry.word);
+  return buildWordPayload(entry.day, entry.word, dayData, `Rychlovka (Slovo #${entry.day})`);
+}
+
+// Generování 3-5 náhodných minových slov pro dané kolo Rychlovky
+function generateMineWords(targetWord, count = 4) {
+  const commonMinePool = [
+    'člověk', 'život', 'čas', 'rok', 'den', 'práce', 'cesta', 'oko', 'místo', 'svět',
+    'voda', 'hlava', 'dům', 'stůl', 'auto', 'kniha', 'škola', 'peníze', 'město', 'slovo',
+    'strom', 'země', 'ruka', 'noha', 'láska', 'tělo', 'dveře', 'okno', 'chléb', 'pes'
+  ];
+  const targetNorm = normalizeWord(targetWord);
+  const candidates = commonMinePool.filter((w) => normalizeWord(w) !== targetNorm);
+  const shuffled = [...candidates].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
 // Získání konkrétního slova (např. při obnově stavu z disku)
@@ -258,19 +401,7 @@ function getSpecificWord(dayNumber, word) {
   const useDay = scheduleEntry ? scheduleEntry.day : (dayNumber || 1);
   const useWord = scheduleEntry ? scheduleEntry.word : cleanWord;
   const dayData = loadDayData(useDay, useWord);
-  let hint = wordsData.targets?.[useWord]?.hint;
-  if (!hint) {
-    hint = `Slovo má ${useWord.length} písmen a začíná na písmeno "${useWord[0].toUpperCase()}".`;
-  }
-  return {
-    key: useWord,
-    date: `Archiv (Den #${useDay})`,
-    dayNumber: useDay,
-    word: useWord,
-    hint: hint,
-    category: wordsData.targets?.[useWord]?.category || 'obecné',
-    dayData: dayData
-  };
+  return buildWordPayload(useDay, useWord, dayData, `Archiv (Den #${useDay})`);
 }
 
 // Výpočet sémantické blízkosti podle vygenerovaných embedding dat
@@ -347,9 +478,12 @@ module.exports = {
   getRandomWord,
   getPastWordsPool,
   getUnlimitedWord,
+  getSpeedrunWord,
+  generateMineWords,
   getSpecificWord,
   calculateRank,
   getTop50,
+  getBetterHintWord,
   normalizeWord,
   removeDiacritics,
   getCzechDateStr,
