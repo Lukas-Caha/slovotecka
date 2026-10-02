@@ -408,7 +408,7 @@ function setLobbyMode(mode) {
   if (mode === 'daily') {
     currentMode = 'daily';
     if (customRoomPanel) customRoomPanel.style.display = 'none';
-    if (lobbyTag) lobbyTag.textContent = '[ 01. REGISTRACE DO HRY ]';
+    if (lobbyTag) lobbyTag.textContent = '[ 01. VSTUP DO ARÉNY ]';
     if (lobbyTitle) lobbyTitle.textContent = 'DNEŠNÍ VÝZVA';
     if (lobbyDesc) lobbyDesc.textContent = 'Zadej svou přezdívku a začni hádat tajné slovo dne společně s ostatními.';
     if (btnEnterGameText) btnEnterGameText.textContent = 'VSTOUPIT DO ARÉNY';
@@ -935,6 +935,9 @@ function showWhatsNew() {
 
 function hideWhatsNew() {
   if (whatsNewModal) whatsNewModal.style.display = 'none';
+  try {
+    localStorage.setItem('slovotecka_whats_new_ack_v3', 'true');
+  } catch (err) {}
 }
 
 if (btnCloseWhatsNew) btnCloseWhatsNew.addEventListener('click', hideWhatsNew);
@@ -946,8 +949,14 @@ if (whatsNewModal) {
   });
 }
 
-// Automatické zobrazení okna WHATS NEW na lobby
-showWhatsNew();
+// Automatické zobrazení okna WHATS NEW pouze pokud ho uživatel dosud nepotvrdil
+try {
+  if (localStorage.getItem('slovotecka_whats_new_ack_v3') !== 'true') {
+    showWhatsNew();
+  }
+} catch (err) {
+  showWhatsNew();
+}
 
 // DOM – Hra
 const displayModeLabel = document.getElementById('display-mode-label');
@@ -5026,10 +5035,6 @@ let authUser = null;
 function updateAuthLabel() {
   if (headerAuthLabel) headerAuthLabel.textContent = authUser ? authUser.username : 'ÚČET';
   if (btnOpenAuth) btnOpenAuth.title = authUser ? `Přihlášen: ${authUser.username}` : 'Přihlášení / Registrace účtu';
-  if (btnLobbyOpenAuth) {
-    btnLobbyOpenAuth.querySelector('span:first-child').textContent = authUser ? `👤 ${authUser.username}` : '👤 Přihlásit se';
-    btnLobbyOpenAuth.title = authUser ? `Účet ${authUser.username}` : 'Přihlášení nebo registrace účtu';
-  }
   if (authAccountName) authAccountName.textContent = authUser?.username || '';
   if (authAccountPanel) authAccountPanel.style.display = authUser ? 'flex' : 'none';
   if (authTabsNav) authTabsNav.style.display = authUser ? 'none' : 'grid';
@@ -5041,17 +5046,24 @@ function updateAuthLabel() {
 
   const authLockBadge = document.getElementById('auth-name-lock-badge');
   const nameStatus = document.getElementById('lobby-name-status');
+  const lobbyGuestHint = document.getElementById('lobby-guest-hint');
 
   if (authUser) {
     if (playerNameInput) {
       playerNameInput.value = authUser.username;
       playerNameInput.readOnly = true;
       playerNameInput.classList.add('is-locked');
-      playerNameInput.title = `Přezdívka je uzamčena pro tvůj přihlášený účet „${authUser.username}“.`;
+      playerNameInput.title = `Přezdívka je uzamčena pro tvůj přihlášený účet „${authUser.username}“. Kliknutím na zámek můžeš účet spravovat.`;
+    }
+    if (btnLobbyOpenAuth) {
+      btnLobbyOpenAuth.style.display = 'none';
     }
     if (authLockBadge) {
       authLockBadge.style.display = 'inline-flex';
       authLockBadge.textContent = `🔒 ÚČET: ${authUser.username}`;
+    }
+    if (lobbyGuestHint) {
+      lobbyGuestHint.style.display = 'none';
     }
     if (nameStatus) {
       nameStatus.style.display = 'none';
@@ -5063,8 +5075,18 @@ function updateAuthLabel() {
       playerNameInput.classList.remove('is-locked');
       playerNameInput.title = '';
     }
+    if (btnLobbyOpenAuth) {
+      btnLobbyOpenAuth.style.display = 'inline-flex';
+      const span = btnLobbyOpenAuth.querySelector('span');
+      if (span) span.textContent = '👤 PŘIHLÁSIT SE';
+      else btnLobbyOpenAuth.textContent = '👤 PŘIHLÁSIT SE';
+      btnLobbyOpenAuth.title = 'Přihlášení nebo registrace účtu';
+    }
     if (authLockBadge) {
       authLockBadge.style.display = 'none';
+    }
+    if (lobbyGuestHint) {
+      lobbyGuestHint.style.display = 'flex';
     }
   }
 }
@@ -5163,6 +5185,22 @@ if (btnOpenAuth) {
 
 if (btnLobbyOpenAuth) {
   btnLobbyOpenAuth.addEventListener('click', () => openAuthModal('login'));
+}
+
+const authLockBadgeEl = document.getElementById('auth-name-lock-badge');
+if (authLockBadgeEl) {
+  authLockBadgeEl.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    openAuthModal('login');
+  });
+}
+
+const btnLobbyOpenRegister = document.getElementById('btn-lobby-open-register');
+if (btnLobbyOpenRegister) {
+  btnLobbyOpenRegister.addEventListener('click', () => {
+    SoundFx.playKeyClick();
+    openAuthModal('register');
+  });
 }
 
 if (btnCloseAuth) {

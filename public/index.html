@@ -16,7 +16,7 @@
   <title>SLOVO. – Český Contexto Multiplayer</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-  <link rel="stylesheet" href="/style.css?v=auth3">
+  <link rel="stylesheet" href="/style.css?v=ui_v4">
 </head>
 <body>
 
@@ -196,13 +196,11 @@
         </div>
         <div class="modal-body">
           <ul class="whats-new-list">
-            <li>třístupňové nápovědy (písmeno ➔ maska s rodem ➔ blízké záchytné slovo)</li>
-            <li>optimalizace pro mobilní obrazovky</li>
-            <li>novy design a retro estetika</li>
-            <li>kazetový magnetofon na hudbu</li>
-            <li>hudba v custom roomkách</li>
-            <li>uživatelská karta se staty</li>
-            <li>zvukové efekty a globální chat</li>
+            <li><strong>🪪 Herní účet &amp; rezervace přezdívky:</strong> Založ si bezpečný účet bez e-mailu a chraň své herní jméno před obsazením ostatními.</li>
+            <li><strong>⏱️ Automatická retence 3 týdny:</strong> Pro maximální ochranu soukromí se účty po 21 dnech neaktivity automaticky a kompletně mažou.</li>
+            <li><strong>⚡ Režim Rychlovka (Speedrun):</strong> Závod s časem ve Vlastní aréně (2, 3 nebo 5 minut) s možností nebezpečných minových slov.</li>
+            <li><strong>🛡️ Zabezpečení &amp; Ochrana dat:</strong> Bezpečné šifrování hesel přes bcrypt, session tokeny a ochrana proti brute-force útokům.</li>
+            <li><strong>🎵 YouTube přehrávač v arénách:</strong> Společná retro kazeta/gramofon s hlasováním pro přeskočení a frontou skladeb.</li>
           </ul>
         </div>
         <div class="modal-footer">
@@ -519,7 +517,7 @@
             <p class="legal-date">Aktualizováno 2. října 2026. Informace o zpracování údajů ve službě SLOVO.</p>
             <div class="legal-article">
               <h4>1. Správce osobních údajů</h4>
-              <p>Správcem je provozovatel projektu SLOVO. Pro dotazy a uplatnění práv napiš na <strong><a href="mailto:slovotecka@proton.me">slovotecka@proton.me</a></strong>. Identifikační údaje provozovatele doplň před veřejným spuštěním.</p>
+              <p>Správcem je provozovatel projektu SLOVO. Pro dotazy a uplatnění práv napiš na <strong><a href="mailto:slovotecka@proton.me">slovotecka@proton.me</a></strong>.</p>
             </div>
             <div class="legal-article">
               <h4>2. Rozsah a účely zpracování údajů</h4>
@@ -628,12 +626,11 @@
       <div class="card lobby-card">
         <div class="card-header-bar">
           <div class="lobby-header-left">
-            <span class="card-tag" id="lobby-tag">PŘIPOJENÍ DO HRY</span>
-            <button type="button" class="btn-whats-new-badge" id="btn-open-whats-new" title="Zobrazit novinky">Co je nového?</button>
-            <button type="button" class="btn-whats-new-badge btn-auth-badge" id="btn-lobby-open-auth" title="Přihlášení nebo registrace účtu">
-              <span>👤 Přihlásit se</span>
-              <span class="badge-mini-tag">Účet</span>
-            </button>
+            <span class="card-tag" id="lobby-tag">[ 01. VSTUP DO ARÉNY ]</span>
+          </div>
+          <div class="lobby-header-right">
+            <button type="button" class="btn-whats-new-badge" id="btn-open-whats-new" title="Zobrazit novinky">[ CO JE NOVÉHO? ]</button>
+            <img src="/symbolWhite.svg" alt="" class="card-mini-symbol" aria-hidden="true">
           </div>
         </div>
 
@@ -721,7 +718,10 @@
           <div class="field-label-row">
             <label class="field-label" for="player-name">TVOJE PŘEZDÍVKA</label>
             <div class="player-customization-badges">
-              <span class="auth-name-lock-badge" id="auth-name-lock-badge" style="display: none;" title="Přezdívka je uzamčena pro tvůj přihlášený účet">🔒 ÚČET</span>
+              <button type="button" class="btn-lobby-auth-link" id="btn-lobby-open-auth" title="Přihlášení k účtu">
+                <span>👤 PŘIHLÁSIT SE</span>
+              </button>
+              <button type="button" class="auth-name-lock-badge" id="auth-name-lock-badge" style="display: none;" title="Přezdívka je uzamčena pro tvůj účet (klikni pro správu)">🔒 ÚČET</button>
               <span class="color-selected-badge" id="color-selected-badge" style="color: #3b82f6;">[ MODRÁ ]</span>
               <span class="emote-selected-badge" id="emote-selected-badge" style="display: none;"></span>
             </div>
@@ -740,6 +740,10 @@
             </button>
           </div>
           <div class="lobby-name-status" id="lobby-name-status" style="display: none;"></div>
+          <div class="lobby-guest-hint" id="lobby-guest-hint">
+            <span class="lobby-guest-hint-text">Hraješ jako host. Chceš si přezdívku rezervovat?</span>
+            <button type="button" class="btn-lobby-inline-link" id="btn-lobby-open-register">Vytvořit účet</button>
+          </div>
 
           <!-- Výsuvný popover pro úpravu hráče (barva + 7TV ikona) -->
           <div class="color-picker-popover" id="color-picker-popover" style="display: none;">
@@ -1271,6 +1275,6 @@
 
   <script src="https://www.youtube.com/iframe_api"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/app.js?v=auth4"></script>
+  <script src="/app.js?v=ui_v4"></script>
 </body>
 </html>

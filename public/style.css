@@ -3267,7 +3267,12 @@ body.chat-is-open .chat-panel,
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+}
+
+.lobby-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .btn-whats-new-badge {
@@ -7380,4 +7385,80 @@ body.chat-is-open .chat-panel,
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.35);
   color: #93c5fd;
+}
+
+/* ── Lobby Auth & UX vylepšení ────────────────────────────────────────── */
+.btn-lobby-auth-link {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  color: #60a5fa;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-lobby-auth-link:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: #3b82f6;
+  color: #fff;
+  box-shadow: 2px 2px 0px rgba(59, 130, 246, 0.3);
+}
+
+.auth-name-lock-badge {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.auth-name-lock-badge:hover {
+  background: rgba(59, 130, 246, 0.3) !important;
+  border-color: #60a5fa !important;
+  color: #fff !important;
+}
+
+.lobby-guest-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: -4px;
+  margin-bottom: 14px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-base-600);
+}
+
+[data-theme="light"] .lobby-guest-hint {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: var(--color-base-700);
+}
+
+.btn-lobby-inline-link {
+  background: none;
+  border: none;
+  color: var(--color-amber);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.btn-lobby-inline-link:hover {
+  color: #fde68a;
 }
