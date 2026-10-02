@@ -1240,10 +1240,10 @@ io.on('connection', (socket) => {
       if (enteredSecret && enteredSecret.toLowerCase() === actualSecret.toLowerCase()) {
         player.isAdmin = true;
         socket.emit('notification', {
-          message: '👑 Úspěšně jsi aktivoval administrátorská práva pro tuto relaci!'
+          message: '[ADMIN] Úspěšně jsi aktivoval administrátorská práva pro tuto relaci.'
         });
         const helpMsg = room.addChatMessage(
-          '🛡️ SYSTÉM',
+          '[SYSTÉM]',
           `@${player.name} Jsi nyní administrátorem arény. Příkazy: !poll, !endpoll, !kick <hráč>, !clear, !announce <text>, !forceskip, !forcestop, !forceword, !reveal`,
           true
         );
@@ -1252,7 +1252,7 @@ io.on('connection', (socket) => {
         return;
       } else {
         socket.emit('error_message', {
-          message: '🚫 Nesprávné administrátorské heslo. Zadej správný ADMIN_SECRET.'
+          message: '[CHYBA] Nesprávné administrátorské heslo.'
         });
         return;
       }

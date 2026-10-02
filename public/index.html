@@ -16,7 +16,7 @@
   <title>SLOVO. – Český Contexto Multiplayer</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-  <link rel="stylesheet" href="/style.css?v=ui_v4">
+  <link rel="stylesheet" href="/style.css?v=ui_v5">
 </head>
 <body>
 
@@ -32,7 +32,7 @@
       <aside id="music-bar" class="music-bar" style="display: none;" aria-label="Společný hudební přehrávač">
         <div class="music-bar-inner">
           <div class="music-bar-left">
-            <span class="music-icon-pulse" aria-hidden="true">🎵</span>
+            <span class="music-icon-pulse" aria-hidden="true">■</span>
             <span class="music-tag">[ HRAJE ]</span>
             <span class="music-title" id="music-title" title="">--</span>
             <span class="music-requester" id="music-requester"></span>
@@ -58,14 +58,14 @@
               </button>
               <div class="music-volume-wrap">
                 <button type="button" class="music-btn btn-vol-mute" id="btn-music-mute" title="Ztlumit / Nahlas" aria-label="Ztlumit nebo zesílit">
-                  <span id="music-mute-icon">🔈</span>
+                  <span id="music-mute-icon" class="music-mute-txt">VOL</span>
                 </button>
                 <input type="range" min="0" max="100" value="20" id="music-volume-slider" class="music-volume-slider" title="Hlasitost hudby (výchozí 20%)" aria-label="Hlasitost hudby">
                 <span class="music-volume-val" id="music-volume-val">20%</span>
               </div>
               <!-- Tlačítko pro zobrazení fronty skladeb -->
               <button type="button" class="music-btn btn-music-queue" id="btn-music-queue" title="Zobrazit frontu skladeb (!queue)" aria-label="Fronta skladeb">
-                <span class="music-queue-icon">📋</span>
+                <span class="music-queue-icon">FRONTA</span>
                 <span class="music-queue-badge" id="music-queue-badge">0</span>
               </button>
               <!-- Tlačítko pro přeskočení skladby hlasováním (!skip) -->
@@ -78,7 +78,7 @@
               </button>
               <!-- Volitelný náhled videa (100% soulad s YouTube IFrame API) -->
               <button type="button" class="music-btn btn-music-video" id="btn-music-video-toggle" title="Zobrazit / Skrýt video náhled (YouTube)" aria-label="Zobrazit nebo skrýt video">
-                <span id="music-video-icon">📺</span>
+                <span id="music-video-icon">VIDEO</span>
               </button>
             </div>
           </div>
@@ -124,32 +124,27 @@
           <div class="header-actions">
             <!-- TOP 50 tlačítko v liště (odemkne se až po vzdání / uhádnutí) -->
             <button type="button" class="btn-theme-toggle btn-top50-toggle" id="btn-nav-top50" title="Zobrazit TOP 50 slov k tajnému heslu" aria-label="TOP 50 slov" style="display: none;">
-              <span class="top50-toggle-icon">🏆</span>
               <span class="top50-toggle-text">TOP 50</span>
             </button>
 
             <!-- Login / Účet tlačítko -->
             <button type="button" class="btn-theme-toggle btn-auth-toggle" id="btn-open-auth" title="Přihlášení / Registrace účtu" aria-label="Přihlášení a registrace">
-              <span class="auth-toggle-icon">👤</span>
               <span class="auth-toggle-text" id="header-auth-label">ÚČET</span>
             </button>
 
             <!-- Průkaz / Statistika -->
             <button type="button" class="btn-theme-toggle btn-stats-toggle" id="btn-open-stats" title="Zobrazit statistiky hráče" aria-label="Statistiky hráče">
-              <span class="stats-toggle-icon">📇</span>
               <span class="stats-toggle-text">STATY</span>
             </button>
 
             <!-- Chat drawer toggle -->
             <button type="button" class="btn-theme-toggle btn-chat-toggle" id="btn-toggle-chat" title="Otevřít chat místnosti" aria-label="Otevřít chat">
-              <span class="chat-toggle-icon">💬</span>
               <span class="chat-toggle-text">CHAT</span>
               <span class="chat-unread-dot" id="header-chat-dot" style="display: none;"></span>
             </button>
 
             <!-- Zvukové efekty -->
             <button type="button" class="btn-theme-toggle btn-sound-toggle" id="btn-sound-toggle" title="Zvukové efekty" aria-label="Přepnout zvukové efekty">
-              <span class="sound-toggle-icon" id="sound-toggle-icon">🔊</span>
               <span class="sound-toggle-text" id="sound-toggle-text">ZVUK</span>
             </button>
 
@@ -196,11 +191,11 @@
         </div>
         <div class="modal-body">
           <ul class="whats-new-list">
-            <li><strong>🪪 Herní účet &amp; rezervace přezdívky:</strong> Založ si bezpečný účet bez e-mailu a chraň své herní jméno před obsazením ostatními.</li>
-            <li><strong>⏱️ Automatická retence 3 týdny:</strong> Pro maximální ochranu soukromí se účty po 21 dnech neaktivity automaticky a kompletně mažou.</li>
-            <li><strong>⚡ Režim Rychlovka (Speedrun):</strong> Závod s časem ve Vlastní aréně (2, 3 nebo 5 minut) s možností nebezpečných minových slov.</li>
-            <li><strong>🛡️ Zabezpečení &amp; Ochrana dat:</strong> Bezpečné šifrování hesel přes bcrypt, session tokeny a ochrana proti brute-force útokům.</li>
-            <li><strong>🎵 YouTube přehrávač v arénách:</strong> Společná retro kazeta/gramofon s hlasováním pro přeskočení a frontou skladeb.</li>
+            <li><strong>Účet a rezervace přezdívky:</strong> Založ si bezpečný účet bez e-mailu a chraň své herní jméno před obsazením ostatními.</li>
+            <li><strong>Retence 3 týdny (GDPR):</strong> Pro maximální ochranu soukromí se účty po 21 dnech neaktivity automaticky a kompletně mažou.</li>
+            <li><strong>Režim Rychlovka:</strong> Závod s časem ve Vlastní aréně (2, 3 nebo 5 minut) s možností nebezpečných minových slov.</li>
+            <li><strong>Zabezpečení &amp; GDPR:</strong> Bezpečné šifrování hesel přes bcrypt, session tokeny a ochrana proti brute-force útokům.</li>
+            <li><strong>Přehrávač v arénách:</strong> Společná retro kazeta/gramofon s hlasováním pro přeskočení a frontou skladeb.</li>
           </ul>
         </div>
         <div class="modal-footer">
@@ -214,7 +209,7 @@
       <div class="modal-card modal-card-auth">
         <div class="modal-header">
           <div class="auth-header-left">
-            <span class="modal-title" id="auth-modal-title">[ 🪪 REGISTRACE & PŘIHLÁŠENÍ ]</span>
+            <span class="modal-title" id="auth-modal-title">[ REGISTRACE & PŘIHLÁŠENÍ ]</span>
             <span class="auth-status-badge" id="auth-status-badge">ÚČET</span>
           </div>
           <button type="button" class="modal-close-btn" id="btn-close-auth" aria-label="Zavřít" title="Zavřít okno">&times;</button>
@@ -245,11 +240,9 @@
             <!-- Brutalistické záložky -->
             <div class="auth-tabs-nav" id="auth-tabs-nav" role="tablist">
               <button type="button" class="auth-tab-btn is-active" id="tab-auth-login" role="tab" aria-selected="true" data-tab="login">
-                <span class="tab-icon">🔑</span>
                 <span>PŘIHLÁŠENÍ</span>
               </button>
               <button type="button" class="auth-tab-btn" id="tab-auth-register" role="tab" aria-selected="false" data-tab="register">
-                <span class="tab-icon">✨</span>
                 <span>REGISTRACE</span>
               </button>
             </div>
@@ -271,7 +264,7 @@
                 </label>
                 <div class="auth-input-wrapper">
                   <input type="password" id="auth-login-password" class="input auth-input" placeholder="••••••••" autocomplete="current-password">
-                  <button type="button" class="btn-toggle-pwd" data-target="auth-login-password" title="Zobrazit / Skrýt heslo" aria-label="Zobrazit heslo">👁️</button>
+                  <button type="button" class="btn-toggle-pwd" data-target="auth-login-password" title="Zobrazit / Skrýt heslo" aria-label="Zobrazit heslo">[UKÁZAT]</button>
                 </div>
               </div>
 
@@ -300,7 +293,7 @@
                 </label>
                 <div class="auth-input-wrapper">
                   <input type="password" id="auth-reg-password" class="input auth-input" placeholder="Zadej bezpečné heslo..." maxlength="100" autocomplete="new-password">
-                  <button type="button" class="btn-toggle-pwd" data-target="auth-reg-password" title="Zobrazit / Skrýt heslo" aria-label="Zobrazit heslo">👁️</button>
+                  <button type="button" class="btn-toggle-pwd" data-target="auth-reg-password" title="Zobrazit / Skrýt heslo" aria-label="Zobrazit heslo">[UKÁZAT]</button>
                 </div>
 
                 <!-- Živé indikátory pravidel hesla -->
@@ -317,7 +310,7 @@
                 </label>
                 <div class="auth-input-wrapper">
                   <input type="password" id="auth-reg-password-check" class="input auth-input" placeholder="Zopakuj heslo..." maxlength="100" autocomplete="new-password">
-                  <button type="button" class="btn-toggle-pwd" data-target="auth-reg-password-check" title="Zobrazit / Skrýt heslo" aria-label="Zobrazit heslo">👁️</button>
+                  <button type="button" class="btn-toggle-pwd" data-target="auth-reg-password-check" title="Zobrazit / Skrýt heslo" aria-label="Zobrazit heslo">[UKÁZAT]</button>
                 </div>
                 <span class="pwd-match-badge" id="pwd-match-badge" style="display: none;"></span>
               </div>
@@ -339,7 +332,6 @@
             <div class="auth-guest-section" id="auth-guest-section">
               <button type="button" class="btn-guest-action" id="btn-auth-play-as-guest">
                 <span class="guest-action-left">
-                  <span class="guest-icon">🎮</span>
                   <span class="guest-action-text">
                     <strong>POKRAČOVAT JAKO HOST</strong>
                     <small>Bez účtu a hesla. Profil se po 7 dnech neaktivity smaže a může zmizet při restartu serveru.</small>
@@ -381,7 +373,7 @@
       <div class="modal-card modal-card-stats">
         <div class="modal-header">
           <div class="stats-header-left">
-            <span class="modal-title">[ 📇 PRŮKAZ HRÁČE // DĚRNÝ ŠTÍTEK ]</span>
+            <span class="modal-title">[ PRŮKAZ HRÁČE // DĚRNÝ ŠTÍTEK ]</span>
             <span class="stats-id-badge" id="stats-player-badge">HRÁČ</span>
           </div>
           <button type="button" class="modal-close-btn" id="btn-close-stats" aria-label="Zavřít">&times;</button>
@@ -404,7 +396,7 @@
               </div>
               <div class="stat-box">
                 <span class="stat-label">DENNÍ SÉRIE (STREAK)</span>
-                <span class="stat-val stat-val-amber" id="stat-current-streak">0 🔥</span>
+                <span class="stat-val stat-val-amber" id="stat-current-streak">0 dní</span>
               </div>
               <div class="stat-box">
                 <span class="stat-label">NEJDELŠÍ SÉRIE</span>
@@ -437,7 +429,6 @@
       <div class="modal-card modal-card-give-up">
         <div class="modal-header">
           <div class="give-up-header-title">
-            <span class="give-up-warning-icon">⚠️</span>
             <span class="modal-title">[ OPRAVDU SE CHCEŠ VZDÁT? ]</span>
           </div>
           <button type="button" class="modal-close-btn" id="btn-close-give-up" aria-label="Zavřít">&times;</button>
@@ -446,16 +437,16 @@
           <p class="give-up-warning-lead">Vzdáním se pro tebe toto kolo končí!</p>
           <ul class="give-up-consequences">
             <li>Odhalí se ti tajné slovo.</li>
-            <li>V horní liště se ti odemkne tlačítko <strong>🏆 TOP 50</strong> slov.</li>
+            <li>V horní liště se ti odemkne tlačítko <strong>TOP 50</strong> slov.</li>
             <li><strong>Ztratíš možnost dále v tomto kole hádat</strong> a přejdeš do diváckého režimu.</li>
           </ul>
         </div>
         <div class="modal-footer modal-footer-split">
           <button type="button" class="btn btn-primary btn-modal-keep-playing" id="btn-cancel-give-up">
-            🛡️ ZPĚT DO HRY
+            ZPĚT DO HRY
           </button>
           <button type="button" class="btn btn-danger-give-up" id="btn-confirm-give-up">
-            🏳️ ANO, VZDÁT SE
+            ANO, VZDÁT SE
           </button>
         </div>
       </div>
@@ -466,7 +457,7 @@
       <div class="modal-card modal-card-legal">
         <div class="modal-header">
           <div class="legal-header-left">
-            <span class="modal-title">[ ⚖️ PRÁVNÍ INFORMACE & PODMÍNKY ]</span>
+            <span class="modal-title">[ PRÁVNÍ INFORMACE & PODMÍNKY ]</span>
           </div>
           <button type="button" class="modal-close-btn" id="btn-close-legal" aria-label="Zavřít">&times;</button>
         </div>
@@ -575,7 +566,7 @@
             </div>
             <div class="legal-article">
               <h4>3. Zobrazení videa a kontrola přehrávání</h4>
-              <p>Každý uživatel má plnou kontrolu nad přehráváním: hudbu si může kdykoli vypnout, regulovat její hlasitost nebo si kliknutím na tlačítko 📺 přepnout zobrazení náhledu videa.</p>
+              <p>Každý uživatel má plnou kontrolu nad přehráváním: hudbu si může kdykoli vypnout, regulovat její hlasitost nebo si kliknutím na tlačítko [VIDEO] přepnout zobrazení náhledu videa.</p>
             </div>
           </div>
 
@@ -586,7 +577,7 @@
             <div class="legal-article">
               <h4>1. Jednotné kontaktní místo pro hlášení</h4>
               <p>Pokud v herním chatu nebo arénách narazíte na protiprávní obsah, šikanu, výhružky, porušení autorských práv či závažné porušení podmínek, kontaktujte neprodleně provozovatele na vyhrazeném e-mailu:</p>
-              <p class="legal-contact-box">📧 Kontaktní e-mail DSA: <strong><a href="mailto:slovotecka@proton.me">slovotecka@proton.me</a></strong></p>
+              <p class="legal-contact-box">Kontaktní e-mail DSA: <strong><a href="mailto:slovotecka@proton.me">slovotecka@proton.me</a></strong></p>
               <p>V hlášení prosím uveďte:</p>
               <ul>
                 <li>Přezdívku ohlašovaného hráče a název místnosti (Denní výzva / Archiv / kód arény).</li>
@@ -641,10 +632,10 @@
         <div id="custom-room-panel" class="custom-room-panel" style="display: none;">
           <div class="custom-subtabs" role="tablist">
             <button type="button" class="custom-subtab is-active" id="btn-subtab-create" role="tab" aria-selected="true">
-              ✨ Vytvořit novou arénu
+              Vytvořit novou arénu
             </button>
             <button type="button" class="custom-subtab" id="btn-subtab-join" role="tab" aria-selected="false">
-              🔑 Mám kód místnosti
+              Mám kód místnosti
             </button>
           </div>
 
@@ -655,15 +646,15 @@
               <div class="custom-word-chips">
                 <label class="custom-chip-opt">
                   <input type="radio" name="custom-word-source" value="daily" checked>
-                  <span class="custom-chip-pill">📅 Dnešní slovo</span>
+                  <span class="custom-chip-pill">Dnešní slovo</span>
                 </label>
                 <label class="custom-chip-opt">
                   <input type="radio" name="custom-word-source" value="archive">
-                  <span class="custom-chip-pill">🎲 Archivní</span>
+                  <span class="custom-chip-pill">Archivní</span>
                 </label>
                 <label class="custom-chip-opt">
                   <input type="radio" name="custom-word-source" value="speedrun">
-                  <span class="custom-chip-pill">⚡ Rychlovka</span>
+                  <span class="custom-chip-pill">Rychlovka</span>
                 </label>
               </div>
             </div>
@@ -675,15 +666,15 @@
                 <div class="custom-word-chips custom-word-chips-mini">
                   <label class="custom-chip-opt">
                     <input type="radio" name="speedrun-duration" value="2">
-                    <span class="custom-chip-pill">⏱️ 2 minuty</span>
+                    <span class="custom-chip-pill">2 minuty</span>
                   </label>
                   <label class="custom-chip-opt">
                     <input type="radio" name="speedrun-duration" value="3" checked>
-                    <span class="custom-chip-pill">⏱️ 3 minuty</span>
+                    <span class="custom-chip-pill">3 minuty</span>
                   </label>
                   <label class="custom-chip-opt">
                     <input type="radio" name="speedrun-duration" value="5">
-                    <span class="custom-chip-pill">⏱️ 5 minut</span>
+                    <span class="custom-chip-pill">5 minut</span>
                   </label>
                 </div>
               </div>
@@ -692,12 +683,12 @@
                 <label class="speedrun-checkbox-label">
                   <input type="checkbox" id="speedrun-enable-mines" checked>
                   <span class="speedrun-custom-checkbox"></span>
-                  <span class="speedrun-checkbox-text">💣 Minové pole (náhodná slova uberou -10s)</span>
+                  <span class="speedrun-checkbox-text">Minové pole (-10 s za minová slova)</span>
                 </label>
                 <label class="speedrun-checkbox-label">
                   <input type="checkbox" id="speedrun-enable-hints" checked>
                   <span class="speedrun-custom-checkbox"></span>
-                  <span class="speedrun-checkbox-text">💡 Povolit nápovědy v kole</span>
+                  <span class="speedrun-checkbox-text">Povolit nápovědy v kole</span>
                 </label>
               </div>
             </div>
@@ -719,9 +710,9 @@
             <label class="field-label" for="player-name">TVOJE PŘEZDÍVKA</label>
             <div class="player-customization-badges">
               <button type="button" class="btn-lobby-auth-link" id="btn-lobby-open-auth" title="Přihlášení k účtu">
-                <span>👤 PŘIHLÁSIT SE</span>
+                <span>PŘIHLÁSIT SE</span>
               </button>
-              <button type="button" class="auth-name-lock-badge" id="auth-name-lock-badge" style="display: none;" title="Přezdívka je uzamčena pro tvůj účet (klikni pro správu)">🔒 ÚČET</button>
+              <button type="button" class="auth-name-lock-badge" id="auth-name-lock-badge" style="display: none;" title="Přezdívka je uzamčena pro tvůj účet (klikni pro správu)">[ ÚČET ]</button>
               <span class="color-selected-badge" id="color-selected-badge" style="color: #3b82f6;">[ MODRÁ ]</span>
               <span class="emote-selected-badge" id="emote-selected-badge" style="display: none;"></span>
             </div>
@@ -747,7 +738,7 @@
 
           <!-- Výsuvný popover pro úpravu hráče (barva + 7TV ikona) -->
           <div class="color-picker-popover" id="color-picker-popover" style="display: none;">
-            <div class="color-picker-popover-title">🎨 VYBER SI BARVU</div>
+            <div class="color-picker-popover-title">[ BARVA HRÁČE ]</div>
             <div class="color-palette" role="radiogroup" id="color-palette">
               <button type="button" class="color-swatch-btn" data-color="#ef4444" data-name="Červená" style="--swatch-color: #ef4444;" title="Červená" aria-label="Červená"></button>
               <button type="button" class="color-swatch-btn" data-color="#f97316" data-name="Oranžová" style="--swatch-color: #f97316;" title="Oranžová" aria-label="Oranžová"></button>
@@ -762,7 +753,7 @@
             <div class="color-picker-popover-divider"></div>
 
             <div class="avatar-emote-section-header">
-              <div class="color-picker-popover-title">👾 7TV IKONA K JMÉNU</div>
+              <div class="color-picker-popover-title">[ 7TV IKONA ]</div>
               <button type="button" class="btn-clear-player-emote" id="btn-clear-player-emote" title="Zrušit ikonu">✕ BEZ IKONY</button>
             </div>
 
@@ -806,7 +797,7 @@
           <span class="custom-badge-tag">KÓD ARÉNY</span>
           <span class="custom-badge-code" id="display-custom-code">-----</span>
           <button type="button" class="btn-copy-link" id="btn-copy-room-link" title="Zkopírovat odkaz na arénu">
-            📋 ZKOPÍROVAT ODKAZ
+            ZKOPÍROVAT ODKAZ
           </button>
         </div>
         <div class="game-meta">
@@ -831,7 +822,7 @@
           <p class="vote-desc" id="vote-desc">Když se shodne nadpoloviční většina hráčů, vylosuje se nové slovo z fondu archivních slov.</p>
         </div>
         <button type="button" class="btn btn-vote" id="btn-vote-new-word">
-          <span class="vote-icon">🗳️</span>
+          <span class="vote-icon">■</span>
           <span id="btn-vote-text">HLASOVAT PRO NOVÉ SLOVO</span>
         </button>
       </div>
@@ -839,25 +830,25 @@
       <!-- Speciální lišta pro mód Rychlovka (Lobby / Časovač / Miny / Sudden Death) -->
       <div id="speedrun-bar" class="speedrun-bar" style="display:none;">
         <div class="speedrun-bar-left">
-          <div class="speedrun-badge" id="speedrun-status-badge">⚡ RYCHLOVKA</div>
+          <div class="speedrun-badge" id="speedrun-status-badge">[ RYCHLOVKA ]</div>
           <div class="speedrun-meta-wrap">
             <span class="speedrun-meta-info" id="speedrun-meta-info">Limit 3 min • Miny zapnuty</span>
-            <span class="speedrun-penalty-badge" id="speedrun-penalty-badge" style="display:none;">💥 -10s</span>
+            <span class="speedrun-penalty-badge" id="speedrun-penalty-badge" style="display:none;">-10 s</span>
           </div>
         </div>
         <div class="speedrun-bar-center">
           <div class="speedrun-timer-box" id="speedrun-timer-box">
-            <span class="speedrun-timer-icon">⏱️</span>
+            <span class="speedrun-timer-icon">■</span>
             <span class="speedrun-timer-digits" id="speedrun-timer-digits">03:00</span>
           </div>
           <div class="speedrun-alert-banner" id="speedrun-alert-banner" style="display:none;"></div>
         </div>
         <div class="speedrun-bar-right" id="speedrun-actions-wrap">
           <button type="button" class="btn btn-speedrun-start" id="btn-speedrun-start" style="display:none;">
-            ▶ ODSTARTOVAT HRU
+            ODSTARTOVAT HRU
           </button>
           <button type="button" class="btn btn-speedrun-next" id="btn-speedrun-next" style="display:none;">
-            🔄 DALŠÍ KOLO
+            DALŠÍ KOLO
           </button>
           <span class="speedrun-waiting-tag" id="speedrun-waiting-tag" style="display:none;">
             Čekání na zakladatele...
@@ -890,7 +881,7 @@
         <div id="hint-revealed" class="hint-revealed" style="display:none;">
           <div class="hint-stepper-header">
             <div class="hint-stepper-title-wrap">
-              <span class="hint-stepper-tag">💡 NÁPOVĚDY</span>
+              <span class="hint-stepper-tag">[ NÁPOVĚDY ]</span>
               <span class="hint-clown-badge" id="hint-clown-badge" title="Získal(a) jsi klauna za nápovědu">🤡</span>
             </div>
             <div class="hint-stepper-controls" id="hint-stepper-controls">
@@ -942,7 +933,6 @@
             <button type="button" class="btn btn-primary btn-submit-guess" id="btn-submit-guess">HÁDAT</button>
             <div class="guess-bar-divider" aria-hidden="true"></div>
             <button type="button" class="btn btn-ghost btn-give-up" id="btn-reveal-word" title="Vzdát se a odhalit tajné slovo (vyžaduje potvrzení)">
-              <span class="give-up-flag" aria-hidden="true">🏳️</span>
               <span class="give-up-text">VZDÁT SE</span>
             </button>
           </div>
@@ -1009,11 +999,11 @@
           <div class="panel-header chat-panel-header">
           <div class="chat-header-tabs" role="tablist">
             <button type="button" class="btn-chat-tab is-active" id="chat-tab-room" role="tab" aria-selected="true" title="Chat dané místnosti">
-              <span class="chat-tab-icon">💬</span>
+              <span class="chat-tab-icon">#</span>
               <span class="chat-tab-label">MÍSTNOST</span>
             </button>
             <button type="button" class="btn-chat-tab" id="chat-tab-global" role="tab" aria-selected="false" title="Globální chat pro celou Slovotečku">
-              <span class="chat-tab-icon">🌐</span>
+              <span class="chat-tab-icon">@</span>
               <span class="chat-tab-label">GLOBÁL</span>
               <span class="chat-tab-unread-dot" id="global-unread-dot" style="display: none;"></span>
             </button>
@@ -1215,7 +1205,7 @@
       <div class="gramophone-tag-row">
         <span class="gramophone-pulse-dot" aria-hidden="true"></span>
         <span class="gramophone-tag" id="player-deck-label">[ HRAJE KAZETA ]</span>
-        <button type="button" class="btn-deck-switch" id="btn-switch-deck" title="Přepnout: Kazetový magnetofon / Gramofon" aria-label="Přepnout přehrávač">💿 GRAMOFON</button>
+        <button type="button" class="btn-deck-switch" id="btn-switch-deck" title="Přepnout: Kazetový magnetofon / Gramofon" aria-label="Přepnout přehrávač">[ GRAMOFON ]</button>
         <button type="button" class="gramophone-btn-minimize" id="btn-gramophone-minimize" title="Minimalizovat na samotný přehrávač" aria-label="Minimalizovat">−</button>
       </div>
       <div class="gramophone-title" id="gramophone-title" title="">--</div>
@@ -1264,7 +1254,7 @@
       </div>
       <div class="modal-footer" id="speedrun-results-footer">
         <button type="button" class="btn btn-primary" id="btn-speedrun-modal-next" style="display:none;">
-          🔄 DALŠÍ KOLO (ZAKLADATEL)
+          DALŠÍ KOLO (ZAKLADATEL)
         </button>
         <button type="button" class="btn btn-secondary" id="btn-speedrun-modal-close">
           ZAVŘÍT
@@ -1275,6 +1265,6 @@
 
   <script src="https://www.youtube.com/iframe_api"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/app.js?v=ui_v4"></script>
+  <script src="/app.js?v=ui_v5"></script>
 </body>
 </html>

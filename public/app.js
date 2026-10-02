@@ -263,7 +263,7 @@ const soundToggleText = document.getElementById('sound-toggle-text');
 
 function updateSoundUI() {
   const on = SoundFx.isEnabled();
-  if (soundToggleIcon) soundToggleIcon.textContent = on ? '🔊' : '🔇';
+  if (soundToggleIcon) soundToggleIcon.textContent = on ? 'ZVUK' : 'MUTE';
   if (soundToggleText) soundToggleText.textContent = on ? 'ZVUK' : 'TICHO';
   if (btnSoundToggle) {
     btnSoundToggle.title = on ? 'Zvukové efekty zapnuty (kliknutím ztlumíš)' : 'Zvukové efekty ztlumeny (kliknutím zapneš)';
@@ -388,7 +388,7 @@ customWordSourceRadios.forEach((r) => {
     SoundFx.playKeyClick();
     if (r.value === 'speedrun' && r.checked) {
       if (speedrunSettingsPanel) speedrunSettingsPanel.style.display = 'block';
-      if (customHintText) customHintText.textContent = '⚡ Rychlý časový závod arény – odstartuje zakladatel po připojení hráčů.';
+      if (customHintText) customHintText.textContent = 'Rychlý časový závod arény – odstartuje zakladatel po připojení hráčů.';
     } else if (r.checked) {
       if (speedrunSettingsPanel) speedrunSettingsPanel.style.display = 'none';
       if (customHintText) customHintText.textContent = 'Po vstupu se vygeneruje kód a odkaz na sdílení pro přátele.';
@@ -526,7 +526,7 @@ if (btnCopyRoomLink) {
     const shareUrl = `${window.location.origin}/?room=${code}`;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareUrl).then(() => {
-        showToast(`📋 Odkaz na arénu ${code} byl zkopírován do schránky!`);
+        showToast(`[OK] Odkaz na arénu ${code} byl zkopírován do schránky!`);
       }).catch(() => {
         prompt('Zkopíruj si odkaz na arénu:', shareUrl);
       });
@@ -819,7 +819,7 @@ function renderYesterdayRecap(recap) {
     const pCount = recap.winner.guessCount || 1;
     statsHtml += `
       <div class="yesterday-stat-item">
-        <span class="yesterday-stat-label">🏆 VÍTĚZ DNE</span>
+        <span class="yesterday-stat-label">VÍTĚZ DNE</span>
         <span class="yesterday-stat-val" style="${recap.winner.color ? 'color: ' + escapeHtml(recap.winner.color) + ';' : ''}">
           ${getPlayerEmoteHtml(recap.winner.emote)}${escapeHtml(recap.winner.name)} (${pCount} ${pCount === 1 ? 'tip' : (pCount >= 2 && pCount <= 4 ? 'tipy' : 'tipů')})
         </span>
@@ -830,7 +830,7 @@ function renderYesterdayRecap(recap) {
   if (recap.worstGuess) {
     statsHtml += `
       <div class="yesterday-stat-item">
-        <span class="yesterday-stat-label">💀 MIMO MÍSU</span>
+        <span class="yesterday-stat-label">MIMO MÍSU</span>
         <span class="yesterday-stat-val" title="${escapeHtml(recap.worstGuess.player)}: ${escapeHtml(recap.worstGuess.word)} (#${recap.worstGuess.rank})">
           ${escapeHtml(recap.worstGuess.player)}: "${escapeHtml(recap.worstGuess.word)}" (#${recap.worstGuess.rank})
         </span>
@@ -841,7 +841,7 @@ function renderYesterdayRecap(recap) {
   if (recap.clown) {
     statsHtml += `
       <div class="yesterday-stat-item">
-        <span class="yesterday-stat-label">🤡 KLAUN (NÁPOVĚDA)</span>
+        <span class="yesterday-stat-label">KLAUN (NÁPOVĚDA)</span>
         <span class="yesterday-stat-val">${escapeHtml(recap.clown.name)}</span>
       </div>
     `;
@@ -850,7 +850,7 @@ function renderYesterdayRecap(recap) {
   if (recap.maxGuesser) {
     statsHtml += `
       <div class="yesterday-stat-item">
-        <span class="yesterday-stat-label">⌨️ STROJ NA TIPY</span>
+        <span class="yesterday-stat-label">NEJVÍCE TIPŮ</span>
         <span class="yesterday-stat-val">${escapeHtml(recap.maxGuesser.name)} (${recap.maxGuesser.guessCount} tipů)</span>
       </div>
     `;
@@ -866,7 +866,7 @@ function renderYesterdayRecap(recap) {
 
   lobbyYesterdayRecap.innerHTML = `
     <div class="yesterday-head">
-      <span class="yesterday-tag">[ 📜 VÝSLEDKY VČEREJŠKA ${dayNumStr} ]</span>
+      <span class="yesterday-tag">[ VÝSLEDKY VČEREJŠKA ${dayNumStr} ]</span>
       <span class="yesterday-word-badge">#1 ${escapeHtml(word)}</span>
     </div>
     <div class="yesterday-stats-grid">
@@ -1286,7 +1286,7 @@ const PlayerStats = (() => {
 
     if (playedEl) playedEl.textContent = stats.gamesPlayed || 0;
     if (wonEl) wonEl.textContent = stats.gamesWon || 0;
-    if (streakEl) streakEl.textContent = `${effectiveStreak} 🔥`;
+    if (streakEl) streakEl.textContent = `${effectiveStreak} dní`;
     if (maxStreakEl) maxStreakEl.textContent = `${stats.maxStreak || 0} dní`;
 
     if (avgEl) {
@@ -1575,7 +1575,7 @@ function applyDeckMode(mode) {
     if (cassetteDeckWrap) cassetteDeckWrap.style.display = 'block';
     if (playerDeckLabel) playerDeckLabel.textContent = '[ HRAJE KAZETA ]';
     if (btnSwitchDeck) {
-      btnSwitchDeck.textContent = '💿 GRAMOFON';
+      btnSwitchDeck.textContent = '[ GRAMOFON ]';
       btnSwitchDeck.title = 'Přepnout na gramofonový vinyl';
     }
   } else {
@@ -1583,7 +1583,7 @@ function applyDeckMode(mode) {
     if (cassetteDeckWrap) cassetteDeckWrap.style.display = 'none';
     if (playerDeckLabel) playerDeckLabel.textContent = '[ HRAJE GRAMOFON ]';
     if (btnSwitchDeck) {
-      btnSwitchDeck.textContent = '📼 KAZETA';
+      btnSwitchDeck.textContent = '[ KAZETA ]';
       btnSwitchDeck.title = 'Přepnout na kazetový magnetofon';
     }
   }
@@ -1622,7 +1622,7 @@ function toggleGramophoneDetails(forceState) {
       try {
         sessionStorage.setItem('slovotecka_music_allowed', 'true');
       } catch (err) {}
-      showToast('🎵 Hudba zapnuta (výchozí hlasitost 20%).');
+      showToast('[AUDIO] Hudba zapnuta (výchozí hlasitost 20%).');
       if (activeTrack) {
         playTrack(activeTrack);
       }
@@ -1995,10 +1995,10 @@ function buildPlayerItemHtml(p, isInCurrentRoom, showRoomTag) {
     statusText = `<span class="player-status">${count} ${pPlural}</span>`;
   }
 
-  const clown = p.usedHint ? ' 🤡' : '';
-  const votedBadge = p.votedForNewWord ? ' <span class="badge-voted" title="Hlasuje pro nové slovo">🗳️</span>' : '';
+  const clown = p.usedHint ? ' [KLAUN]' : '';
+  const votedBadge = p.votedForNewWord ? ' <span class="badge-voted" title="Hlasuje pro nové slovo">[HLAS]</span>' : '';
   const isMeTag = isMe ? ' <span style="font-size: 0.72rem; color: var(--color-base-600);">(ty)</span>' : '';
-  const adminBadge = p.isAdmin ? ' <span class="badge-admin" title="Administrátor"><span class="badge-admin-crown">👑</span> ADMIN</span>' : '';
+  const adminBadge = p.isAdmin ? ' <span class="badge-admin" title="Administrátor">[ADMIN]</span>' : '';
   const roomTag = showRoomTag && p.roomTitle ? `<span class="player-room-tag">${escapeHtml(p.roomTitle)}</span>` : '';
 
   return `
@@ -2311,7 +2311,7 @@ function queryGuestProfile(rawName) {
       if (res.isRegistered && (!authUser || authUser.username.toLocaleLowerCase('cs-CZ') !== clean.toLocaleLowerCase('cs-CZ'))) {
         lobbyNameStatus.className = 'lobby-name-status is-warning';
         lobbyNameStatus.style.display = 'block';
-        lobbyNameStatus.innerHTML = `⚠️ Přezdívka <strong>${escapeHtml(clean)}</strong> je registrovaná. Pro hraní s ní se <a href="#" id="link-status-login" style="color: #60a5fa; text-decoration: underline; font-weight: bold;">přihlas</a>.`;
+        lobbyNameStatus.innerHTML = `[!] Přezdívka <strong>${escapeHtml(clean)}</strong> je registrovaná. Pro hraní s ní se <a href="#" id="link-status-login" style="color: #60a5fa; text-decoration: underline; font-weight: bold;">přihlas</a>.`;
         const link = document.getElementById('link-status-login');
         if (link) {
           link.addEventListener('click', (e) => {
@@ -2466,7 +2466,7 @@ function submitGuess() {
     if (existing) {
       triggerInputShake();
       SoundFx.playError();
-      setFeedback(`⚠️ Slovo "${word.toUpperCase()}" už jsi v tomto kole zadal(a) (#${existing.rank})!`);
+      setFeedback(`[!] Slovo "${word.toUpperCase()}" už jsi v tomto kole zadal(a) (#${existing.rank})!`);
       const allCards = guessesList.querySelectorAll('.guess-card');
       allCards.forEach(c => {
         const wSpan = c.querySelector('.guess-card-word');
@@ -2870,7 +2870,7 @@ function renderAdminCommandsInPopover() {
   adminGroup = document.createElement('div');
   adminGroup.className = 'chat-admin-commands-group';
   adminGroup.innerHTML = `
-    <div style="font-size:0.68rem; font-weight:800; color:#f59e0b; padding:8px 10px 4px; letter-spacing:0.06em; border-top:1px solid rgba(245, 158, 11, 0.3); margin-top:4px;">[ 👑 ADMIN PŘÍKAZY ]</div>
+    <div style="font-size:0.68rem; font-weight:800; color:#f59e0b; padding:8px 10px 4px; letter-spacing:0.06em; border-top:1px solid rgba(245, 158, 11, 0.3); margin-top:4px;">[ ADMIN PŘÍKAZY ]</div>
     <button type="button" class="chat-command-item" data-command="!poll Otázka? | Ano | Ne">
       <span class="cmd-code" style="color:#f59e0b;">!poll &lt;otázka&gt; | &lt;volba 1&gt; | &lt;volba 2&gt;</span>
       <span class="cmd-desc">Vyhlásit anketu v chatu na 60 sekund</span>
@@ -3033,7 +3033,7 @@ function updateChatAutocomplete() {
       display: `@${p.name}`,
       isAdmin: !!p.isAdmin,
       initial: (p.name || '?').charAt(0).toUpperCase(),
-      meta: p.isAdmin ? '👑 ADMIN' : (p.name === myPlayerName ? 'TY' : 'HRÁČ')
+      meta: p.isAdmin ? '[ADMIN]' : (p.name === myPlayerName ? 'TY' : 'HRÁČ')
     }));
   }
 
@@ -3069,7 +3069,7 @@ function renderAutocompleteItems() {
 
     let metaHtml = '';
     if (item.isAdmin) {
-      metaHtml = `<span class="badge-admin" style="font-size: 0.6rem; padding: 1px 4px;">👑 ADMIN</span>`;
+      metaHtml = `<span class="badge-admin" style="font-size: 0.6rem; padding: 1px 4px;">[ADMIN]</span>`;
     } else {
       metaHtml = `<span class="chat-autocomplete-meta">${escapeHtml(item.meta)}</span>`;
     }
@@ -3291,7 +3291,7 @@ function appendGlobalChatMessage(data) {
 
   const senderColor = data.color ? escapeHtml(data.color) : '#38bdf8';
   const adminBadge = data.isAdmin
-    ? ' <span class="badge-admin" title="Administrátor"><span class="badge-admin-crown">👑</span> ADMIN</span>'
+    ? ' <span class="badge-admin" title="Administrátor">[ADMIN]</span>'
     : '';
   const parsedHtml = renderMessageWithEmotes(data.message);
 
@@ -3399,8 +3399,8 @@ socket.on('chat_message', (data) => {
 });
 
 socket.on('chat_cleared', () => {
-  chatMessages.innerHTML = '<div class="chat-empty">🧹 Chat byl promazán administrátorem.</div>';
-  showToast('🧹 Chat byl promazán administrátorem.');
+  chatMessages.innerHTML = '<div class="chat-empty">[SYSTÉM] Chat byl promazán administrátorem.</div>';
+  showToast('[ADMIN] Chat byl promazán administrátorem.');
 });
 
 socket.on('kicked', (data) => {
@@ -3439,7 +3439,7 @@ function appendChatMessage(data) {
   if (emptyMsg) emptyMsg.remove();
 
   const isMe = data.player === myPlayerName;
-  const isTelegraph = data.player === '⚡ TELEGRAPH' || (typeof data.player === 'string' && data.player.includes('TELEGRAPH'));
+  const isTelegraph = data.player === 'TELEGRAPH' || (typeof data.player === 'string' && data.player.includes('TELEGRAPH'));
   const div = document.createElement('div');
   let msgCls = 'chat-msg';
   if (isMe) msgCls += ' is-me';
@@ -3456,14 +3456,14 @@ function appendChatMessage(data) {
     const mentionRegex = new RegExp(`@${escapedMyName}(?=[\\s.,!?:;]|$)`, 'i');
     if (mentionRegex.test(data.message)) {
       div.classList.add('has-mention');
-      showToast(`💬 ${data.player} tě zmínil(a) v chatu!`);
+      showToast(`[CHAT] ${data.player} tě zmínil(a) v chatu!`);
     }
   }
 
   const parsedHtml = renderMessageWithEmotes(data.message);
 
   const adminBadge = data.isAdmin
-    ? ' <span class="badge-admin" title="Administrátor"><span class="badge-admin-crown">👑</span> ADMIN</span>'
+    ? ' <span class="badge-admin" title="Administrátor">[ADMIN]</span>'
     : '';
 
   let confirmBoxHtml = '';
@@ -3620,7 +3620,7 @@ function renderSpeedrunResults(results, isHost) {
     solvers.forEach((s, idx) => {
       const row = document.createElement('div');
       row.className = 'speedrun-result-row is-winner';
-      const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : '⭐'));
+      const medal = idx === 0 ? '1.' : (idx === 1 ? '2.' : (idx === 2 ? '3.' : '•'));
       row.innerHTML = `
         <div class="speedrun-result-player">
           <span class="speedrun-result-rank">${medal}</span>
@@ -3640,7 +3640,7 @@ function renderSpeedrunResults(results, isHost) {
       row.className = 'speedrun-result-row';
       const rankText = r.bestRank ? `#${r.bestRank}` : 'Bez zásahu';
       const wordText = r.bestWord ? `("${escapeHtml(r.bestWord)}")` : '';
-      const penaltyText = r.timePenaltySeconds > 0 ? ` • 💣 -${r.timePenaltySeconds}s` : '';
+      const penaltyText = r.timePenaltySeconds > 0 ? ` • -${r.timePenaltySeconds}s` : '';
       row.innerHTML = `
         <div class="speedrun-result-player">
           <span class="speedrun-result-rank">${place}.</span>
@@ -3692,7 +3692,7 @@ function updateSpeedrunView(state) {
   if (speedrunPenaltyBadge) {
     if (sp.penaltySeconds > 0) {
       speedrunPenaltyBadge.style.display = 'inline-flex';
-      speedrunPenaltyBadge.textContent = `💥 -${sp.penaltySeconds}s penalizace`;
+      speedrunPenaltyBadge.textContent = `-${sp.penaltySeconds}s penalizace`;
     } else {
       speedrunPenaltyBadge.style.display = 'none';
     }
@@ -3702,7 +3702,7 @@ function updateSpeedrunView(state) {
   if (speedrunAlertBanner) {
     if (sp.suddenDeath && sp.suddenDeath.active) {
       speedrunAlertBanner.style.display = 'block';
-      speedrunAlertBanner.textContent = `⚡ SUDDEN DEATH: ${sp.suddenDeath.firstWinner} našel slovo! Zbývá ${sp.suddenDeath.remainingSeconds || 30}s!`;
+      speedrunAlertBanner.textContent = `[SUDDEN DEATH] ${sp.suddenDeath.firstWinner} našel slovo! Zbývá ${sp.suddenDeath.remainingSeconds || 30}s!`;
       if (speedrunTimerBox) speedrunTimerBox.classList.add('is-sudden');
     } else {
       speedrunAlertBanner.style.display = 'none';
@@ -3716,7 +3716,7 @@ function updateSpeedrunView(state) {
       clearInterval(speedrunLocalTimer);
       speedrunLocalTimer = null;
     }
-    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '⚡ LOBBY RYCHLOVKY';
+    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '[ RYCHLOVKA: LOBBY ]';
     if (speedrunTimerDigits) speedrunTimerDigits.textContent = formatSpeedrunTime((sp.durationMinutes || 3) * 60);
 
     if (btnSpeedrunStart) btnSpeedrunStart.style.display = isHost ? 'inline-flex' : 'none';
@@ -3733,7 +3733,7 @@ function updateSpeedrunView(state) {
     if (btnSubmitGuess) btnSubmitGuess.disabled = true;
     if (btnRevealWord) btnRevealWord.style.display = 'none';
   } else if (sp.status === 'countdown') {
-    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '⚡ PŘIPRAVIT SE!';
+    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '[ PŘIPRAVIT SE ]';
     if (btnSpeedrunStart) btnSpeedrunStart.style.display = 'none';
     if (btnSpeedrunNext) btnSpeedrunNext.style.display = 'none';
     if (speedrunWaitingTag) speedrunWaitingTag.style.display = 'none';
@@ -3744,7 +3744,7 @@ function updateSpeedrunView(state) {
     if (btnSubmitGuess) btnSubmitGuess.disabled = true;
     if (btnRevealWord) btnRevealWord.style.display = 'none';
   } else if (sp.status === 'running') {
-    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '⚡ RYCHLOVKA BĚŽÍ';
+    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '[ RYCHLOVKA BĚŽÍ ]';
     if (btnSpeedrunStart) btnSpeedrunStart.style.display = 'none';
     if (btnSpeedrunNext) btnSpeedrunNext.style.display = 'none';
     if (speedrunWaitingTag) speedrunWaitingTag.style.display = 'none';
@@ -3789,7 +3789,7 @@ function updateSpeedrunView(state) {
       clearInterval(speedrunLocalTimer);
       speedrunLocalTimer = null;
     }
-    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '🏁 KOLO SKONČILO';
+    if (speedrunStatusBadge) speedrunStatusBadge.textContent = '[ KOLO SKONČILO ]';
     if (speedrunTimerDigits) speedrunTimerDigits.textContent = '00:00';
     if (btnSpeedrunStart) btnSpeedrunStart.style.display = 'none';
     if (btnSpeedrunNext) btnSpeedrunNext.style.display = isHost ? 'inline-flex' : 'none';
@@ -3815,18 +3815,18 @@ function updateSpeedrunView(state) {
 socket.on('speedrun_countdown', ({ count }) => {
   SoundFx.playKeyClick();
   if (speedrunTimerDigits) speedrunTimerDigits.textContent = `00:0${count}`;
-  if (speedrunStatusBadge) speedrunStatusBadge.textContent = `⚡ START ZA: ${count}...`;
-  showToast(`⏱️ Start za ${count}...`);
+  if (speedrunStatusBadge) speedrunStatusBadge.textContent = `[ START ZA: ${count}... ]`;
+  showToast(`[START] Za ${count}...`);
 });
 
 socket.on('speedrun_started', () => {
   SoundFx.playKeyClick();
-  showToast('⚡ Rychlovka odstartovala! Hádejte!');
+  showToast('[START] Rychlovka odstartovala! Hádejte!');
 });
 
 socket.on('speedrun_mine_hit', ({ penaltySeconds, word }) => {
   SoundFx.playError();
-  showToast(`💥 MINA! Slovo "${word}" ti ubralo ${penaltySeconds}s z tvého času!`, true);
+  showToast(`[MINA] Slovo "${word}" ti ubralo ${penaltySeconds}s z tvého času!`, true);
   if (speedrunTimerBox) {
     speedrunTimerBox.classList.add('mine-hit-flash');
     setTimeout(() => { if (speedrunTimerBox) speedrunTimerBox.classList.remove('mine-hit-flash'); }, 800);
@@ -3835,7 +3835,7 @@ socket.on('speedrun_mine_hit', ({ penaltySeconds, word }) => {
 
 socket.on('speedrun_sudden_death', ({ winner, remainingSeconds }) => {
   SoundFx.playRankUp();
-  showToast(`⚡ SUDDEN DEATH! ${winner} uhodl(a) slovo! Máte ${remainingSeconds}s na dohnání!`);
+  showToast(`[SUDDEN DEATH] ${winner} uhodl(a) slovo! Máte ${remainingSeconds}s na dohnání!`);
 });
 
 socket.on('speedrun_round_ended', ({ results, hostName }) => {
@@ -4739,7 +4739,7 @@ if (btnMusicEnable) {
     try {
       sessionStorage.setItem('slovotecka_music_allowed', 'true');
     } catch (err) {}
-    showToast('🎵 Hudba zapnuta (výchozí hlasitost 20%).');
+    showToast('[AUDIO] Hudba zapnuta (výchozí hlasitost 20%).');
     if (activeTrack) {
       playTrack(activeTrack);
     }
@@ -4753,7 +4753,7 @@ function toggleMusic() {
     try {
       sessionStorage.setItem('slovotecka_music_allowed', 'true');
     } catch (err) {}
-    showToast('🎵 Hudba zapnuta (výchozí hlasitost 20%).');
+    showToast('[AUDIO] Hudba zapnuta (výchozí hlasitost 20%).');
     if (activeTrack) {
       playTrack(activeTrack);
     }
@@ -4808,7 +4808,7 @@ if (musicVolumeSlider) {
       if (currentVolume > 0 && isLocalMuted) {
         isLocalMuted = false;
         ytPlayer.unMute();
-        if (musicMuteIcon) musicMuteIcon.textContent = '🔈';
+        if (musicMuteIcon) musicMuteIcon.textContent = 'VOL';
       }
     }
   });
@@ -4820,11 +4820,11 @@ if (btnMusicMute) {
     isLocalMuted = !isLocalMuted;
     if (isLocalMuted) {
       ytPlayer.mute();
-      if (musicMuteIcon) musicMuteIcon.textContent = '🔇';
+      if (musicMuteIcon) musicMuteIcon.textContent = 'MUTE';
     } else {
       ytPlayer.unMute();
       ytPlayer.setVolume(currentVolume);
-      if (musicMuteIcon) musicMuteIcon.textContent = '🔈';
+      if (musicMuteIcon) musicMuteIcon.textContent = 'VOL';
     }
   });
 }
@@ -5005,7 +5005,7 @@ if (btnMusicVideoToggle && ytPlayerContainer) {
     const isPip = ytPlayerContainer.classList.toggle('is-visible-pip');
     btnMusicVideoToggle.classList.toggle('is-active', isPip);
     btnMusicVideoToggle.title = isPip ? 'Skrýt video náhled' : 'Zobrazit video náhled (YouTube)';
-    showToast(isPip ? '📺 Náhled videa zobrazen' : '📺 Náhled videa skryt');
+    showToast(isPip ? '[VIDEO] Náhled videa zobrazen' : '[VIDEO] Náhled videa skryt');
   });
 }
 
@@ -5060,7 +5060,7 @@ function updateAuthLabel() {
     }
     if (authLockBadge) {
       authLockBadge.style.display = 'inline-flex';
-      authLockBadge.textContent = `🔒 ÚČET: ${authUser.username}`;
+      authLockBadge.textContent = `[ ÚČET: ${authUser.username} ]`;
     }
     if (lobbyGuestHint) {
       lobbyGuestHint.style.display = 'none';
@@ -5078,8 +5078,8 @@ function updateAuthLabel() {
     if (btnLobbyOpenAuth) {
       btnLobbyOpenAuth.style.display = 'inline-flex';
       const span = btnLobbyOpenAuth.querySelector('span');
-      if (span) span.textContent = '👤 PŘIHLÁSIT SE';
-      else btnLobbyOpenAuth.textContent = '👤 PŘIHLÁSIT SE';
+      if (span) span.textContent = 'PŘIHLÁSIT SE';
+      else btnLobbyOpenAuth.textContent = 'PŘIHLÁSIT SE';
       btnLobbyOpenAuth.title = 'Přihlášení nebo registrace účtu';
     }
     if (authLockBadge) {
@@ -5128,7 +5128,7 @@ async function submitAuthForm(endpoint, username, password) {
   }
   socket.disconnect();
   socket.connect();
-  showToast(`✅ Přihlášen jako ${authUser.username}.`);
+  showToast(`[OK] Přihlášen jako ${authUser.username}.`);
 
   if (currentMode && currentMode !== 'lobby') {
     setTimeout(() => {
@@ -5239,7 +5239,7 @@ if (authLoginForm) {
     try {
       await submitAuthForm('/api/auth/login', username, password);
     } catch (err) {
-      showToast(`⚠️ ${err.message}`, true);
+      showToast(`[!] ${err.message}`, true);
     }
   });
 }
@@ -5252,13 +5252,13 @@ if (authRegisterForm) {
     const password = authRegPassword?.value || '';
     const passwordCheck = authRegPasswordCheck?.value || '';
     if (password !== passwordCheck) {
-      showToast('⚠️ Hesla se neshodují.', true);
+      showToast('[!] Hesla se neshodují.', true);
       return;
     }
     try {
       await submitAuthForm('/api/auth/register', username, password);
     } catch (err) {
-      showToast(`⚠️ ${err.message}`, true);
+      showToast(`[!] ${err.message}`, true);
     }
   });
 }
@@ -5271,7 +5271,7 @@ if (btnAuthPlayAsGuest) {
     if (playerNameInput) {
       playerNameInput.focus();
     }
-    showToast('🎮 Pokračuješ jako host. Můžeš rovnou zadat jméno a hrát!');
+    showToast('[INFO] Pokračuješ jako host. Můžeš rovnou zadat jméno a hrát!');
   });
 }
 
@@ -5292,9 +5292,9 @@ if (btnAuthLogout) {
       closeAuthModal();
       socket.disconnect();
       socket.connect();
-      showToast('Odhlášení proběhlo.');
+      showToast('[OK] Odhlášení proběhlo.');
     } catch (err) {
-      showToast(`⚠️ ${err.message}`, true);
+      showToast(`[!] ${err.message}`, true);
     }
   });
 }
@@ -5318,9 +5318,9 @@ if (btnAuthDelete) {
       closeAuthModal();
       socket.disconnect();
       socket.connect();
-      showToast('Účet a profilová data byly smazány.');
+      showToast('[OK] Účet a profilová data byly smazány.');
     } catch (err) {
-      showToast(`⚠️ ${err.message}`, true);
+      showToast(`[!] ${err.message}`, true);
     }
   });
 }
@@ -5334,7 +5334,7 @@ document.querySelectorAll('.btn-toggle-pwd').forEach(btn => {
     if (!input) return;
     const isPwd = input.type === 'password';
     input.type = isPwd ? 'text' : 'password';
-    btn.textContent = isPwd ? '🙈' : '👁️';
+    btn.textContent = isPwd ? '[SKRÝT]' : '[UKÁZAT]';
     btn.title = isPwd ? 'Skrýt heslo' : 'Zobrazit heslo';
   });
 });
