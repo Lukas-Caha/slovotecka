@@ -1233,6 +1233,31 @@ io.on('connection', (socket) => {
       }
     }
 
+    // Příkaz pro aktivaci administrátorských práv v chatu: !admin <heslo>
+    if (cleanMsg.toLowerCase().startsWith('!admin ') || cleanMsg.toLowerCase() === '!admin') {
+      const enteredSecret = cleanMsg.slice(6).trim();
+      const actualSecret = process.env.ADMIN_SECRET || '/admin-perms-456';
+      if (enteredSecret && enteredSecret.toLowerCase() === actualSecret.toLowerCase()) {
+        player.isAdmin = true;
+        socket.emit('notification', {
+          message: '👑 Úspěšně jsi aktivoval administrátorská práva pro tuto relaci!'
+        });
+        const helpMsg = room.addChatMessage(
+          '🛡️ SYSTÉM',
+          `@${player.name} Jsi nyní administrátorem arény. Příkazy: !poll, !endpoll, !kick <hráč>, !clear, !announce <text>, !forceskip, !forcestop, !forceword, !reveal`,
+          true
+        );
+        socket.emit('chat_message', helpMsg);
+        broadcastGameState(mode);
+        return;
+      } else {
+        socket.emit('error_message', {
+          message: '🚫 Nesprávné administrátorské heslo. Zadej správný ADMIN_SECRET.'
+        });
+        return;
+      }
+    }
+
     // Příkaz pro přehrávání hudby: !play [youtube odkaz / název skladby]
     if (cleanMsg.toLowerCase().startsWith('!play')) {
       if (!mode.startsWith('custom_')) {

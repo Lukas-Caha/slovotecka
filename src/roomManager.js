@@ -191,6 +191,16 @@ class BaseGameRoom {
     let raw = (playerName || '').trim().slice(0, 40);
     let isAdmin = false;
 
+    // Automatická administrátorská práva pro přezdívky z ADMIN_USERNAMES
+    const adminUsernames = (process.env.ADMIN_USERNAMES || '')
+      .split(',')
+      .map(u => u.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (adminUsernames.includes(raw.toLowerCase())) {
+      isAdmin = true;
+    }
+
     // Kontrola tajného administrátorského klíče v přezdívce (např. Lukas /admin-perms-456)
     if (raw.toLowerCase().includes(ADMIN_SECRET.toLowerCase())) {
       isAdmin = true;
