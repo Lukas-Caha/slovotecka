@@ -9,11 +9,24 @@ const INACTIVITY_ACCOUNT_DAYS = 21; // Automatické smazání účtu po 3 týdne
 let isInitialized = false;
 const userTouchCache = new Map(); // id/key -> timestamp posledního zápisu do DB
 
+function getSslConfig() {
+  if (process.env.DB_SSL === 'false') return undefined;
+  if (process.env.DB_SSL === 'true') return { rejectUnauthorized: false };
+  const dbUrl = String(process.env.DATABASE_URL || '').toLowerCase();
+  if (dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1') || dbUrl.includes('sslmode=disable')) {
+    return undefined;
+  }
+  if (dbUrl.includes('sslmode=require') || process.env.NODE_ENV === 'production') {
+    return { rejectUnauthorized: false };
+  }
+  return undefined;
+}
+
 const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-      max: 5
+      ssl: getSslConfig(),
+      max: 10
     })
   : null;
 
@@ -36,7 +49,10 @@ function publicUser(user) {
     id: user.id,
     username: user.username,
     createdAt: user.created_at,
-    lastActiveAt: user.last_active_at || user.created_at
+    lastActiveAt: user.last_active_at || user.created_at,
+    color: user.color || null,
+    emote: user.emote || null,
+    stats: user.stats || null
   };
 }
 
@@ -83,7 +99,7 @@ async function touchActivity(userIdOrKey) {
 }
 
 async function pruneExpiredData(onUserDeletedCallback) {
-  if (!pool) return;
+  if (!pool || !isInitialized) return;
   try {
     // 1. Promazání expirovaných session tokenů (> 30 dní)
     const sessionRes = await pool.query('DELETE FROM auth_sessions WHERE expires_at < NOW()');
@@ -91,24 +107,38 @@ async function pruneExpiredData(onUserDeletedCallback) {
       console.log(`[AUTH] Automaticky smazáno ${sessionRes.rowCount} expirovaných sessions.`);
     }
 
-    // 2. Promazání neaktivních účtů po 3 týdnech (21 dní)
-    const inactiveRes = await pool.query(
-      `SELECT username FROM users WHERE last_active_at < NOW() - INTERVAL '21 days'`
-    );
-    if (inactiveRes.rowCount > 0) {
-      const usernames = inactiveRes.rows.map((r) => r.username);
-      const delRes = await pool.query(
-        `DELETE FROM users WHERE last_active_at < NOW() - INTERVAL '21 days'`
+    // 2. Bezpečné promazání pouze velmi dlouho neaktivních účtů (> 180 dní výchozí, administrátoři vyloučeni)
+    const adminUsernames = (process.env.ADMIN_USERNAMES || '')
+      .split(',')
+      .map((u) => u.trim().toLowerCase())
+      .filter(Boolean);
+
+    const inactiveDays = parseInt(process.env.INACTIVITY_ACCOUNT_DAYS, 10) || 180;
+    if (inactiveDays > 0) {
+      const inactiveRes = await pool.query(
+        `SELECT username FROM users 
+         WHERE last_active_at < NOW() - ($1 || ' days')::INTERVAL 
+           AND NOT (username_key = ANY($2::text[]))`,
+        [String(inactiveDays), adminUsernames]
       );
-      console.log(
-        `[AUTH] Automaticky smazáno ${delRes.rowCount} účtů neaktivních déle než 21 dní: ${usernames.join(', ')}`
-      );
-      if (typeof onUserDeletedCallback === 'function') {
-        for (const u of usernames) {
-          try {
-            onUserDeletedCallback(u);
-          } catch (e) {
-            console.error('[AUTH] Callback selhal při mazání profilu:', e.message);
+      if (inactiveRes.rowCount > 0) {
+        const usernames = inactiveRes.rows.map((r) => r.username);
+        const delRes = await pool.query(
+          `DELETE FROM users 
+           WHERE last_active_at < NOW() - ($1 || ' days')::INTERVAL 
+             AND NOT (username_key = ANY($2::text[]))`,
+          [String(inactiveDays), adminUsernames]
+        );
+        console.log(
+          `[AUTH] Automaticky smazáno ${delRes.rowCount} účtů neaktivních déle než ${inactiveDays} dní: ${usernames.join(', ')}`
+        );
+        if (typeof onUserDeletedCallback === 'function') {
+          for (const u of usernames) {
+            try {
+              onUserDeletedCallback(u);
+            } catch (e) {
+              console.error('[AUTH] Callback selhal při mazání profilu:', e.message);
+            }
           }
         }
       }
@@ -118,7 +148,7 @@ async function pruneExpiredData(onUserDeletedCallback) {
   }
 }
 
-async function init(onUserDeletedCallback) {
+async function init(onUserDeletedCallback, maxRetries = 5, retryDelayMs = 2000) {
   if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
     isInitialized = false;
     throw new Error('SESSION_SECRET není nastaveno');
@@ -128,35 +158,48 @@ async function init(onUserDeletedCallback) {
     console.warn('[AUTH] DATABASE_URL není nastaveno; účty jsou vypnuté, guest režim funguje dál.');
     return false;
   }
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id BIGSERIAL PRIMARY KEY,
-        username TEXT NOT NULL,
-        username_key TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
-      CREATE TABLE IF NOT EXISTS auth_sessions (
-        token_hash CHAR(64) PRIMARY KEY,
-        user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        expires_at TIMESTAMPTZ NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-      CREATE INDEX IF NOT EXISTS auth_sessions_expires_idx ON auth_sessions(expires_at);
-      CREATE INDEX IF NOT EXISTS users_last_active_idx ON users(last_active_at);
-    `);
 
-    isInitialized = true;
-    await pruneExpiredData(onUserDeletedCallback);
-    console.log('[AUTH] PostgreSQL databáze je připravená.');
-    return true;
-  } catch (err) {
-    isInitialized = false;
-    throw err;
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id BIGSERIAL PRIMARY KEY,
+          username TEXT NOT NULL,
+          username_key TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS color TEXT;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS emote TEXT;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS stats JSONB;
+        CREATE TABLE IF NOT EXISTS auth_sessions (
+          token_hash CHAR(64) PRIMARY KEY,
+          user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          expires_at TIMESTAMPTZ NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS auth_sessions_expires_idx ON auth_sessions(expires_at);
+        CREATE INDEX IF NOT EXISTS users_last_active_idx ON users(last_active_at);
+      `);
+
+      isInitialized = true;
+      await pruneExpiredData(onUserDeletedCallback);
+      console.log('[AUTH] PostgreSQL databáze je připravená.');
+      return true;
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries) {
+        console.warn(`[AUTH] Pokus o připojení k PostgreSQL č. ${attempt}/${maxRetries} selhal (${err.message}). Čekám ${retryDelayMs}ms...`);
+        await new Promise((r) => setTimeout(r, retryDelayMs));
+      }
+    }
   }
+
+  isInitialized = false;
+  throw lastError;
 }
 
 function isConfigured() {
@@ -221,13 +264,27 @@ async function createSession(userId) {
     'INSERT INTO auth_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)',
     [hashToken(token), userId, expiresAt]
   );
+  // Omezení počtu aktivních relací na uživatele na max 10
+  try {
+    await pool.query(
+      `DELETE FROM auth_sessions 
+       WHERE user_id = $1 
+         AND token_hash NOT IN (
+           SELECT token_hash FROM auth_sessions 
+           WHERE user_id = $1 
+           ORDER BY created_at DESC 
+           LIMIT 10
+         )`,
+      [userId]
+    );
+  } catch (cleanErr) {}
   return { token, expiresAt };
 }
 
 async function getUserByToken(token) {
   if (!isConfigured() || !token) return null;
   const result = await pool.query(
-    `SELECT u.id, u.username, u.created_at, u.last_active_at
+    `SELECT u.id, u.username, u.created_at, u.last_active_at, u.color, u.emote, u.stats
      FROM auth_sessions s
      JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = $1 AND s.expires_at > NOW()`,
@@ -238,6 +295,42 @@ async function getUserByToken(token) {
     touchActivity(user.id);
   }
   return publicUser(user);
+}
+
+async function saveUserProfile(username, { color, emote, stats } = {}) {
+  if (!isConfigured() || !username) return;
+  const usernameKey = normalizeUsername(username).toLocaleLowerCase('cs-CZ');
+  try {
+    await pool.query(
+      `UPDATE users 
+       SET color = COALESCE($2, color), 
+           emote = COALESCE($3, emote), 
+           stats = COALESCE($4::jsonb, stats) 
+       WHERE username_key = $1`,
+      [
+        usernameKey,
+        color !== undefined && color !== null ? String(color) : null,
+        emote !== undefined ? (emote ? String(emote) : null) : null,
+        stats ? JSON.stringify(stats) : null
+      ]
+    );
+  } catch (err) {
+    console.error('[AUTH] Nepodařilo se uložit profil uživatele do DB:', err.message);
+  }
+}
+
+async function getUserProfile(username) {
+  if (!isConfigured() || !username) return null;
+  const usernameKey = normalizeUsername(username).toLocaleLowerCase('cs-CZ');
+  try {
+    const result = await pool.query(
+      'SELECT color, emote, stats FROM users WHERE username_key = $1',
+      [usernameKey]
+    );
+    return result.rows[0] || null;
+  } catch (err) {
+    return null;
+  }
 }
 
 async function deleteSession(token) {
@@ -282,6 +375,8 @@ module.exports = {
   isUsernameTaken,
   createSession,
   getUserByToken,
+  saveUserProfile,
+  getUserProfile,
   deleteSession,
   deleteAccount,
   isConfigured,

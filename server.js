@@ -2,6 +2,34 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+
+// Načtení proměnných prostředí z .env (Node.js 20.6+ nebo záložní parser)
+if (typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch (err) {}
+} else {
+  try {
+    const envPath = path.join(__dirname, '.env');
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf-8');
+      for (const line of envContent.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx !== -1) {
+          const key = trimmed.slice(0, eqIdx).trim();
+          const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"](.*)['"]$/, '$1');
+          if (key && process.env[key] === undefined) {
+            process.env[key] = val;
+          }
+        }
+      }
+    }
+  } catch (err) {}
+}
+
 const helmet = require('helmet');
 const { Server } = require('socket.io');
 const gameManager = require('./src/roomManager');
@@ -201,7 +229,7 @@ app.post('/api/auth/register', registerLimiter, async (req, res) => {
   try {
     const user = await authService.register(req.body?.username, req.body?.password);
     const session = await authService.createSession(user.id);
-    playerProfileManager.markAsRegistered(user.username);
+    playerProfileManager.markAsRegistered(user.username, user);
     setSessionCookie(res, session.token, 30 * 24 * 60 * 60);
     res.status(201).json({ user });
   } catch (err) {
@@ -221,7 +249,7 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const user = await authService.login(req.body?.username, req.body?.password);
     const session = await authService.createSession(user.id);
-    playerProfileManager.markAsRegistered(user.username);
+    playerProfileManager.markAsRegistered(user.username, user);
     setSessionCookie(res, session.token, 30 * 24 * 60 * 60);
     res.json({ user });
   } catch (err) {
@@ -572,14 +600,41 @@ const globalChatHistory = [];
 const MAX_GLOBAL_CHAT_HISTORY = 100;
 
 // ── OCHRANA SERVERU A RATE LIMITING (Proti DoS / spamu / brute-force) ──
-const socketRateLimits = new Map(); // socket.id -> { lastGuess, lastChat, lastGlobalChat, customRoomsCount, customRoomsReset }
+const socketRateLimits = new Map(); // key -> { lastGuess, lastChat, lastGlobalChat, customRoomsCount, customRoomsReset }
 
-function checkSocketRate(socketId, action, minIntervalMs) {
-  const now = Date.now();
-  if (!socketRateLimits.has(socketId)) {
-    socketRateLimits.set(socketId, {});
+function getRateLimitKey(socketOrId) {
+  if (socketOrId && typeof socketOrId === 'object') {
+    const headerIp = socketOrId.handshake?.headers?.['x-forwarded-for'];
+    const clientIp = headerIp ? headerIp.split(',')[0].trim() : (socketOrId.handshake?.address || socketOrId.id);
+    return `ip_${clientIp}`;
   }
-  const data = socketRateLimits.get(socketId);
+  const sock = io.sockets.sockets.get(socketOrId);
+  if (sock) {
+    const headerIp = sock.handshake?.headers?.['x-forwarded-for'];
+    const clientIp = headerIp ? headerIp.split(',')[0].trim() : (sock.handshake?.address || socketOrId);
+    return `ip_${clientIp}`;
+  }
+  return `sock_${socketOrId}`;
+}
+
+const rateLimitCleanupTimer = setInterval(() => {
+  const cutoff = Date.now() - 2 * 60 * 60 * 1000;
+  for (const [key, entry] of socketRateLimits.entries()) {
+    if ((entry.lastChat || 0) < cutoff && (entry.lastGuess || 0) < cutoff && (entry.lastGlobalChat || 0) < cutoff && (!entry.customRoomsReset || entry.customRoomsReset < cutoff)) {
+      socketRateLimits.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
+if (rateLimitCleanupTimer.unref) rateLimitCleanupTimer.unref();
+
+function checkSocketRate(socketOrId, action, minIntervalMs) {
+  const key = getRateLimitKey(socketOrId);
+  const now = Date.now();
+  let data = socketRateLimits.get(key);
+  if (!data) {
+    data = {};
+    socketRateLimits.set(key, data);
+  }
   const lastTime = data[action] || 0;
   if (now - lastTime < minIntervalMs) {
     return false;
@@ -588,12 +643,14 @@ function checkSocketRate(socketId, action, minIntervalMs) {
   return true;
 }
 
-function checkCustomRoomRate(socketId) {
+function checkCustomRoomRate(socketOrId) {
+  const key = getRateLimitKey(socketOrId);
   const now = Date.now();
-  if (!socketRateLimits.has(socketId)) {
-    socketRateLimits.set(socketId, {});
+  let data = socketRateLimits.get(key);
+  if (!data) {
+    data = {};
+    socketRateLimits.set(key, data);
   }
-  const data = socketRateLimits.get(socketId);
   if (!data.customRoomsReset || now > data.customRoomsReset) {
     data.customRoomsCount = 0;
     data.customRoomsReset = now + 60 * 60 * 1000; // 1 hodina
@@ -740,7 +797,7 @@ io.on('connection', (socket) => {
     const accountUser = socket.data?.authUser;
     if (accountUser) {
       authService.touchActivity(accountUser.id);
-      playerProfileManager.markAsRegistered(accountUser.username);
+      playerProfileManager.markAsRegistered(accountUser.username, accountUser);
     }
     if (accountUser && cleanRequestedName.toLocaleLowerCase('cs-CZ') !== accountUser.username.toLocaleLowerCase('cs-CZ')) {
       socket.emit('error_message', { message: `Tento účet musí hrát pod přezdívkou „${accountUser.username}“.` });
@@ -750,6 +807,19 @@ io.on('connection', (socket) => {
       socket.emit('error_message', { message: 'Tato přezdívka je registrovaná. Přihlas se ke svému účtu, nebo zvol jinou.' });
       return;
     }
+
+    // Určení administrátorských práv – pouze pro ověřené uživatele v ADMIN_USERNAMES
+    let isExplicitAdmin = false;
+    if (accountUser && process.env.ADMIN_USERNAMES) {
+      const adminList = process.env.ADMIN_USERNAMES
+        .split(',')
+        .map((u) => u.trim().toLowerCase())
+        .filter(Boolean);
+      if (adminList.includes(accountUser.username.toLowerCase())) {
+        isExplicitAdmin = true;
+      }
+    }
+
     let gameMode = 'daily';
     if (mode === 'unlimited') {
       gameMode = 'unlimited';
@@ -779,9 +849,10 @@ io.on('connection', (socket) => {
       ? socket.handshake.headers['x-forwarded-for'].split(',')[0].trim()
       : socket.handshake.address;
 
+    const effectiveName = accountUser ? accountUser.username : cleanRequestedName;
     const { player, isReconnect, oldSocketId } = gameManager.joinPlayer(
       socket.id,
-      playerName,
+      effectiveName,
       gameMode,
       color,
       customCode,
@@ -789,7 +860,8 @@ io.on('connection', (socket) => {
       sessionId,
       clientIp,
       speedrunConfig,
-      emote
+      emote,
+      isExplicitAdmin
     );
     socket.data = socket.data || {};
     socket.data.playerName = player.name;
@@ -1048,10 +1120,12 @@ io.on('connection', (socket) => {
 
       console.warn(`[DSA REPORT] Hráč "${reporterName}" nahlásil "${cleanTarget}": "${cleanReason}"`);
 
-      // Zápis do logu hlášení v src/data
+      // Zápis do logu hlášení v src/data (asynchronně bez blokování event loopu)
       const dataDir = path.join(__dirname, 'src', 'data');
       if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-      fs.appendFileSync(path.join(dataDir, 'reports.log'), JSON.stringify(reportEntry) + '\n', 'utf-8');
+      fs.promises.appendFile(path.join(dataDir, 'reports.log'), JSON.stringify(reportEntry) + '\n', 'utf-8').catch((err) => {
+        console.error('[DSA REPORT] Chyba při zápisu hlášení:', err.message);
+      });
 
       // Oznámení pro administrátora v aréně
       if (room && room.players) {
@@ -1236,8 +1310,27 @@ io.on('connection', (socket) => {
     // Příkaz pro aktivaci administrátorských práv v chatu: !admin <heslo>
     if (cleanMsg.toLowerCase().startsWith('!admin ') || cleanMsg.toLowerCase() === '!admin') {
       const enteredSecret = cleanMsg.slice(6).trim();
-      const actualSecret = process.env.ADMIN_SECRET || '/admin-perms-456';
-      if (enteredSecret && enteredSecret.toLowerCase() === actualSecret.toLowerCase()) {
+      const actualSecret = (process.env.ADMIN_SECRET || '').trim();
+
+      if (!actualSecret || actualSecret === '/admin-perms-456' || actualSecret === 'zmente_toto_tajne_heslo_pred_spustenim_12345') {
+        socket.emit('error_message', {
+          message: '[ADMIN] Administrátorský přístup přes heslo není bezpečně nakonfigurován (nastavte silné ADMIN_SECRET v .env).'
+        });
+        return;
+      }
+
+      let matches = false;
+      try {
+        const enteredBuf = Buffer.from(enteredSecret, 'utf-8');
+        const actualBuf = Buffer.from(actualSecret, 'utf-8');
+        if (enteredBuf.length === actualBuf.length && enteredBuf.length > 0) {
+          matches = crypto.timingSafeEqual(enteredBuf, actualBuf);
+        }
+      } catch (e) {
+        matches = false;
+      }
+
+      if (matches) {
         player.isAdmin = true;
         socket.emit('notification', {
           message: '[ADMIN] Úspěšně jsi aktivoval administrátorská práva pro tuto relaci.'

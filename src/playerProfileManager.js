@@ -1,6 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const wordService = require('./wordService');
+let authService = null;
+try {
+  authService = require('./authService');
+} catch (e) {}
 
 const PROFILES_FILE_PATH = path.join(__dirname, 'data', 'playerProfiles.json');
 const INACTIVITY_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 7 dní neaktivity
@@ -100,9 +104,31 @@ class PlayerProfileManager {
         const tmpPath = `${PROFILES_FILE_PATH}.tmp`;
         fs.writeFile(tmpPath, jsonStr, 'utf-8', (err) => {
           if (!err) {
-            fs.rename(tmpPath, PROFILES_FILE_PATH, () => {});
+            try {
+              if (process.platform === 'win32' && fs.existsSync(PROFILES_FILE_PATH)) {
+                fs.copyFileSync(tmpPath, PROFILES_FILE_PATH);
+                fs.unlinkSync(tmpPath);
+              } else {
+                fs.rename(tmpPath, PROFILES_FILE_PATH, () => {});
+              }
+            } catch (e) {
+              fs.writeFileSync(PROFILES_FILE_PATH, jsonStr, 'utf-8');
+            }
           }
         });
+      }
+
+      // Synchronizace profilů registrovaných uživatelů do PostgreSQL
+      if (authService && typeof authService.saveUserProfile === 'function') {
+        for (const p of this.profiles.values()) {
+          if (p && p.isRegistered) {
+            authService.saveUserProfile(p.name, {
+              color: p.color,
+              emote: p.emote,
+              stats: p.stats
+            });
+          }
+        }
       }
     } catch (err) {
       console.error('[PROFILES] Chyba při ukládání profilů:', err);
@@ -168,18 +194,28 @@ class PlayerProfileManager {
     return prof;
   }
 
-  markAsRegistered(name) {
+  markAsRegistered(name, dbData = null) {
     const key = this.normalizeKey(name);
-    if (!key) return;
-    const prof = this.profiles.get(key);
+    if (!key) return null;
+    let prof = this.profiles.get(key);
     if (prof) {
-      if (!prof.isRegistered) {
-        prof.isRegistered = true;
-        this.scheduleSave();
+      prof.isRegistered = true;
+      if (dbData) {
+        if (dbData.color) prof.color = dbData.color;
+        if (dbData.emote !== undefined) prof.emote = dbData.emote;
+        if (dbData.stats) prof.stats = this.mergeStats(prof.stats, dbData.stats);
       }
+      this.scheduleSave();
     } else {
-      this.getOrCreateProfile(name, null, null, null, true);
+      prof = this.getOrCreateProfile(
+        name,
+        dbData?.color || null,
+        dbData?.stats || null,
+        dbData?.emote || null,
+        true
+      );
     }
+    return prof;
   }
 
   updateColor(name, color) {

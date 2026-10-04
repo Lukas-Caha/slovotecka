@@ -5,11 +5,6 @@ const playerProfileManager = require('./playerProfileManager');
 
 const STATE_FILE_PATH = path.join(__dirname, 'data', 'savedState.json');
 
-// Tajný token pro získání administrátorských práv v přezdívce (např. Lukas /admin-perms-456)
-const ADMIN_SECRET = process.env.ADMIN_SECRET || '/admin-perms-456';
-if (process.env.NODE_ENV === 'production' && ADMIN_SECRET === '/admin-perms-456') {
-  console.warn('\x1b[33m%s\x1b[0m', '⚠️  [BEZPEČNOSTNÍ VAROVÁNÍ] V produkčním režimu používáte výchozí ADMIN_SECRET! Nastavte bezpečnou proměnnou prostředí ADMIN_SECRET.');
-}
 
 // 8 základních barev pro výběr přezdívky
 const ALLOWED_COLORS = [
@@ -186,27 +181,10 @@ class BaseGameRoom {
     }
   }
 
-  // Připojení hráče do místnosti (s podporou rychlého reconnectu a zamezení řetězení (2))
-  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null, playerEmote = null) {
+  // Připojení hráče do místnosti (s podporou bezpečného reconnectu a zamezení únosu relací)
+  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null, playerEmote = null, isExplicitAdmin = false) {
     let raw = (playerName || '').trim().slice(0, 40);
-    let isAdmin = false;
-
-    // Automatická administrátorská práva pro přezdívky z ADMIN_USERNAMES
-    const adminUsernames = (process.env.ADMIN_USERNAMES || '')
-      .split(',')
-      .map(u => u.trim().toLowerCase())
-      .filter(Boolean);
-
-    if (adminUsernames.includes(raw.toLowerCase())) {
-      isAdmin = true;
-    }
-
-    // Kontrola tajného administrátorského klíče v přezdívce (např. Lukas /admin-perms-456)
-    if (raw.toLowerCase().includes(ADMIN_SECRET.toLowerCase())) {
-      isAdmin = true;
-      const regex = new RegExp(ADMIN_SECRET.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-      raw = raw.replace(regex, '').trim().slice(0, 40);
-    }
+    const isAdmin = Boolean(isExplicitAdmin);
 
     let cleanName = raw || (isAdmin ? 'Admin' : `Hráč_${Object.keys(this.players).length + 1}`);
     cleanName = cleanName.slice(0, 40);
@@ -215,30 +193,25 @@ class BaseGameRoom {
     const baseCleanName = cleanName.replace(/(\s*\(\d+\))+$/, '').trim() || cleanName;
 
     // 1. Zjistíme, zda v této místnosti již neexistuje stejný hráč
-    // (např. při rychlém obnovení stránky F5, kdy se starý socket ještě nestihl odpojit)
+    // BEZPEČNÝ RECONNECT: Pouze pokud se shoduje relace (sessionId)!
+    // Cizí hráč se stejným jménem NIKDY nesmí unést běžící relaci jiného hráče!
     let existingPlayer = null;
     let oldSocketId = null;
 
-    for (const [sId, p] of Object.entries(this.players)) {
-      if (sId === socketId) continue;
+    if (sessionId) {
+      for (const [sId, p] of Object.entries(this.players)) {
+        if (sId === socketId) continue;
 
-      const sameSession = Boolean(sessionId && p.sessionId && p.sessionId === sessionId);
-      const pBaseName = p.name ? p.name.replace(/(\s*\(\d+\))+$/, '').trim().toLowerCase() : '';
-      const targetBaseName = baseCleanName.toLowerCase();
-      const sameName = Boolean(pBaseName && pBaseName === targetBaseName);
-      const sameNameAndSession = Boolean(sameName && sessionId && p.sessionId && p.sessionId === sessionId);
-      const sameNameAndIp = Boolean(
-        sameName &&
-        (!sessionId || !p.sessionId) &&
-        clientIp &&
-        p.clientIp &&
-        p.clientIp === clientIp
-      );
+        const sameSession = Boolean(p.sessionId && p.sessionId === sessionId);
+        const pBaseName = p.name ? p.name.replace(/(\s*\(\d+\))+$/, '').trim().toLowerCase() : '';
+        const targetBaseName = baseCleanName.toLowerCase();
+        const sameName = Boolean(pBaseName && pBaseName === targetBaseName);
 
-      if (sameSession || sameNameAndSession || sameNameAndIp || sameName) {
-        existingPlayer = p;
-        oldSocketId = sId;
-        break;
+        if (sameSession || (sameName && p.sessionId === sessionId)) {
+          existingPlayer = p;
+          oldSocketId = sId;
+          break;
+        }
       }
     }
 
@@ -341,7 +314,7 @@ class BaseGameRoom {
       name: finalName,
       color: chosenColor,
       emote: chosenEmote,
-      isAdmin: existingProfile && existingProfile.isAdmin !== undefined ? (existingProfile.isAdmin || !!isAdmin) : !!isAdmin,
+      isAdmin: Boolean(isAdmin),
       solved: existingProfile ? !!existingProfile.solved : false,
       gaveUp: existingProfile ? !!existingProfile.gaveUp : false,
       usedHint: existingProfile ? !!existingProfile.usedHint : false,
@@ -988,9 +961,9 @@ class DailyGameRoom extends BaseGameRoom {
     return { isNewDay: false };
   }
 
-  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null, playerEmote = null) {
+  joinPlayer(socketId, playerName, playerColor = null, sessionId = null, clientIp = null, playerEmote = null, isExplicitAdmin = false) {
     this.checkMidnightRoll();
-    return super.joinPlayer(socketId, playerName, playerColor, sessionId, clientIp, playerEmote);
+    return super.joinPlayer(socketId, playerName, playerColor, sessionId, clientIp, playerEmote, isExplicitAdmin);
   }
 
   submitGuess(socketId, rawWord) {
@@ -2098,7 +2071,7 @@ class RoomManager {
     };
   }
 
-  joinPlayer(socketId, playerName, mode = 'daily', color = null, customCode = null, wordSource = 'daily', sessionId = null, clientIp = null, speedrunConfig = null, emote = null) {
+  joinPlayer(socketId, playerName, mode = 'daily', color = null, customCode = null, wordSource = 'daily', sessionId = null, clientIp = null, speedrunConfig = null, emote = null, isExplicitAdmin = false) {
     let validMode = 'daily';
     let room = null;
 
@@ -2130,7 +2103,7 @@ class RoomManager {
       if (prevRoom) prevRoom.removePlayer(socketId);
     }
 
-    const joinResult = room.joinPlayer(socketId, playerName, color, sessionId, clientIp, emote);
+    const joinResult = room.joinPlayer(socketId, playerName, color, sessionId, clientIp, emote, isExplicitAdmin);
     const player = joinResult.player || joinResult;
     this.socketToRoom.set(socketId, validMode);
 
