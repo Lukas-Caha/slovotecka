@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io({ autoConnect: false });
 
 // ── Přepínač Light / Dark módu (Slunce vlevo, posuvník, Měsíc vpravo) ─────
 const btnThemeToggle = document.getElementById('btn-theme-toggle');
@@ -2171,9 +2171,9 @@ if (myPlayerName) {
 }
 
 function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[char]));
 }
 
 // ── Toast notifikace ──────────────────────────────────
@@ -5350,8 +5350,8 @@ function validatePasswordUI() {
   const pwd = authRegPassword ? authRegPassword.value : '';
   const pwdCheck = authRegPasswordCheck ? authRegPasswordCheck.value : '';
 
-  // Pravidlo 1: 6–100 znaků
-  const hasMinLen = pwd.length >= 6 && pwd.length <= 100;
+  // Alespoň 6 znaků, maximálně 72 UTF-8 bajtů (bcrypt).
+  const hasMinLen = pwd.length >= 6 && new TextEncoder().encode(pwd).length <= 72;
   if (ruleLen) {
     ruleLen.classList.toggle('is-valid', hasMinLen);
     const bullet = ruleLen.querySelector('.rule-bullet');
@@ -5396,4 +5396,5 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-refreshAuthState();
+// Establish the guest cookie and account identity before the first handshake.
+refreshAuthState().finally(() => socket.connect());

@@ -10,21 +10,31 @@ let isInitialized = false;
 const userTouchCache = new Map(); // id/key -> timestamp posledního zápisu do DB
 
 function getSslConfig() {
-  if (process.env.DB_SSL === 'false') return undefined;
-  if (process.env.DB_SSL === 'true') return { rejectUnauthorized: false };
-  const dbUrl = String(process.env.DATABASE_URL || '').toLowerCase();
-  if (dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1') || dbUrl.includes('sslmode=disable')) {
-    return undefined;
+  const url = new URL(process.env.DATABASE_URL || 'postgres://localhost');
+  const mode = url.searchParams.get('sslmode');
+  if (process.env.DB_SSL === 'false' || (process.env.DB_SSL !== 'true' && mode === 'disable')) return false;
+  const local = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname);
+  if (process.env.DB_SSL === 'true' || (mode && mode !== 'disable') || url.searchParams.has('sslrootcert') || (!local && process.env.NODE_ENV === 'production')) {
+    const caFile = process.env.DB_SSL_CA_FILE || url.searchParams.get('sslrootcert');
+    const ssl = { rejectUnauthorized: true };
+    for (const [key, file] of [['ca', caFile], ['cert', url.searchParams.get('sslcert')], ['key', url.searchParams.get('sslkey')]]) {
+      if (file) ssl[key] = require('fs').readFileSync(file, 'utf8');
+    }
+    return ssl;
   }
-  if (dbUrl.includes('sslmode=require') || process.env.NODE_ENV === 'production') {
-    return { rejectUnauthorized: false };
-  }
-  return undefined;
+  return false;
+}
+
+function getConnectionString() {
+  const url = new URL(process.env.DATABASE_URL);
+  // pg would replace the verified SSL object if these parameters remained in the URL.
+  for (const key of ['sslmode', 'sslrootcert', 'sslcert', 'sslkey', 'ssl']) url.searchParams.delete(key);
+  return url.toString();
 }
 
 const pool = process.env.DATABASE_URL
   ? new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: getConnectionString(),
       ssl: getSslConfig(),
       max: 10
     })
@@ -73,7 +83,7 @@ function validatePassword(password) {
   return (
     typeof password === 'string' &&
     password.length >= 6 &&
-    password.length <= 100 &&
+    !bcrypt.truncates(password) &&
     /[0-9A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/.test(password)
   );
 }
@@ -149,7 +159,7 @@ async function pruneExpiredData(onUserDeletedCallback) {
 }
 
 async function init(onUserDeletedCallback, maxRetries = 5, retryDelayMs = 2000) {
-  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  if (pool && process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
     isInitialized = false;
     throw new Error('SESSION_SECRET není nastaveno');
   }
@@ -246,7 +256,10 @@ async function login(username, password) {
 }
 
 async function isUsernameTaken(username) {
-  if (!isConfigured()) return false;
+  if (!isConfigured()) {
+    if (pool) throw new Error('AUTH_UNAVAILABLE');
+    return false;
+  }
   const clean = normalizeUsername(username);
   if (!clean) return false;
   const result = await pool.query(
@@ -304,14 +317,15 @@ async function saveUserProfile(username, { color, emote, stats } = {}) {
     await pool.query(
       `UPDATE users 
        SET color = COALESCE($2, color), 
-           emote = COALESCE($3, emote), 
+           emote = CASE WHEN $5::boolean THEN $3 ELSE emote END,
            stats = COALESCE($4::jsonb, stats) 
        WHERE username_key = $1`,
       [
         usernameKey,
         color !== undefined && color !== null ? String(color) : null,
         emote !== undefined ? (emote ? String(emote) : null) : null,
-        stats ? JSON.stringify(stats) : null
+        stats ? JSON.stringify(stats) : null,
+        emote !== undefined
       ]
     );
   } catch (err) {

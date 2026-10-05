@@ -25,16 +25,17 @@ class PlayerProfileManager {
 
   sanitizeStats(stats) {
     const s = stats || {};
+    const count = value => Number.isSafeInteger(value) && value >= 0 ? value : 0;
     return {
-      gamesPlayed: typeof s.gamesPlayed === 'number' ? s.gamesPlayed : 0,
-      gamesWon: typeof s.gamesWon === 'number' ? s.gamesWon : 0,
-      currentStreak: typeof s.currentStreak === 'number' ? s.currentStreak : 0,
-      maxStreak: typeof s.maxStreak === 'number' ? s.maxStreak : 0,
+      gamesPlayed: count(s.gamesPlayed),
+      gamesWon: count(s.gamesWon),
+      currentStreak: count(s.currentStreak),
+      maxStreak: count(s.maxStreak),
       lastWinDate: typeof s.lastWinDate === 'string' ? s.lastWinDate : null,
-      totalWinningGuesses: typeof s.totalWinningGuesses === 'number' ? s.totalWinningGuesses : 0,
-      bestScore: typeof s.bestScore === 'number' ? s.bestScore : null,
-      recordedPlayedGames: Array.isArray(s.recordedPlayedGames) ? s.recordedPlayedGames.slice(-200) : [],
-      recordedWonGames: Array.isArray(s.recordedWonGames) ? s.recordedWonGames.slice(-200) : []
+      totalWinningGuesses: count(s.totalWinningGuesses),
+      bestScore: Number.isSafeInteger(s.bestScore) && s.bestScore > 0 ? s.bestScore : null,
+      recordedPlayedGames: Array.isArray(s.recordedPlayedGames) ? s.recordedPlayedGames.filter(v => typeof v === 'string' && v.length < 100).slice(-200) : [],
+      recordedWonGames: Array.isArray(s.recordedWonGames) ? s.recordedWonGames.filter(v => typeof v === 'string' && v.length < 100).slice(-200) : []
     };
   }
 
@@ -89,7 +90,7 @@ class PlayerProfileManager {
 
   saveProfiles(sync = false) {
     try {
-      const obj = {};
+      const obj = Object.create(null);
       for (const [k, p] of this.profiles.entries()) {
         obj[k] = p;
       }
@@ -172,17 +173,13 @@ class PlayerProfileManager {
         emote: preferredEmote || null,
         isRegistered: Boolean(isRegistered),
         lastActive: now,
-        stats: this.sanitizeStats(clientStats)
+        stats: this.sanitizeStats(null)
       };
       this.profiles.set(key, prof);
       this.scheduleSave();
     } else {
       if (isRegistered) prof.isRegistered = true;
       prof.lastActive = now;
-      // Migrace / sloučení dat z klienta (např. když poprvé přechází z LocalStorage a server má 0 her)
-      if (clientStats && (!prof.stats || prof.stats.gamesPlayed === 0)) {
-        prof.stats = this.mergeStats(prof.stats, clientStats);
-      }
       if (preferredColor && preferredColor !== '#3b82f6' && prof.color !== preferredColor) {
         prof.color = preferredColor;
       }
@@ -203,7 +200,6 @@ class PlayerProfileManager {
       if (dbData) {
         if (dbData.color) prof.color = dbData.color;
         if (dbData.emote !== undefined) prof.emote = dbData.emote;
-        if (dbData.stats) prof.stats = this.mergeStats(prof.stats, dbData.stats);
       }
       this.scheduleSave();
     } else {
@@ -215,6 +211,7 @@ class PlayerProfileManager {
         true
       );
     }
+    if (dbData?.stats) prof.stats = this.mergeStats(prof.stats, dbData.stats);
     return prof;
   }
 
@@ -312,6 +309,7 @@ class PlayerProfileManager {
 
   mergeStats(existing, incoming) {
     if (!incoming) return existing;
+    incoming = this.sanitizeStats(incoming);
     const s = existing || this.sanitizeStats({});
     return {
       gamesPlayed: Math.max(s.gamesPlayed || 0, incoming.gamesPlayed || 0),

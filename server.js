@@ -37,10 +37,12 @@ const emoteService = require('./src/emoteService');
 const wordService = require('./src/wordService');
 const playerProfileManager = require('./src/playerProfileManager');
 const authService = require('./src/authService');
+const security = require('./src/security');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, { maxHttpBufferSize: 20000 });
+io.engine.use((req, res, next) => { security.ensureGuest(req, res); next(); });
 
 const PORT = process.env.PORT || 3000;
 const AUTH_COOKIE = 'slovo_session';
@@ -48,7 +50,7 @@ const REPORT_LOG_PATH = path.join(__dirname, 'src', 'data', 'reports.log');
 const REPORT_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
 
 // Důvěra v reverzní proxy (Render, Nginx, Cloudflare)
-app.set('trust proxy', 1);
+app.set('trust proxy', security.isTrustedProxy);
 app.use(express.json({ limit: '20kb' }));
 
 function getSessionToken(req) {
@@ -150,9 +152,12 @@ io.use(async (socket, next) => {
     socket.data.authUser = await authService.getUserByToken(socket.handshake.headers.cookie
       ? getSessionToken({ headers: socket.handshake.headers })
       : null);
+    await authService.isUsernameTaken('');
+    socket.data.authToken = socket.data.authUser ? getSessionToken({ headers: socket.handshake.headers }) : null;
+    socket.data.identity = socket.data.authUser ? 'user:' + socket.data.authUser.id : socket.request.guestIdentity;
     next();
   } catch (err) {
-    next();
+    next(new Error('Přihlášení je momentálně nedostupné.'));
   }
 });
 
@@ -217,6 +222,8 @@ app.get(['/ping', '/health'], (req, res) => {
 // Účty jsou volitelné; bez DATABASE_URL zůstává funkční guest režim.
 app.get('/api/auth/me', async (req, res) => {
   try {
+    security.ensureGuest(req, res);
+    await authService.isUsernameTaken('');
     const user = await authService.getUserByToken(getSessionToken(req));
     res.json({ authenticated: Boolean(user), user });
   } catch (err) {
@@ -236,7 +243,7 @@ app.post('/api/auth/register', registerLimiter, async (req, res) => {
     const known = {
       DATABASE_NOT_CONFIGURED: [503, 'AUTH_UNAVAILABLE', 'Databáze účtů není nakonfigurovaná.'],
       INVALID_USERNAME: [400, 'INVALID_USERNAME', 'Přezdívka musí mít 3–30 znaků a může obsahovat písmena, čísla, mezery, tečku, pomlčku a podtržítko.'],
-      INVALID_PASSWORD: [400, 'INVALID_PASSWORD', 'Heslo musí mít 6–100 znaků a obsahovat číslo nebo velké písmeno.'],
+      INVALID_PASSWORD: [400, 'INVALID_PASSWORD', 'Heslo musí mít alespoň 6 znaků, nejvýše 72 UTF-8 bajtů a obsahovat číslo nebo velké písmeno.'],
       USERNAME_TAKEN: [409, 'USERNAME_TAKEN', 'Tato přezdívka už je registrovaná.']
     }[err.message];
     if (!known) console.error('[AUTH] Registrace selhala:', err);
@@ -603,18 +610,8 @@ const MAX_GLOBAL_CHAT_HISTORY = 100;
 const socketRateLimits = new Map(); // key -> { lastGuess, lastChat, lastGlobalChat, customRoomsCount, customRoomsReset }
 
 function getRateLimitKey(socketOrId) {
-  if (socketOrId && typeof socketOrId === 'object') {
-    const headerIp = socketOrId.handshake?.headers?.['x-forwarded-for'];
-    const clientIp = headerIp ? headerIp.split(',')[0].trim() : (socketOrId.handshake?.address || socketOrId.id);
-    return `ip_${clientIp}`;
-  }
-  const sock = io.sockets.sockets.get(socketOrId);
-  if (sock) {
-    const headerIp = sock.handshake?.headers?.['x-forwarded-for'];
-    const clientIp = headerIp ? headerIp.split(',')[0].trim() : (sock.handshake?.address || socketOrId);
-    return `ip_${clientIp}`;
-  }
-  return `sock_${socketOrId}`;
+  const socket = typeof socketOrId === 'object' ? socketOrId : io.sockets.sockets.get(socketOrId);
+  return socket ? 'ip_' + security.getClientIp(socket) : 'sock_' + socketOrId;
 }
 
 const rateLimitCleanupTimer = setInterval(() => {
@@ -663,6 +660,42 @@ function checkCustomRoomRate(socketOrId) {
 }
 
 io.on('connection', (socket) => {
+  const registerEvent = socket.on.bind(socket);
+  let eventWindow = { start: Date.now(), count: 0 };
+  let eventQueue = Promise.resolve();
+  let pendingEvents = 0;
+  socket.on = (event, handler) => {
+    if (event === 'disconnect') return registerEvent(event, handler);
+    return registerEvent(event, (...args) => {
+      const reject = () => {
+        socket.emit('error_message', { message: 'Neplatný nebo příliš častý požadavek.' });
+        const ack = args.find(arg => typeof arg === 'function');
+        if (ack) ack({ error: 'INVALID_REQUEST', exists: false });
+      };
+      if (Date.now() - eventWindow.start >= 1000) eventWindow = { start: Date.now(), count: 0 };
+      if (++eventWindow.count > 30 || pendingEvents >= 30 || !security.validPayload(event, args[0])) { reject(); return; }
+      pendingEvents++;
+      return eventQueue = eventQueue.then(async () => {
+        if (!socket.connected) return;
+        await authService.isUsernameTaken('');
+        if (socket.data.authToken) {
+          const user = await authService.getUserByToken(socket.data.authToken);
+          if (!user || String(user.id) !== String(socket.data.authUser?.id)) {
+            socket.emit('error_message', { message: 'Přihlášení vypršelo. Připoj se znovu.' });
+            socket.disconnect(true);
+            return;
+          }
+          socket.data.authUser = user;
+        }
+        return handler(...args);
+      }).catch(err => {
+        console.error('[SOCKET]', event, err.message);
+        socket.emit('error_message', { message: 'Požadavek se nepodařilo dokončit.' });
+        const ack = args.find(arg => typeof arg === 'function');
+        if (ack) ack({ error: 'REQUEST_FAILED', exists: false });
+      }).finally(() => { pendingEvents--; });
+    });
+  };
   // Odeslání aktuálních počtů hráčů nově připojenému klientovi
   socket.emit('arena_counts', gameManager.getOnlineCounts());
   // Odeslání historie globálního chatu
@@ -682,6 +715,7 @@ io.on('connection', (socket) => {
       return;
     }
     const room = gameManager.createCustomRoom(wordSource || 'daily');
+    room.hostIdentity = socket.data.identity;
     socket.emit('custom_room_created', {
       roomCode: room.roomCode,
       mode: room.mode,
@@ -694,6 +728,12 @@ io.on('connection', (socket) => {
     const room = gameManager.getRoomForSocket(socket.id);
     const mode = gameManager.getModeForSocket(socket.id);
     if (!room || !mode || !mode.startsWith('custom_')) return;
+    const player = room.players[socket.id];
+    if (!player || (player.sessionId !== room.hostIdentity && !player.isAdmin)) {
+      socket.emit('error_message', { message: 'Režim může změnit pouze zakladatel arény.' });
+      return;
+    }
+    if (!checkSocketRate(socket, 'lastSourceChange', 1000)) return;
     if (typeof room.setWordSource === 'function') {
       const changed = room.setWordSource(wordSource);
       if (changed) {
@@ -735,7 +775,7 @@ io.on('connection', (socket) => {
       globalChatHistory.shift();
     }
 
-    playerProfileManager.touchActivity(senderName);
+    if (player) playerProfileManager.touchActivity(player.profileKey);
     io.emit('global_chat_message', globalEntry);
   });
 
@@ -750,12 +790,12 @@ io.on('connection', (socket) => {
 
     try {
       const isRegistered = await authService.isUsernameTaken(clean);
-      const prof = playerProfileManager.getProfile(clean);
+      const prof = playerProfileManager.getProfile(security.profileKey(clean, socket.data.identity));
       if (prof) {
         return callback({
           exists: true,
           isRegistered,
-          name: prof.name,
+          name: clean,
           color: prof.color,
           emote: prof.emote || null,
           stats: prof.stats
@@ -773,7 +813,7 @@ io.on('connection', (socket) => {
     if (room && room.players && room.players[socket.id]) {
       const player = room.players[socket.id];
       player.color = color;
-      playerProfileManager.updateColor(player.name, color);
+      playerProfileManager.updateColor(player.profileKey, color);
       const mode = gameManager.getModeForSocket(socket.id);
       if (mode) broadcastGameState(mode);
     }
@@ -785,7 +825,7 @@ io.on('connection', (socket) => {
     if (room && room.players && room.players[socket.id]) {
       const player = room.players[socket.id];
       player.emote = emote || null;
-      playerProfileManager.updateEmote(player.name, emote);
+      playerProfileManager.updateEmote(player.profileKey, emote);
       const mode = gameManager.getModeForSocket(socket.id);
       if (mode) broadcastGameState(mode);
     }
@@ -793,6 +833,7 @@ io.on('connection', (socket) => {
 
   // 1. Vstup do hry (denní, unlimited, nebo vlastní aréna)
   socket.on('join_game', async ({ playerName, mode, color, emote, customCode, wordSource, speedrunConfig, sessionId, clientStats }) => {
+    if (!checkSocketRate(socket, 'lastJoin', 300)) return;
     const cleanRequestedName = String(playerName || '').replace(/(\s*\(\d+\))+$/, '').trim();
     const accountUser = socket.data?.authUser;
     if (accountUser) {
@@ -820,12 +861,17 @@ io.on('connection', (socket) => {
       }
     }
 
+    const identity = socket.data.identity;
     let gameMode = 'daily';
     if (mode === 'unlimited') {
       gameMode = 'unlimited';
     } else if (mode === 'custom' || (mode && mode.startsWith('custom_')) || customCode) {
       const rawCode = (customCode || (mode && mode.startsWith('custom_') ? mode.replace('custom_', '') : '')).toUpperCase().trim();
       let customRoom = rawCode ? gameManager.getCustomRoom(rawCode) : null;
+      if (!customRoom && !checkCustomRoomRate(socket)) {
+        socket.emit('error_message', { message: 'Překročen limit pro zakládání arén (max 5 za hodinu).' });
+        return;
+      }
       if (!customRoom && rawCode) {
         customRoom = gameManager.createCustomRoom(wordSource || 'daily', rawCode, playerName, speedrunConfig);
       } else if (!customRoom) {
@@ -834,20 +880,13 @@ io.on('connection', (socket) => {
       gameMode = customRoom.mode;
     }
 
-    // Případná migrace statistik z klienta do profilu na serveru
-    if (clientStats && playerName) {
-      playerProfileManager.getOrCreateProfile(playerName, color, clientStats, emote);
-    }
-
     // Opuštění předchozích místností
     for (const r of socket.rooms) {
       if (r !== socket.id) socket.leave(r);
     }
     socket.join(gameMode);
 
-    const clientIp = socket.handshake.headers['x-forwarded-for']
-      ? socket.handshake.headers['x-forwarded-for'].split(',')[0].trim()
-      : socket.handshake.address;
+    const clientIp = security.getClientIp(socket);
 
     const effectiveName = accountUser ? accountUser.username : cleanRequestedName;
     const { player, isReconnect, oldSocketId } = gameManager.joinPlayer(
@@ -857,7 +896,7 @@ io.on('connection', (socket) => {
       color,
       customCode,
       wordSource,
-      sessionId,
+      identity,
       clientIp,
       speedrunConfig,
       emote,
@@ -1058,7 +1097,7 @@ io.on('connection', (socket) => {
       return;
     }
     const player = room.players[socket.id];
-    if (!player || (player.name !== room.hostName && !player.isAdmin)) {
+    if (!player || (player.sessionId !== room.hostIdentity && !player.isAdmin)) {
       socket.emit('error_message', { message: 'Odstartovat hru může pouze zakladatel arény.' });
       return;
     }
@@ -1084,7 +1123,7 @@ io.on('connection', (socket) => {
       return;
     }
     const player = room.players[socket.id];
-    if (!player || (player.name !== room.hostName && !player.isAdmin)) {
+    if (!player || (player.sessionId !== room.hostIdentity && !player.isAdmin)) {
       socket.emit('error_message', { message: 'Nové kolo může spustit pouze zakladatel arény.' });
       return;
     }
@@ -1286,7 +1325,7 @@ io.on('connection', (socket) => {
         const normSpoilerWord = wordService.removeDiacritics(guessWord.toLowerCase());
 
         const alreadyGuessed = Array.isArray(room.guesses) && room.guesses.some((g) =>
-          (g.socketId === socket.id || (g.player && player.name && g.player.toLowerCase() === player.name.toLowerCase())) &&
+          (g.ownerId === player.sessionId) &&
           wordService.removeDiacritics((g.word || '').toLowerCase()) === normSpoilerWord
         );
 
