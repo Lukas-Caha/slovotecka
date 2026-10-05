@@ -2,899 +2,365 @@
   "dailyTargetWords": [
     "pes",
     "káva",
-    "škola",
     "les",
-    "slunce",
-    "auto",
-    "chléb",
-    "voda",
     "kniha",
-    "řeka",
-    "léto",
-    "hudba",
-    "zahrada",
-    "hory",
-    "lékař",
-    "hrad",
     "vlak",
-    "jablko",
-    "oheň",
-    "postel",
-    "pivo",
+    "slunce",
+    "škola",
+    "chléb",
+    "řeka",
+    "hudba",
+    "bota",
     "telefon",
-    "stůl",
-    "zima",
-    "ryba",
-    "obraz",
-    "město",
+    "zahrada",
+    "lékař",
+    "moře",
+    "dům",
+    "kočka",
+    "dort",
+    "kolo",
+    "film",
     "strom",
     "čaj",
-    "bota"
+    "hora",
+    "rodina",
+    "počítač",
+    "ryba",
+    "postel",
+    "sníh",
+    "obchod",
+    "fotbal",
+    "květina",
+    "mléko",
+    "letadlo",
+    "učitel",
+    "oheň",
+    "město",
+    "jablko",
+    "kytara",
+    "nemocnice",
+    "most",
+    "pták",
+    "pivo",
+    "hodiny",
+    "pláž",
+    "divadlo",
+    "židle",
+    "vítr",
+    "peníze",
+    "loď",
+    "práce",
+    "med",
+    "okno",
+    "srdce",
+    "vesnice",
+    "voda",
+    "auto",
+    "hvězda",
+    "kuchyň",
+    "dítě",
+    "maso"
   ],
-  "categoryAffinities": {
-    "zvire": {
-      "zvire": 0,
-      "priroda": 1,
-      "clovek": 2,
-      "jidlo": 3,
-      "domov": 3,
-      "kultura": 4,
-      "doprava": 5,
-      "mesto": 4
-    },
-    "mesto": {
-      "mesto": 0,
-      "domov": 1,
-      "doprava": 1,
-      "kultura": 2,
-      "clovek": 2,
-      "priroda": 3,
-      "jidlo": 3,
-      "zvire": 4
-    },
-    "jidlo": {
-      "jidlo": 0,
-      "clovek": 1,
-      "domov": 1,
-      "priroda": 2,
-      "zvire": 3,
-      "kultura": 4,
-      "doprava": 5
-    },
-    "kultura": {
-      "kultura": 0,
-      "clovek": 1,
-      "domov": 2,
-      "mesto": 2,
-      "doprava": 3,
-      "priroda": 4,
-      "jidlo": 4,
-      "zvire": 5
-    },
-    "priroda": {
-      "priroda": 0,
-      "zvire": 1,
-      "cas": 1,
-      "jidlo": 2,
-      "clovek": 3,
-      "domov": 4,
-      "doprava": 4,
-      "kultura": 5
-    },
-    "doprava": {
-      "doprava": 0,
-      "mesto": 1,
-      "clovek": 2,
-      "domov": 3,
-      "priroda": 4,
-      "kultura": 4,
-      "jidlo": 5,
-      "zvire": 5
-    },
-    "clovek": {
-      "clovek": 0,
-      "domov": 1,
-      "kultura": 1,
-      "jidlo": 2,
-      "zvire": 2,
-      "mesto": 2,
-      "doprava": 3,
-      "priroda": 3
-    }
-  },
   "targets": {
     "pes": {
       "word": "pes",
-      "hint": "Nejlepší přítel člověka",
-      "category": "zvire",
-      "ranks": {
-        "štěně": 2,
-        "fena": 3,
-        "kočka": 4,
-        "obojek": 5,
-        "vodítko": 6,
-        "kost": 7,
-        "štěkání": 8,
-        "bouda": 9,
-        "veterinář": 10,
-        "mazlíček": 11,
-        "čumák": 12,
-        "tlapka": 13,
-        "srst": 14,
-        "aport": 15,
-        "čokl": 16,
-        "granule": 17,
-        "útulek": 18,
-        "rasa": 19,
-        "jezevčík": 20,
-        "retrívr": 21,
-        "ovčák": 22,
-        "lovec": 23,
-        "hlídač": 24,
-        "ocas": 25,
-        "kousnutí": 26,
-        "lísání": 27,
-        "zvíře": 28,
-        "vlk": 29,
-        "haf": 30,
-        "blecha": 31,
-        "chov": 32,
-        "venčení": 33,
-        "psovod": 34,
-        "zvířátko": 35,
-        "šelma": 40,
-        "kůň": 50,
-        "koťátko": 55,
-        "liška": 60,
-        "medvěd": 70,
-        "lev": 75,
-        "procházka": 85,
-        "park": 110,
-        "pán": 120,
-        "člověk": 140,
-        "kamarád": 150,
-        "tráva": 180,
-        "příroda": 210,
-        "domov": 250
-      }
+      "gender": "mužský",
+      "category": "obecné"
     },
     "káva": {
       "word": "káva",
-      "hint": "Oblíbený horký ranní nápoj",
-      "category": "jidlo",
-      "ranks": {
-        "espresso": 2,
-        "kofein": 3,
-        "čaj": 4,
-        "šálek": 5,
-        "kavárna": 6,
-        "cappuccino": 7,
-        "mléko": 8,
-        "hrnek": 9,
-        "cukr": 10,
-        "latté": 11,
-        "nápoj": 12,
-        "barista": 13,
-        "pražení": 14,
-        "kávovar": 15,
-        "lžička": 16,
-        "ráno": 17,
-        "probuzení": 18,
-        "vůně": 19,
-        "arabica": 20,
-        "robusta": 21,
-        "horká": 22,
-        "lógor": 23,
-        "zrnka": 24,
-        "smetana": 25,
-        "kakao": 26,
-        "presso": 27,
-        "mletí": 28,
-        "teplo": 32,
-        "dort": 40,
-        "zákusek": 45,
-        "pití": 50,
-        "voda": 60,
-        "snídaně": 70,
-        "jídlo": 90,
-        "restaurace": 110,
-        "pauza": 130,
-        "odpočinek": 160,
-        "den": 220
-      }
-    },
-    "škola": {
-      "word": "škola",
-      "hint": "Místo pro výuku a vzdělávání",
-      "category": "kultura",
-      "ranks": {
-        "učitel": 2,
-        "žák": 3,
-        "student": 4,
-        "třída": 5,
-        "výuka": 6,
-        "vzdělání": 7,
-        "lavice": 8,
-        "tabule": 9,
-        "sešit": 10,
-        "učebnice": 11,
-        "známka": 12,
-        "zkouška": 13,
-        "přestávka": 14,
-        "ředitel": 15,
-        "úkol": 16,
-        "univerzita": 17,
-        "maturita": 18,
-        "školák": 19,
-        "vysvědčení": 20,
-        "pero": 21,
-        "aktovka": 22,
-        "křída": 23,
-        "rozvrh": 24,
-        "učit": 25,
-        "předmět": 28,
-        "matematika": 32,
-        "čeština": 35,
-        "hodina": 40,
-        "učitelský": 45,
-        "profesor": 50,
-        "kniha": 60,
-        "děti": 80,
-        "kamarádi": 110,
-        "budova": 150,
-        "práce": 220
-      }
+      "gender": "ženský",
+      "category": "obecné"
     },
     "les": {
       "word": "les",
-      "hint": "Velký porost stromů plný zvěře a hub",
-      "category": "priroda",
-      "ranks": {
-        "strom": 2,
-        "stromy": 3,
-        "dřevo": 4,
-        "houby": 5,
-        "mech": 6,
-        "borovice": 7,
-        "smrk": 8,
-        "dub": 9,
-        "zvěř": 10,
-        "myslivec": 11,
-        "příroda": 12,
-        "listí": 13,
-        "háj": 14,
-        "větve": 15,
-        "paseka": 16,
-        "borůvky": 17,
-        "kůra": 18,
-        "kapradí": 19,
-        "jehličí": 20,
-        "lesník": 21,
-        "mýtina": 22,
-        "houbař": 23,
-        "stezka": 24,
-        "křoví": 25,
-        "pařez": 26,
-        "vlk": 30,
-        "jelen": 34,
-        "srna": 38,
-        "divočák": 42,
-        "pták": 50,
-        "hory": 70,
-        "země": 100,
-        "tráva": 130,
-        "procházka": 170,
-        "klid": 210
-      }
-    },
-    "slunce": {
-      "word": "slunce",
-      "hint": "Hvězda dávající Zemi teplo a světlo",
-      "category": "priroda",
-      "ranks": {
-        "teplo": 2,
-        "světlo": 3,
-        "paprsky": 4,
-        "den": 5,
-        "obloha": 6,
-        "léto": 7,
-        "svit": 8,
-        "hvězda": 9,
-        "opalování": 10,
-        "stín": 11,
-        "východ": 12,
-        "západ": 13,
-        "jas": 14,
-        "žár": 15,
-        "horko": 16,
-        "slunečnice": 17,
-        "mrak": 18,
-        "planeta": 19,
-        "vesmír": 20,
-        "svítání": 21,
-        "ráno": 22,
-        "poledne": 23,
-        "pláž": 24,
-        "úpal": 25,
-        "záře": 26,
-        "oheň": 40,
-        "měsíc": 48,
-        "počasí": 65,
-        "dovolená": 95,
-        "jaro": 125,
-        "život": 180
-      }
-    },
-    "auto": {
-      "word": "auto",
-      "hint": "Čtyřkolový motorový dopravní prostředek",
-      "category": "doprava",
-      "ranks": {
-        "automobil": 2,
-        "vozidlo": 3,
-        "řidič": 4,
-        "motor": 5,
-        "volant": 6,
-        "kola": 7,
-        "silnice": 8,
-        "jízda": 9,
-        "benzín": 10,
-        "nafta": 11,
-        "brzdy": 12,
-        "doprava": 13,
-        "dálnice": 14,
-        "garáž": 15,
-        "kufr": 16,
-        "rychlost": 17,
-        "pedál": 18,
-        "zácpa": 19,
-        "semafor": 20,
-        "karoserie": 21,
-        "pneumatika": 22,
-        "křižovatka": 23,
-        "výfuk": 24,
-        "kapota": 25,
-        "tankování": 26,
-        "kamion": 30,
-        "motorka": 35,
-        "autobus": 45,
-        "vlak": 55,
-        "cesta": 75,
-        "město": 100,
-        "nehoda": 130
-      }
-    },
-    "chléb": {
-      "word": "chléb",
-      "hint": "Základní pečené pečivo z mouky",
-      "category": "jidlo",
-      "ranks": {
-        "chleba": 2,
-        "pekař": 3,
-        "pekárna": 4,
-        "pečivo": 5,
-        "kůrka": 6,
-        "mouka": 7,
-        "těsto": 8,
-        "pečení": 9,
-        "krajíc": 10,
-        "rohlík": 11,
-        "máslo": 12,
-        "bochník": 13,
-        "kvasnice": 14,
-        "obilí": 15,
-        "pšenice": 16,
-        "žito": 17,
-        "droždí": 18,
-        "sendvič": 19,
-        "topinka": 20,
-        "křupavý": 21,
-        "sádlo": 22,
-        "pec": 23,
-        "střídka": 24,
-        "drobek": 25,
-        "houska": 30,
-        "snídaně": 40,
-        "jídlo": 60,
-        "stůl": 95,
-        "hlad": 115,
-        "kuchyně": 140
-      }
-    },
-    "voda": {
-      "word": "voda",
-      "hint": "Čirá životodárná tekutina",
-      "category": "priroda",
-      "ranks": {
-        "řeka": 2,
-        "moře": 3,
-        "oceán": 4,
-        "tekutina": 5,
-        "jezero": 6,
-        "kapka": 7,
-        "proud": 8,
-        "nápoj": 9,
-        "déšť": 10,
-        "vlna": 11,
-        "plavání": 12,
-        "pramen": 13,
-        "led": 14,
-        "rybník": 15,
-        "potok": 16,
-        "břeh": 17,
-        "hloubka": 18,
-        "koupání": 19,
-        "přehrada": 20,
-        "žízeň": 21,
-        "mokro": 22,
-        "vodník": 23,
-        "pára": 24,
-        "potápění": 25,
-        "studna": 26,
-        "kohoutek": 30,
-        "sklenice": 40,
-        "láhev": 50,
-        "ryba": 65,
-        "loď": 80,
-        "čistota": 115,
-        "život": 145
-      }
+      "gender": "mužský",
+      "category": "obecné"
     },
     "kniha": {
       "word": "kniha",
-      "hint": "Vázané listy plné psaných příběhů",
-      "category": "kultura",
-      "ranks": {
-        "čtení": 2,
-        "stránka": 3,
-        "autor": 4,
-        "spisovatel": 5,
-        "knihovna": 6,
-        "příběh": 7,
-        "román": 8,
-        "kapitola": 9,
-        "papír": 10,
-        "knížka": 11,
-        "literatura": 12,
-        "obálka": 13,
-        "básník": 14,
-        "poezie": 15,
-        "knihkupectví": 16,
-        "čtenář": 17,
-        "písmena": 18,
-        "vazba": 19,
-        "text": 20,
-        "učebnice": 25,
-        "sešit": 30,
-        "škola": 45,
-        "vzdělání": 60,
-        "psaní": 75,
-        "pero": 95,
-        "pohádka": 115,
-        "fantazie": 145
-      }
-    },
-    "řeka": {
-      "word": "řeka",
-      "hint": "Přirozený tekoucí vodní tok",
-      "category": "priroda",
-      "ranks": {
-        "proud": 2,
-        "voda": 3,
-        "potok": 4,
-        "břeh": 5,
-        "koryto": 6,
-        "most": 7,
-        "pramen": 8,
-        "jezero": 9,
-        "moře": 10,
-        "loď": 11,
-        "ryba": 12,
-        "přehrada": 13,
-        "ústí": 14,
-        "vltava": 15,
-        "labe": 16,
-        "jez": 17,
-        "vlny": 18,
-        "rybář": 19,
-        "plavba": 20,
-        "vodák": 21,
-        "pádlo": 22,
-        "povodeň": 25,
-        "kameny": 35,
-        "plavání": 45,
-        "příroda": 70,
-        "les": 95
-      }
-    },
-    "léto": {
-      "word": "léto",
-      "hint": "Nejteplejší roční období",
-      "category": "priroda",
-      "ranks": {
-        "slunce": 2,
-        "teplo": 3,
-        "horko": 4,
-        "prázdniny": 5,
-        "dovolená": 6,
-        "koupaní": 7,
-        "koupání": 7,
-        "voda": 8,
-        "pláž": 9,
-        "moře": 10,
-        "opalování": 11,
-        "zmrzlina": 12,
-        "jaro": 13,
-        "podzim": 14,
-        "zima": 15,
-        "červenec": 16,
-        "srpen": 17,
-        "červen": 18,
-        "tábor": 19,
-        "bouřka": 20,
-        "úpal": 22,
-        "plavky": 25,
-        "písek": 30,
-        "cestování": 40,
-        "výlet": 50,
-        "příroda": 70
-      }
-    },
-    "hudba": {
-      "word": "hudba",
-      "hint": "Umění tónů, melodií a rytmu",
-      "category": "kultura",
-      "ranks": {
-        "píseň": 2,
-        "melodie": 3,
-        "tón": 4,
-        "rytmus": 5,
-        "zpěv": 6,
-        "zpěvák": 7,
-        "kapela": 8,
-        "koncert": 9,
-        "nástroj": 10,
-        "kytara": 11,
-        "klavír": 12,
-        "housle": 13,
-        "bicí": 14,
-        "skladatel": 15,
-        "sluchátka": 16,
-        "rádio": 17,
-        "zvuk": 18,
-        "noty": 19,
-        "tanec": 20,
-        "orchestr": 22,
-        "rock": 25,
-        "pop": 28,
-        "hudebník": 30,
-        "hlas": 35,
-        "divadlo": 55,
-        "umění": 70
-      }
-    },
-    "zahrada": {
-      "word": "zahrada",
-      "hint": "Upravený pozemek u domu s rostlinami a stromy",
-      "category": "priroda",
-      "ranks": {
-        "strom": 2,
-        "květina": 3,
-        "tráva": 4,
-        "záhon": 5,
-        "zelenina": 6,
-        "ovoce": 7,
-        "plot": 8,
-        "sekačka": 9,
-        "zahradník": 10,
-        "země": 11,
-        "hlína": 12,
-        "zalévání": 13,
-        "hadice": 14,
-        "jablko": 15,
-        "keř": 16,
-        "altán": 17,
-        "lavička": 18,
-        "dům": 19,
-        "terasa": 20,
-        "sklizeň": 22,
-        "rostlina": 25,
-        "plevel": 30,
-        "příroda": 50
-      }
-    },
-    "hory": {
-      "word": "hory",
-      "hint": "Vysoká pohoří s vrcholy a údolími",
-      "category": "priroda",
-      "ranks": {
-        "vrchol": 2,
-        "hora": 3,
-        "kopec": 4,
-        "skála": 5,
-        "sníh": 6,
-        "lyžování": 7,
-        "turistika": 8,
-        "výstup": 9,
-        "hřeben": 10,
-        "údolí": 11,
-        "lanovka": 12,
-        "chata": 13,
-        "sjezdovka": 14,
-        "kamení": 15,
-        "les": 16,
-        "výlet": 17,
-        "kráčivý": 18,
-        "výhled": 19,
-        "alpy": 20,
-        "krkonoše": 21,
-        "strmý": 25,
-        "příroda": 45,
-        "vítr": 60,
-        "zima": 75
-      }
-    },
-    "lékař": {
-      "word": "lékař",
-      "hint": "Odborník pečující o zdraví a léčící nemoci",
-      "category": "clovek",
-      "ranks": {
-        "doktor": 2,
-        "nemocnice": 3,
-        "pacient": 4,
-        "sestřička": 5,
-        "ordinace": 6,
-        "lék": 7,
-        "nemoc": 8,
-        "zdraví": 9,
-        "léčba": 10,
-        "recept": 11,
-        "vyšetření": 12,
-        "operace": 13,
-        "chirurg": 14,
-        "sanitka": 15,
-        "bolest": 16,
-        "stetoskop": 17,
-        "očkování": 18,
-        "injekce": 19,
-        "záchranka": 20,
-        "teploměr": 22,
-        "obvaz": 25,
-        "lékárna": 30,
-        "uzdravení": 35,
-        "tělo": 50,
-        "člověk": 70
-      }
-    },
-    "hrad": {
-      "word": "hrad",
-      "hint": "Středověké kamenné sídlo králů a pánů",
-      "category": "mesto",
-      "ranks": {
-        "zámek": 2, "věž": 3, "hradby": 4, "král": 5, "rytíř": 6, "brána": 7, "cimbuří": 8, "pevnost": 9,
-        "zřícenina": 10, "příkop": 11, "kámen": 12, "historie": 13, "hradní": 14, "nádvoří": 15, "most": 16,
-        "královna": 17, "panovník": 18, "středověk": 19, "palác": 20, "zbroj": 22, "meč": 25, "karlštejn": 28,
-        "vězení": 32, "sklepení": 35, "hradisko": 40, "architektura": 50, "turista": 65, "památka": 75, "kopec": 90
-      }
+      "gender": "ženský",
+      "category": "obecné"
     },
     "vlak": {
       "word": "vlak",
-      "hint": "Souprava vozů jedoucí po kolejích",
-      "category": "doprava",
-      "ranks": {
-        "koleje": 2, "nádraží": 3, "lokomotiva": 4, "vagón": 5, "průvodčí": 6, "perón": 7, "stanice": 8,
-        "kolejnice": 9, "zpoždění": 10, "cestování": 11, "jízdenka": 12, "rychlík": 13, "trať": 14, "vlakový": 15,
-        "kupé": 16, "pasažér": 17, "doprava": 18, "jízdní": 19, "přejezd": 20, "strojvedoucí": 22, "cesta": 25,
-        "autobus": 35, "tramvaj": 40, "metro": 45, "auto": 55, "výlet": 70, "město": 95
-      }
+      "gender": "mužský",
+      "category": "obecné"
     },
-    "jablko": {
-      "word": "jablko",
-      "hint": "Šťavnaté kulaté ovoce rostoucí na jabloni",
-      "category": "jidlo",
-      "ranks": {
-        "ovoce": 2, "strom": 3, "hruška": 4, "sad": 5, "červené": 6, "sladké": 7, "větev": 8, "jabloň": 9,
-        "šťáva": 10, "mošt": 11, "štrúdl": 12, "kompot": 13, "slupka": 14, "jadřinec": 15, "vitamín": 16,
-        "červík": 17, "sklizeň": 18, "zelené": 19, "chuť": 20, "koláč": 22, "švestka": 25, "jahoda": 28,
-        "banán": 32, "zahrada": 40, "jídlo": 60, "příroda": 90
-      }
+    "slunce": {
+      "word": "slunce",
+      "gender": "střední",
+      "category": "obecné"
     },
-    "oheň": {
-      "word": "oheň",
-      "hint": "Horký živel produkující plameny a kouř",
-      "category": "priroda",
-      "ranks": {
-        "plamen": 2, "kouř": 3, "teplo": 4, "táborák": 5, "popel": 6, "jiskra": 7, "dřevo": 8, "ohniště": 9,
-        "zápalka": 10, "hoření": 11, "žár": 12, "hasič": 13, "popálenina": 14, "ohnivý": 15, "požár": 16,
-        "uhlí": 17, "kamna": 18, "krb": 19, "zapalovač": 20, "horko": 22, "světlo": 25, "noc": 35,
-        "slunce": 45, "les": 85, "nebezpečí": 110
-      }
+    "škola": {
+      "word": "škola",
+      "gender": "ženský",
+      "category": "obecné"
     },
-    "postel": {
-      "word": "postel",
-      "hint": "Nábytek určený pro noční odpočinek a spánek",
-      "category": "domov",
-      "ranks": {
-        "spánek": 2, "peřina": 3, "polštář": 4, "matrace": 5, "ložnice": 6, "povlečení": 7, "noc": 8,
-        "odpočinek": 9, "deka": 10, "spaní": 11, "unavený": 12, "probuzení": 13, "rošt": 14, "lenošení": 15,
-        "sen": 16, "peřiny": 17, "usínání": 18, "gauč": 20, "pokoj": 25, "dům": 35, "nábytek": 45,
-        "tělo": 65, "ráno": 85, "klid": 110
-      }
+    "chléb": {
+      "word": "chléb",
+      "gender": "mužský",
+      "category": "obecné"
     },
-    "pivo": {
-      "word": "pivo",
-      "hint": "Český národní hořký kvašený nápoj z chmele a sladu",
-      "category": "jidlo",
-      "ranks": {
-        "hospoda": 2, "půllitr": 3, "pěna": 4, "chmel": 5, "slad": 6, "ležák": 7, "pivovar": 8, "točené": 9,
-        "alkohol": 10, "orosené": 11, "nápoj": 12, "hospodský": 13, "desítka": 14, "dvanáctka": 15, "láhev": 16,
-        "víno": 17, "sklenice": 18, "žízeň": 19, "kocovina": 20, "bar": 22, "pivko": 25, "kamarádi": 35,
-        "večer": 45, "pití": 55, "jídlo": 80
-      }
+    "řeka": {
+      "word": "řeka",
+      "gender": "ženský",
+      "category": "obecné"
     },
-    "telefon": {
-      "word": "telefon",
-      "hint": "Přístroj na volání, zprávy a brouzdání po internetu",
-      "category": "kultura",
-      "ranks": {
-        "mobil": 2, "volání": 3, "displej": 4, "nabíječka": 5, "zpráva": 6, "číslo": 7, "hovor": 8,
-        "baterie": 9, "aplikace": 10, "smartphone": 11, "internet": 12, "vyzvánění": 13, "sms": 14, "sluchátka": 15,
-        "kabel": 16, "dotykový": 17, "kontakt": 18, "signál": 19, "počítač": 22, "komunikace": 25, "fotka": 30,
-        "elektronika": 45, "technologie": 60, "člověk": 90
-      }
-    },
-    "stůl": {
-      "word": "stůl",
-      "hint": "Nábytek s vodorovnou deskou a nohama",
-      "category": "domov",
-      "ranks": {
-        "židle": 2, "nábytek": 3, "deska": 4, "noha": 5, "ubrus": 6, "dřevo": 7, "jídelna": 8, "kuchyň": 9,
-        "oběd": 10, "talíř": 11, "pracovna": 12, "psací": 13, "pokoj": 14, "sezení": 15, "prostírání": 16,
-        "konferenční": 17, "skříň": 20, "postel": 25, "dům": 35, "domov": 45, "jídlo": 60, "práce": 85
-      }
-    },
-    "zima": {
-      "word": "zima",
-      "hint": "Nejchladnější roční období plné sněhu a mrazu",
-      "category": "priroda",
-      "ranks": {
-        "sníh": 2, "mráz": 3, "led": 4, "vločka": 5, "chlad": 6, "kabát": 7, "rukavice": 8, "čepice": 9,
-        "lyžování": 10, "vánoce": 11, "prosinec": 12, "leden": 13, "rampouch": 14, "studeno": 15, "bunda": 16,
-        "sněhulák": 17, "bruslení": 18, "sáňky": 19, "lyže": 20, "podzim": 22, "jaro": 25, "léto": 30,
-        "počasí": 40, "teploměr": 50, "hory": 65, "příroda": 90
-      }
-    },
-    "ryba": {
-      "word": "ryba",
-      "hint": "Šupinatý vodní živočich dýchající žábrami",
-      "category": "zvire",
-      "ranks": {
-        "voda": 2, "rybník": 3, "řeka": 4, "kapr": 5, "ploutev": 6, "šupina": 7, "rybář": 8, "prut": 9,
-        "udice": 10, "akvárium": 11, "plavání": 12, "žábry": 13, "úlovek": 14, "pstruh": 15, "štika": 16,
-        "moře": 17, "oceán": 18, "háček": 19, "sádka": 22, "zvíře": 25, "loď": 35, "maso": 45, "příroda": 65
-      }
-    },
-    "obraz": {
-      "word": "obraz",
-      "hint": "Malířské umělecké dílo zavěšené v rámu",
-      "category": "kultura",
-      "ranks": {
-        "malba": 2, "malíř": 3, "rám": 4, "plátno": 5, "štětec": 6, "barvy": 7, "galerie": 8, "umění": 9,
-        "portrét": 10, "výstava": 11, "kresba": 12, "krajina": 13, "olejomalba": 14, "zeď": 15,
-        "umělec": 17, "muzeum": 18, "socha": 20, "barva": 22, "krása": 35, "kultura": 50, "pokoj": 70
-      }
-    },
-    "město": {
-      "word": "město",
-      "hint": "Větší osídlené místo s ulicemi, náměstím a radnicí",
-      "category": "mesto",
-      "ranks": {
-        "ulice": 2, "náměstí": 3, "domy": 4, "budovy": 5, "lidé": 6, "doprava": 7, "radnice": 8, "centrum": 9,
-        "semafor": 10, "sídliště": 11, "městský": 12, "chodník": 13, "vesnice": 14, "obyvatelé": 15, "obchody": 16,
-        "park": 17, "kostel": 18, "auto": 20, "panelák": 22, "škola": 25, "metro": 30, "práce": 45
-      }
-    },
-    "strom": {
-      "word": "strom",
-      "hint": "Mohutná dřevitá rostlina s kmenem a korunou",
-      "category": "priroda",
-      "ranks": {
-        "les": 2, "dřevo": 3, "větev": 4, "list": 5, "kmen": 6, "kůra": 7, "kořen": 8, "stín": 9,
-        "koruna": 10, "jehličí": 11, "pařez": 12, "dub": 13, "smrk": 14, "borovice": 15, "bříza": 16,
-        "stromy": 17, "příroda": 18, "listí": 19, "zelený": 20, "park": 25, "zahrada": 30, "pták": 40
-      }
-    },
-    "čaj": {
-      "word": "čaj",
-      "hint": "Teplý nápoj připravený louhováním sušených lístků nebo bylin",
-      "category": "jidlo",
-      "ranks": {
-        "bylinky": 2, "konvice": 3, "hrnek": 4, "horký": 5, "med": 6, "citrón": 7, "šálek": 8, "sáček": 9,
-        "louhování": 10, "nápoj": 11, "zelený": 12, "černý": 13, "zázvor": 14, "káva": 15, "teplo": 16,
-        "pití": 17, "voda": 18, "cukr": 19, "lžička": 20, "nemoc": 25, "zima": 30, "ráno": 45, "klid": 65
-      }
+    "hudba": {
+      "word": "hudba",
+      "gender": "ženský",
+      "category": "obecné"
     },
     "bota": {
       "word": "bota",
-      "hint": "Obuv na nohu chránící chodidlo při chůzi",
-      "category": "clovek",
-      "ranks": {
-        "noha": 2, "tkanička": 3, "podrážka": 4, "chůze": 5, "teniska": 6, "obuv": 7, "podpatek": 8,
-        "sandál": 9, "botička": 10, "švec": 11, "kožená": 12, "ponožka": 13, "polobotka": 14, "přezutí": 15,
-        "krok": 16, "chodidlo": 17, "pantofle": 18, "oblečení": 25, "kalhoty": 30, "cesta": 45, "běh": 60
-      }
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "telefon": {
+      "word": "telefon",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "zahrada": {
+      "word": "zahrada",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "lékař": {
+      "word": "lékař",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "moře": {
+      "word": "moře",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "dům": {
+      "word": "dům",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "kočka": {
+      "word": "kočka",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "dort": {
+      "word": "dort",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "kolo": {
+      "word": "kolo",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "film": {
+      "word": "film",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "strom": {
+      "word": "strom",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "čaj": {
+      "word": "čaj",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "hora": {
+      "word": "hora",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "rodina": {
+      "word": "rodina",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "počítač": {
+      "word": "počítač",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "ryba": {
+      "word": "ryba",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "postel": {
+      "word": "postel",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "sníh": {
+      "word": "sníh",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "obchod": {
+      "word": "obchod",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "fotbal": {
+      "word": "fotbal",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "květina": {
+      "word": "květina",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "mléko": {
+      "word": "mléko",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "letadlo": {
+      "word": "letadlo",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "učitel": {
+      "word": "učitel",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "oheň": {
+      "word": "oheň",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "město": {
+      "word": "město",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "jablko": {
+      "word": "jablko",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "kytara": {
+      "word": "kytara",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "nemocnice": {
+      "word": "nemocnice",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "most": {
+      "word": "most",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "pták": {
+      "word": "pták",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "pivo": {
+      "word": "pivo",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "hodiny": {
+      "word": "hodiny",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "pláž": {
+      "word": "pláž",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "divadlo": {
+      "word": "divadlo",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "židle": {
+      "word": "židle",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "vítr": {
+      "word": "vítr",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "peníze": {
+      "word": "peníze",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "loď": {
+      "word": "loď",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "práce": {
+      "word": "práce",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "med": {
+      "word": "med",
+      "gender": "mužský",
+      "category": "obecné"
+    },
+    "okno": {
+      "word": "okno",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "srdce": {
+      "word": "srdce",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "vesnice": {
+      "word": "vesnice",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "voda": {
+      "word": "voda",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "auto": {
+      "word": "auto",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "hvězda": {
+      "word": "hvězda",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "kuchyň": {
+      "word": "kuchyň",
+      "gender": "ženský",
+      "category": "obecné"
+    },
+    "dítě": {
+      "word": "dítě",
+      "gender": "střední",
+      "category": "obecné"
+    },
+    "maso": {
+      "word": "maso",
+      "gender": "střední",
+      "category": "obecné"
     }
-  },
-  "semanticClusters": {
-    "zvire": [
-      "kůň", "kráva", "prase", "ovce", "koza", "býk", "tele", "hříbě", "selátko",
-      "pták", "orel", "sokol", "jestřáb", "sova", "holub", "kachna", "husa", "labuť", "vrabec", "kos", "vlaštovka",
-      "ryba", "kapr", "pstruh", "štika", "okoun", "žralok", "velryba", "delfín",
-      "medvěd", "vlk", "liška", "rys", "jelen", "srnec", "daněk", "kanec", "zajíc", "králík",
-      "lev", "tygr", "gepard", "leopard", "slon", "žirafa", "zebra", "hroch", "nosorožec", "opice", "šimpanz", "klokan", "velbloud",
-      "hmyz", "včela", "vosa", "čmelák", "mravenec", "moucha", "komár", "brouk", "motýl", "pavouk",
-      "had", "zmije", "kobra", "krokodýl", "ještěrka", "želva", "žába", "ropucha",
-      "křeček", "morče", "myš", "potkan", "ježek", "veverka", "bobr", "krtek"
-    ],
-    "jidlo": [
-      "čaj", "voda", "pivo", "víno", "mléko", "džus", "minerálka", "limonáda", "sirup", "káva",
-      "chléb", "chleba", "rohlík", "houska", "bábovka", "vánočka", "koláč", "buchta", "dort", "sušenka", "kobliha",
-      "máslo", "sýr", "tvaroh", "jogurt", "smetana", "šlehačka",
-      "maso", "šunka", "salám", "klobása", "párek", "slanina", "vepřové", "hovězí", "kuřecí", "ryba", "řízek", "guláš", "svíčková",
-      "polévka", "vývar", "omáčka", "těstoviny", "rýže", "brambory", "knedlík", "kaše", "hranolky",
-      "mouka", "cukr", "sůl", "pepř", "olej", "ocet", "koření", "droždí", "med",
-      "jablko", "hruška", "švestka", "třešeň", "jahoda", "malina", "borůvka", "banán", "pomeranč", "citrón", "meloun", "hrozny",
-      "rajče", "okurka", "paprika", "mrkev", "cibule", "česnek", "brambor", "hrách", "fazole", "čočka", "zelí", "salát",
-      "snídaně", "oběd", "večeře", "svačina", "hostina", "půst", "hlad", "žízeň", "chuť"
-    ],
-    "priroda": [
-      "les", "strom", "dřevo", "pařez", "větev", "list", "jehličí", "kůra", "kořen",
-      "mech", "tráva", "květina", "louka", "pole", "křoví", "kapradí", "houba", "hřib",
-      "hora", "vrchol", "kopec", "skála", "údolí", "roklina", "jeskyně", "propast", "kámen", "písek", "hlína", "země",
-      "řeka", "potok", "bystřina", "pramen", "vodopád", "jezero", "rybník", "tůň", "moře", "oceán", "záliv", "ostrov", "pláž",
-      "slunce", "měsíc", "hvězda", "nebe", "obloha", "vesmír", "planeta",
-      "mrak", "déšť", "kapka", "bouřka", "blesk", "hrom", "vítr", "vichřice", "vánice", "sníh", "vločka", "led", "mráz", "námraza", "rosa", "mlha",
-      "jaro", "léto", "podzim", "zima", "den", "noc", "ráno", "poledne", "večer", "soumrak", "svítání"
-    ],
-    "doprava": [
-      "auto", "automobil", "vůz", "vozidlo", "dodávka", "kamion", "náklaďák", "traktor",
-      "autobus", "trolejbus", "tramvaj", "metro", "vlak", "lokomotiva", "vagón",
-      "kolo", "bicykl", "motorka", "motocykl", "skútr", "čtyřkolka", "koloběžka",
-      "letadlo", "stíhačka", "vrtulník", "balón", "raketa",
-      "loď", "parník", "člun", "jachta", "plachetnice", "ponorka", "trajekt",
-      "silnice", "cesta", "dálnice", "ulice", "křižovatka", "most", "tunel", "kolej",
-      "nádraží", "stanice", "zastávka", "letiště", "přístav", "garáž", "parkoviště",
-      "řidič", "pilot", "kapitán", "strojvedoucí", "cestující", "pasažér",
-      "motor", "volant", "pedál", "brzda", "kolo", "pneumatika", "světlo", "stěrač", "benzín", "nafta"
-    ],
-    "kultura": [
-      "škola", "univerzita", "gymnázium", "fakulta", "třída", "kabinet", "posluchárna",
-      "kniha", "knížka", "sešit", "učebnice", "slovník", "román", "povídka", "báseň", "časopis", "noviny",
-      "pero", "tužka", "pastelka", "křída", "fixa", "pravítko", "guma", "kružítko", "aktovka", "batoh",
-      "divadlo", "kino", "film", "scéna", "herec", "herečka", "režisér", "představení", "hra", "opona",
-      "hudba", "píseň", "melodie", "tón", "koncert", "zpěvák", "kapela", "orchestr", "kytara", "klavír", "housle",
-      "obraz", "malba", "socha", "galerie", "muzeum", "výstava", "malíř", "sochař", "umělec",
-      "učitel", "profesor", "žák", "student", "školák", "ředitel", "vědec", "spisovatel", "básník"
-    ],
-    "clovek": [
-      "člověk", "lidé", "muž", "žena", "dítě", "chlapec", "dívka", "miminko", "batole", "stařec", "babička", "dědeček",
-      "otec", "matka", "rodiče", "syn", "dcera", "bratr", "sestra", "sourozenec", "strýc", "teta", "bratranec", "rodina", "příbuzný",
-      "přítel", "kamarád", "známý", "soused", "kolega", "nepřítel", "cizinec",
-      "hlava", "vlasy", "obličej", "tvář", "čelo", "oko", "ucho", "nos", "pusa", "ústa", "ret", "zub", "jazyk", "brada", "krk",
-      "tělo", "rameno", "ruka", "paže", "loket", "zápěstí", "dlaň", "prst", "nehet",
-      "hrudník", "prsa", "břicho", "záda", "páteř", "bok", "zadek",
-      "noha", "stehno", "koleno", "lýtko", "kotník", "chodidlo", "pata", "prstec",
-      "srdce", "plíce", "žaludek", "játra", "ledviny", "mozek", "krev", "žíla", "kost", "kloub", "sval", "kůže",
-      "lékař", "doktor", "chirurg", "zubař", "sestřička", "pacient", "nemocný", "raněný"
-    ],
-    "domov": [
-      "dům", "domek", "vila", "chalupa", "chata", "byt", "panelák", "činžák", "mrakodrap",
-      "pokoj", "místnost", "kuchyň", "koupelna", "ložnice", "obývák", "chodba", "předsíň", "šatna", "spíž", "sklep", "půda", "garáž",
-      "střecha", "komín", "zeď", "stěna", "okno", "dveře", "práh", "podlaha", "strop", "schody", "zábradlí",
-      "stůl", "židle", "křeslo", "pohovka", "gauč", "postel", "matrace", "skříň", "police", "komoda", "zrcadlo", "koberec",
-      "lampa", "lustr", "světlo", "vypínač", "zásuvka", "topení", "kamna", "krb",
-      "talíř", "miska", "hrnek", "sklenice", "příbor", "nůž", "vidlička", "lžíce", "lžička", "hrnec", "pánev", "pekáč",
-      "lednice", "mrazák", "sporák", "trouba", "myčka", "pračka", "vysavač", "žehlička"
-    ]
   }
 }

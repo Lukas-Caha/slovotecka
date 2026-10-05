@@ -69,6 +69,25 @@ test('chat escaping encodes quotes in attribute context', () => {
   assert.equal(context.escapeHtml("<&'>"), '&lt;&amp;&#39;&gt;');
 });
 
+test('state from a previous word dataset cannot restore obsolete ranks', () => {
+  const { gm, safeFs } = fixture();
+  const saved = {
+    daily: { date: word.getCzechDateStr(), targetWord: gm.rooms.daily.targetWordObj.word,
+      guesses: [{ word: 'starý', rank: 2 }], playerProfiles: {} }
+  };
+  safeFs.existsSync = () => true;
+  safeFs.readFileSync = () => JSON.stringify(saved);
+  assert.equal(gm.loadStateFromFile(), false);
+  assert.equal(gm.rooms.daily.guesses.length, 0);
+  saved.wordDataVersion = word.DATA_VERSION;
+  assert.equal(gm.loadStateFromFile(), true);
+  assert.equal(gm.rooms.daily.guesses[0].word, 'starý');
+  let persisted;
+  safeFs.writeFileSync = (p, content) => { persisted = JSON.parse(content); };
+  gm.saveStateToFile(true);
+  assert.equal(persisted.wordDataVersion, word.DATA_VERSION);
+});
+
 test('same name cannot recover another guest state, statistics or guesses', () => {
   const { gm, profiles } = fixture();
   const room = gm.rooms.daily;

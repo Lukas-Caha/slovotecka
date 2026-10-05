@@ -833,7 +833,8 @@ class DailyGameRoom extends BaseGameRoom {
   loadYesterdayRecap() {
     try {
       if (fs.existsSync(YESTERDAY_RECAP_PATH)) {
-        return JSON.parse(fs.readFileSync(YESTERDAY_RECAP_PATH, 'utf-8'));
+        const recap = JSON.parse(fs.readFileSync(YESTERDAY_RECAP_PATH, 'utf-8'));
+        return recap.wordDataVersion === wordService.DATA_VERSION ? recap : null;
       }
     } catch (e) {
       console.warn('[DailyGameRoom] Nepodařilo se načíst yesterdayRecap.json:', e.message);
@@ -842,6 +843,7 @@ class DailyGameRoom extends BaseGameRoom {
   }
 
   saveYesterdayRecap(recap) {
+    recap.wordDataVersion = wordService.DATA_VERSION;
     this.yesterdayRecap = recap;
     try {
       const dir = path.dirname(YESTERDAY_RECAP_PATH);
@@ -1833,6 +1835,7 @@ class RoomManager {
   saveStateToFile(sync = false) {
     try {
       const data = {
+        wordDataVersion: wordService.DATA_VERSION,
         savedAt: Date.now(),
         daily: {
           date: this.rooms.daily.activeDate,
@@ -1888,6 +1891,12 @@ class RoomManager {
       const raw = fs.readFileSync(STATE_FILE_PATH, 'utf-8');
       if (!raw || !raw.trim()) return false;
       const data = JSON.parse(raw);
+
+      // Tipy a pořadí ze starého slovníku nepatří do nové herní sady.
+      if (data.wordDataVersion !== wordService.DATA_VERSION) {
+        console.log('[STATE] Herní slovník se změnil, začínám s čistými koly.');
+        return false;
+      }
 
       const todayStr = wordService.getCzechDateStr();
 

@@ -15,6 +15,7 @@ try {
 // Cesty ke složce s vygenerovanými slovy na dny
 const VYSTUP_DIR = path.join(__dirname, '..', 'vystup');
 const HARMONOGRAM_PATH = path.join(VYSTUP_DIR, 'harmonogram.csv');
+const DATA_VERSION = 'czech-lemmas-2026-10-05';
 
 // Pomocná funkce pro odstranění české diakritiky (háčků a čárek)
 function removeDiacritics(str) {
@@ -38,9 +39,21 @@ function getCzechDateStr(date = new Date()) {
   }).format(date);
 }
 
-// Pevné výchozí datum (1. září 2026 = Den #1)
-// 17. září 2026 = Den #17, po půlnoci 18. září 2026 = Den #18
-const START_DATE_STR = '2026-09-01';
+// Nová sada: 5. října 2026 = Den #1, další slovo o české půlnoci.
+const START_DATE_STR = '2026-10-05';
+
+// Tvary slov odkazují na jediný základní tvar, nezabírají další pořadí.
+const aliasesPath = path.join(VYSTUP_DIR, 'aliases.json');
+const wordAliases = fs.existsSync(aliasesPath)
+  ? JSON.parse(fs.readFileSync(aliasesPath, 'utf8')) : {};
+const accentlessAliases = new Map();
+for (const form of Object.keys(wordAliases)) {
+  const key = removeDiacritics(form);
+  // Nejednoznačné zápisy bez diakritiky mají pevné, na cíli nezávislé rozlišení.
+  if (key !== form && !Object.hasOwn(wordAliases, key) && !accentlessAliases.has(key)) {
+    accentlessAliases.set(key, wordAliases[form]);
+  }
+}
 
 // Načtení harmonogramu dnů a tajných slov z vystup/harmonogram.csv
 function loadSchedule() {
@@ -68,7 +81,7 @@ function loadSchedule() {
 
 const schedule = loadSchedule();
 
-// Výpočet pořadového čísla dne od 1. září 2026
+// Výpočet pořadového čísla dne od začátku nové sady.
 function getDayNumber(dateStr) {
   const targetDateStr = dateStr || getCzechDateStr();
   const [sy, sm, sd] = START_DATE_STR.split('-').map(Number);
@@ -110,6 +123,7 @@ const WORD_GENDERS = {
 
 function getWordGender(word) {
   const w = normalizeWord(word);
+  if (wordsData.targets?.[w]?.gender) return wordsData.targets[w].gender;
   if (WORD_GENDERS[w]) return WORD_GENDERS[w];
   if (w.endsWith('o') || w.endsWith('í') || (w.endsWith('e') && (w.endsWith('če') || w.endsWith('ště') || w.endsWith('tě')))) return 'střední';
   if (w.endsWith('a') || w.endsWith('e') || w.endsWith('ost')) return 'ženský';
@@ -231,6 +245,8 @@ function loadDayData(day, targetWord) {
     maxRank
   };
 
+  // Každý den obsahuje celý slovník; při dlouhém běhu držíme jen několik dnů.
+  if (dayCache.size >= 4) dayCache.delete(dayCache.keys().next().value);
   dayCache.set(day, dayData);
   return dayData;
 }
@@ -398,8 +414,9 @@ function getSpecificWord(dayNumber, word) {
   if (!word) return null;
   const cleanWord = word.trim().toLowerCase();
   const scheduleEntry = schedule.find((s) => (dayNumber ? s.day === dayNumber : false) && s.word === cleanWord) || schedule.find((s) => s.word === cleanWord);
-  const useDay = scheduleEntry ? scheduleEntry.day : (dayNumber || 1);
-  const useWord = scheduleEntry ? scheduleEntry.word : cleanWord;
+  if (!scheduleEntry) return null;
+  const useDay = scheduleEntry.day;
+  const useWord = scheduleEntry.word;
   const dayData = loadDayData(useDay, useWord);
   return buildWordPayload(useDay, useWord, dayData, `Archiv (Den #${useDay})`);
 }
@@ -418,11 +435,10 @@ function calculateRank(targetWordObj, userGuess) {
   }
 
   const targetWord = normalizeWord(targetWordObj.word);
-  const targetNorm = removeDiacritics(targetWord);
   const guessNorm = removeDiacritics(cleanGuess);
 
-  // 1. Uhodnuto vítězné slovo!
-  if (cleanGuess === targetWord || guessNorm === targetNorm) {
+  // Přesný základní tvar má přednost před shodou bez diakritiky.
+  if (cleanGuess === targetWord) {
     return {
       isValid: true,
       isWinner: true,
@@ -448,6 +464,13 @@ function calculateRank(targetWordObj, userGuess) {
     };
   }
 
+  // Skloňování i časování sdílí rank a zobrazený základní tvar.
+  const lemma = wordAliases[cleanGuess];
+  if (lemma && dayData.exactMap.has(lemma)) {
+    const rank = dayData.exactMap.get(lemma);
+    return { isValid: true, isWinner: rank === 1, rank, word: lemma };
+  }
+
   // 3. Shoda bez diakritiky (např. 'aktualne' -> 'aktuálně')
   if (dayData.normalizedMap.has(guessNorm)) {
     const match = dayData.normalizedMap.get(guessNorm);
@@ -458,6 +481,12 @@ function calculateRank(targetWordObj, userGuess) {
       rank: match.rank,
       word: isWinner ? targetWordObj.word : match.word
     };
+  }
+
+  const accentlessLemma = accentlessAliases.get(guessNorm);
+  if (accentlessLemma && dayData.exactMap.has(accentlessLemma)) {
+    const rank = dayData.exactMap.get(accentlessLemma);
+    return { isValid: true, isWinner: rank === 1, rank, word: accentlessLemma };
   }
 
   // 4. Slovo není ve slovníku
@@ -474,6 +503,7 @@ function getTop50(targetWordObj) {
 }
 
 module.exports = {
+  DATA_VERSION,
   getDailyWord,
   getRandomWord,
   getPastWordsPool,
@@ -489,4 +519,3 @@ module.exports = {
   getCzechDateStr,
   getDayNumber
 };
-
