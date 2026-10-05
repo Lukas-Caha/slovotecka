@@ -229,11 +229,11 @@ test('invalidated account session disconnects before processing a command', asyn
   assert.equal(f.gm.rooms.daily.players.a, undefined);
 });
 
-function authFixture(env, query = async () => ({ rows: [], rowCount: 0 })) {
+function authFixture(env, query = async () => ({ rows: [], rowCount: 0 }), dependencies = {}) {
   let config;
   const captured = [];
   function Pool(options) { config = options; this.on = () => {}; this.query = async (...args) => { captured.push(args); return query(...args); }; }
-  const auth = load('src/authService.js', { pg: { Pool } }, env).value;
+  const auth = load('src/authService.js', { pg: { Pool }, ...dependencies }, env).value;
   return { auth, captured, getConfig: () => config };
 }
 
@@ -249,6 +249,40 @@ test('TLS verifies certificates even with sslmode=require in connection string',
   const f = authFixture({ DATABASE_URL: 'postgres://db.example/test?sslmode=require', NODE_ENV: 'production' });
   assert.equal(f.getConfig().ssl.rejectUnauthorized, true);
   assert.equal(new URL(f.getConfig().connectionString).searchParams.has('sslmode'), false);
+});
+
+test('Render internal Postgres uses encrypted TLS compatible with its self-signed certificate', () => {
+  for (const suffix of ['', '?sslmode=require']) {
+    const f = authFixture({ DATABASE_URL: `postgres://dpg-example-a/test${suffix}`, NODE_ENV: 'production', RENDER: 'true' });
+    assert.equal(f.getConfig().ssl.rejectUnauthorized, false);
+    assert.equal(typeof f.getConfig().ssl, 'object');
+  }
+});
+
+test('Render external Postgres still verifies its certificate', () => {
+  const f = authFixture({ DATABASE_URL: 'postgres://dpg-example-a.frankfurt-postgres.render.com/test?sslmode=require',
+    NODE_ENV: 'production', RENDER: 'true' });
+  assert.equal(f.getConfig().ssl.rejectUnauthorized, true);
+});
+
+test('Render-like hostname on another platform does not disable verification', () => {
+  const f = authFixture({ DATABASE_URL: 'postgres://dpg-example-a/test', NODE_ENV: 'production' });
+  assert.equal(f.getConfig().ssl.rejectUnauthorized, true);
+});
+
+test('explicit strict SSL modes are respected even on Render internal hosts', () => {
+  for (const mode of ['verify-ca', 'verify-full']) {
+    const f = authFixture({ DATABASE_URL: `postgres://dpg-example-a/test?sslmode=${mode}`,
+      NODE_ENV: 'production', RENDER: 'true' });
+    assert.equal(f.getConfig().ssl.rejectUnauthorized, true);
+  }
+});
+
+test('a supplied CA forces certificate verification on Render internal hosts', () => {
+  const f = authFixture({ DATABASE_URL: 'postgres://dpg-example-a/test', DB_SSL_CA_FILE: '/test/ca.pem',
+    NODE_ENV: 'production', RENDER: 'true' }, undefined, { fs: { readFileSync: () => 'trusted-ca' } });
+  assert.equal(f.getConfig().ssl.rejectUnauthorized, true);
+  assert.equal(f.getConfig().ssl.ca, 'trusted-ca');
 });
 
 test('registration rejects bcrypt truncation for ASCII and Czech passwords', async () => {

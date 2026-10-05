@@ -16,7 +16,15 @@ function getSslConfig() {
   const local = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname);
   if (process.env.DB_SSL === 'true' || (mode && mode !== 'disable') || url.searchParams.has('sslrootcert') || (!local && process.env.NODE_ENV === 'production')) {
     const caFile = process.env.DB_SSL_CA_FILE || url.searchParams.get('sslrootcert');
-    const ssl = { rejectUnauthorized: true };
+    // Render's private, single-label Postgres hosts use self-signed certificates.
+    // Keep TLS enabled there, without relaxing verification for public hosts,
+    // other platforms, an explicit verification mode, or a supplied CA.
+    const renderInternal = process.env.RENDER === 'true' && /^dpg-[a-z0-9-]+$/i.test(url.hostname);
+    const strictVerification = Boolean(caFile) || ['verify-ca', 'verify-full'].includes(mode);
+    const ssl = { rejectUnauthorized: !renderInternal || strictVerification };
+    if (!ssl.rejectUnauthorized) {
+      console.log('[AUTH] Interní Render PostgreSQL: TLS zapnuto, self-signed certifikát v privátní síti.');
+    }
     for (const [key, file] of [['ca', caFile], ['cert', url.searchParams.get('sslcert')], ['key', url.searchParams.get('sslkey')]]) {
       if (file) ssl[key] = require('fs').readFileSync(file, 'utf8');
     }

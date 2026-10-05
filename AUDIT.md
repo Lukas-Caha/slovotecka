@@ -6,13 +6,19 @@ Následující nálezy popisují stav před opravou. P1 znamená vysokou priorit
 
 ## Stav oprav — 5. října 2026
 
-Všech 11 nálezů níže má implementovanou opravu. Hráče nově identifikuje ověřený účet nebo podepsaná HttpOnly guest cookie; klientské ID a přezdívka nejsou dokladem vlastnictví. Identita chrání také oprávnění zakladatele arény. Události procházejí validací, omezenou frontou a kontrolou platnosti přihlášení. Chat escapuje uvozovky, statistiky z klienta se neimportují, arény mají limity a úklid, TLS ověřuje certifikáty, nová hesla respektují bcrypt limit a emote lze v DB vymazat.
+Všech 11 nálezů níže má implementovanou opravu. Hráče nově identifikuje ověřený účet nebo podepsaná HttpOnly guest cookie; klientské ID a přezdívka nejsou dokladem vlastnictví. Identita chrání také oprávnění zakladatele arény. Události procházejí validací, omezenou frontou a kontrolou platnosti přihlášení. Chat escapuje uvozovky, statistiky z klienta se neimportují, arény mají limity a úklid, TLS ověřuje certifikáty externích DB (výjimka pro privátní Render PostgreSQL je popsána níže), nová hesla respektují bcrypt limit a emote lze v DB vymazat.
 
-Všech 21 regresních testů prošlo. Testy jsou v `tests/security.test.js` a spouštějí se přes `npm test`. Zahrnují skutečný HTTP/Engine.IO handshake, vstup do hry, výhru a odmítnutí neplatného paketu. Kontrola syntaxe všech 10 JS souborů a `git diff --check` také prošla. PostgreSQL operace jsou testované s nahrazeným poolem; připojení k produkční databázi a reálný prohlížeč nebyly ověřeny.
+Všech 26 regresních testů prošlo. Testy jsou v `tests/security.test.js` a spouštějí se přes `npm test`. Zahrnují skutečný HTTP/Engine.IO handshake, vstup do hry, výhru a odmítnutí neplatného paketu. Kontrola syntaxe všech 10 JS souborů a `git diff --check` také prošla. PostgreSQL operace jsou testované s nahrazeným poolem; připojení k produkční databázi a reálný prohlížeč nebyly ověřeny.
 
 Při nasazení nastavte stabilní náhodný `SESSION_SECRET`, aby se guest identity zachovaly přes restarty. Bez něj se podpisový klíč generuje při startu. Pro další proxy mimo loopback nastavte jejich skutečné IP v `TRUST_PROXY_IPS`. Databáze s vlastní CA potřebuje `DB_SSL_CA_FILE`; SSL parametry z URL se převádějí do ověřované TLS konfigurace, protože podle [dokumentace node-postgres](https://node-postgres.com/features/ssl) mohou jinak přepsat objekt SSL.
 
 Staré herní záznamy založené pouze na přezdívce nelze bezpečně přiřadit nové identitě, proto se jejich stav automaticky nepřebírá. Registrované účty zachovávají profilové statistiky z DB. Guest statistiky z localStorage se nově nepovažují za serverem ověřené výsledky. Oprávnění z příkazu `!admin` je po reconnectu potřeba znovu aktivovat; admin účty z `ADMIN_USERNAMES` se ověřují automaticky.
+
+## Oprava kompatibility s Render PostgreSQL
+
+Po nasazení se ukázalo, že interní Render PostgreSQL odmítá striktní ověření kvůli self-signed certifikátu. [Dokumentace Renderu](https://render.com/docs/postgresql-creating-connecting) uvádí, že interní spojení podporuje TLS se self-signed certifikátem, ale nepodporuje standardní režimy verify-ca/verify-full. Původní doporučení, že stávající konfiguraci není potřeba měnit, opomenulo tuto vlastnost hostingu.
+
+Kód nyní přijímá self-signed certifikát pouze při běhu na Renderu (automatická proměnná RENDER=true) a pro interní hostname dpg-* bez domény. TLS zůstává zapnuté; pro veřejné hosty a ostatní hostingy zůstává ověření certifikátu aktivní. Zadaná CA nebo explicitní verify-ca/verify-full se respektují a tuto výjimku vypnou. Pět nových regresních testů pokrývá tyto kombinace. Produkční připojení je potřeba potvrdit po novém deployi; hodnotu DATABASE_URL ani přístup do Render účtu nemáme.
 
 ## 1. P1 — XSS v chatu přes HTML atributy
 
