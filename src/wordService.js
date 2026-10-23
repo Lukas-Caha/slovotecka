@@ -4,7 +4,9 @@ const path = require('path');
 // Načtení případných doplňkových dat (nápovědy, kategorie)
 let wordsData = { targets: {} };
 try {
-  const jsonPath = path.join(__dirname, 'data', 'words.json');
+  const generatedMetadataPath = path.join(__dirname, '..', 'vystup', 'words.json');
+  const jsonPath = fs.existsSync(generatedMetadataPath)
+    ? generatedMetadataPath : path.join(__dirname, 'data', 'words.json');
   if (fs.existsSync(jsonPath)) {
     wordsData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
   }
@@ -15,7 +17,13 @@ try {
 // Cesty ke složce s vygenerovanými slovy na dny
 const VYSTUP_DIR = path.join(__dirname, '..', 'vystup');
 const HARMONOGRAM_PATH = path.join(VYSTUP_DIR, 'harmonogram.csv');
-const DATA_VERSION = 'czech-lemmas-2026-10-05';
+const datasetManifest = JSON.parse(fs.readFileSync(path.join(VYSTUP_DIR, 'manifest.json'), 'utf8'));
+const DATA_VERSION = datasetManifest.version;
+const semanticStore = datasetManifest.storage === 'indexed-ranks-v1'
+  ? new (require('./semanticIndex').SemanticStore)(VYSTUP_DIR, datasetManifest) : null;
+const accentlessPath = path.join(VYSTUP_DIR, 'accentless.json');
+const preferredAccentless = fs.existsSync(accentlessPath)
+  ? JSON.parse(fs.readFileSync(accentlessPath, 'utf8')) : {};
 
 // Pomocná funkce pro odstranění české diakritiky (háčků a čárek)
 function removeDiacritics(str) {
@@ -26,7 +34,7 @@ function removeDiacritics(str) {
 // Očištění a normalizace vstupu
 function normalizeWord(word) {
   if (!word || typeof word !== 'string') return '';
-  return word.trim().toLowerCase();
+  return word.trim().normalize('NFC').toLowerCase().replace(/’/g, "'");
 }
 
 // Získání aktuálního data v českém časovém pásmu (Europe/Prague) ve formátu YYYY-MM-DD
@@ -39,8 +47,8 @@ function getCzechDateStr(date = new Date()) {
   }).format(date);
 }
 
-// Nová sada: 5. října 2026 = Den #1, další slovo o české půlnoci.
-const START_DATE_STR = '2026-10-05';
+// The generated manifest owns the schedule origin and saved-state version.
+const START_DATE_STR = datasetManifest.startDate;
 
 // Tvary slov odkazují na jediný základní tvar, nezabírají další pořadí.
 const aliasesPath = path.join(VYSTUP_DIR, 'aliases.json');
@@ -151,6 +159,13 @@ function loadDayData(day, targetWord) {
     return dayCache.get(day);
   }
 
+  if (semanticStore) {
+    const data = semanticStore.loadDay(day, normalizeWord(targetWord), wordsData.targets?.[normalizeWord(targetWord)]);
+    if (dayCache.size >= 4) dayCache.delete(dayCache.keys().next().value);
+    dayCache.set(day, data);
+    return data;
+  }
+
   const numStr = String(day).padStart(2, '0');
   let fileName = `den_${numStr}_${targetWord}.csv`;
   let filePath = path.join(VYSTUP_DIR, fileName);
@@ -215,7 +230,7 @@ function loadDayData(day, targetWord) {
 
     const norm = removeDiacritics(word);
     const existing = normalizedMap.get(norm);
-    if (!existing || existing.rank > rank) {
+    if (!existing || preferredAccentless[norm] === word) {
       normalizedMap.set(norm, { word, rank });
     }
   }
@@ -234,8 +249,18 @@ function loadDayData(day, targetWord) {
     }
   }
 
+  // Reviewed hints keep the ranks computed by the model.
+  const metadata = wordsData.targets?.[cleanTarget];
+  const reviewedRadar = metadata?.radarWord;
+  if (reviewedRadar && exactMap.has(reviewedRadar)) {
+    radarCandidate = { word: reviewedRadar, rank: exactMap.get(reviewedRadar) };
+  }
+  const hintWords = Array.isArray(metadata?.hintWords)
+    ? new Set(metadata.hintWords) : null;
+
   const dayData = {
     day,
+    hintWords,
     targetWord: cleanTarget,
     exactMap,
     normalizedMap,
@@ -281,7 +306,7 @@ function getBetterHintWord(dayData, bestRank = 999999, excludedWords = []) {
   for (let r = 2; r <= maxRankLimit; r++) {
     if (dayData.rankToWordMap.has(r)) {
       const w = dayData.rankToWordMap.get(r);
-      if (!excluded.has(w)) {
+      if (!excluded.has(w) && (!dayData.hintWords || dayData.hintWords.has(w))) {
         const diff = Math.abs(r - targetRank);
         if (diff < bestDiff) {
           bestDiff = diff;
@@ -298,7 +323,7 @@ function getBetterHintWord(dayData, bestRank = 999999, excludedWords = []) {
   for (let r = maxRankLimit; r >= 2; r--) {
     if (dayData.rankToWordMap.has(r)) {
       const w = dayData.rankToWordMap.get(r);
-      if (!excluded.has(w)) {
+      if (!excluded.has(w) && (!dayData.hintWords || dayData.hintWords.has(w))) {
         return { word: w, rank: r };
       }
     }
@@ -423,19 +448,19 @@ function getSpecificWord(dayNumber, word) {
 
 // Výpočet sémantické blízkosti podle vygenerovaných embedding dat
 function calculateRank(targetWordObj, userGuess) {
-  const cleanGuess = normalizeWord(userGuess);
+  let cleanGuess = normalizeWord(userGuess);
   if (!cleanGuess || cleanGuess.length < 2) {
     return { isValid: false, error: 'Slovo musí mít alespoň 2 písmena.' };
   }
 
   // Povolena pouze písmena české a latinské abecedy
-  const czechLetterRegex = /^[a-záčďéěíňóřšťúůýž]+$/i;
-  if (!czechLetterRegex.test(cleanGuess)) {
-    return { isValid: false, error: 'Slovo smí obsahovat pouze písmena bez čísel a znaků.' };
+  const czechLetterRegex = /^[\p{Script=Latin}]+(?:[-'][\p{Script=Latin}]+)*$/u;
+  if (cleanGuess.length > 48 || !czechLetterRegex.test(cleanGuess)) {
+    return { isValid: false, error: 'Použij slovo z písmen; uvnitř může být spojovník.' };
   }
 
   const targetWord = normalizeWord(targetWordObj.word);
-  const guessNorm = removeDiacritics(cleanGuess);
+  let guessNorm = removeDiacritics(cleanGuess);
 
   // Přesný základní tvar má přednost před shodou bez diakritiky.
   if (cleanGuess === targetWord) {
@@ -452,6 +477,12 @@ function calculateRank(targetWordObj, userGuess) {
     return { isValid: false, error: 'Chyba herních dat pro dnešní den.' };
   }
 
+  const preferredSpelling = semanticStore?.inputAliases[cleanGuess];
+  if (preferredSpelling) {
+    cleanGuess = preferredSpelling;
+    guessNorm = removeDiacritics(cleanGuess);
+  }
+
   // 2. Přesná shoda v herním slovníku daného dne
   if (dayData.exactMap.has(cleanGuess)) {
     const rank = dayData.exactMap.get(cleanGuess);
@@ -462,6 +493,14 @@ function calculateRank(targetWordObj, userGuess) {
       rank: rank,
       word: isWinner ? targetWordObj.word : cleanGuess
     };
+  }
+
+  if (semanticStore) {
+    const id = semanticStore.exact.lookup(cleanGuess);
+    if (id !== undefined) {
+      const rank = dayData.ranks[id];
+      return { isValid: true, isWinner: rank === 1, rank, word: semanticStore.words[id] };
+    }
   }
 
   // Skloňování i časování sdílí rank a zobrazený základní tvar.

@@ -1,0 +1,6 @@
+[
+  {"word":"covid","anchors":{"koronavir":0.35,"nemoc":0.25,"infekce":0.20,"epidemie":0.20},"forms":["covidu","covidem","covidy","covidů","covidům","covidech"]},
+  {"word":"covidový","anchors":{"virový":0.60,"infekční":0.20,"epidemie":0.20},"forms":["covidová","covidové","covidového","covidovému","covidovým","covidovém","covidovou","covidoví","covidových","covidovými"]},
+  {"word":"chatbot","anchors":{"chat":0.30,"automatický":0.20,"konverzace":0.25,"program":0.25},"forms":["chatbotu","chatbotem","chatboti","chatboty","chatbotů","chatbotům","chatbotech"]},
+  {"word":"chatgpt","anchors":{"inteligence":0.25,"umělý":0.20,"asistent":0.20,"jazykový":0.15,"konverzace":0.20},"forms":["chatgptu","chatgptem"]}
+]

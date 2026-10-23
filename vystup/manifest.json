@@ -1,0 +1,117 @@
+{
+  "version": "cz-context-v3-2026-10-23-58c3e971d7e40cc0",
+  "storage": "indexed-ranks-v1",
+  "startDate": "2026-10-23",
+  "endDate": "2026-11-21",
+  "days": 30,
+  "vocabularySize": 219607,
+  "acceptedForms": 5386783,
+  "aliasCount": 5167176,
+  "source": {
+    "vectorSources": {
+      "cc": "fastText cc.cs.300.vec.gz, all 2000000 tokens",
+      "wiki": "fastText wiki.cs.vec, all 627841 tokens"
+    },
+    "morphology": "czech-morfflex2.1-250909.dict",
+    "vocabularySize": 219607,
+    "acceptedExactForms": 5386783,
+    "aliasCount": 5167176,
+    "accentlessSpellings": 4708437,
+    "wordfreq": "3.1.1",
+    "wordAcceptance": "No frequency threshold for dictionary-recognized words. Unrecognized loans/slang require an exact wordfreq entry with Zipf >= 2.2, or explicit review. Corpus fragments are not admitted using inferred compound frequency.",
+    "lemmaComposition": "85% normalized headword + 15% normalized weighted form mean; normalized. Without headword use normalized form mean.",
+    "projection": {
+      "method": "Orthogonal Procrustes on shared lemmas with Zipf >= 3",
+      "trainingLemmas": 19113,
+      "estimatedCC": 323,
+      "estimatedWiki": 62758
+    },
+    "cacheSHA256": "509b4a4364a1974b7e1f079e18ac41e85b17724c926a22fa7e079330ba7aed0f",
+    "reviewedDefinitionEmbeddings": {
+      "covid": {
+        "koronavir": 0.35,
+        "nemoc": 0.25,
+        "infekce": 0.2,
+        "epidemie": 0.2
+      },
+      "covidový": {
+        "virový": 0.6,
+        "infekční": 0.2,
+        "epidemie": 0.2
+      },
+      "chatbot": {
+        "chat": 0.3,
+        "automatický": 0.2,
+        "konverzace": 0.25,
+        "program": 0.25
+      },
+      "chatgpt": {
+        "inteligence": 0.25,
+        "umělý": 0.2,
+        "asistent": 0.2,
+        "jazykový": 0.15,
+        "konverzace": 0.2
+      }
+    }
+  },
+  "ranking": {
+    "query": "Each model: normalize(0.60 target + 0.40 normalized association mean). Sense cue when configured: normalize(0.35 target + 0.25 cue + 0.40 association mean).",
+    "score": "0.65 * CC cosine + 0.350 * Wiki cosine - 0.025 * max(0, 3.0 - maximum form Zipf) - 0.03 for words without dictionary analysis",
+    "head": "Only answer is forced to rank 1. All other ranks are computed. No manual rank swaps.",
+    "ties": "Stable vocabulary ID order; base words are lexical, reviewed additions appended in declared order.",
+    "hints": "Reviewed thematic words, their true computed ranks."
+  },
+  "files": {
+    "den_01.ranks.bin": "c36a69670a7144b642ff1fe7905d8ae562470d4d6954549977b44d901f2a47db",
+    "den_02.ranks.bin": "7835ee49cf11c0af0340ad078cab7767b8d4839dd59cba109c983a864bc37e3a",
+    "den_03.ranks.bin": "91494947d7112fb8585d89582a0452afca7f0727c685cb2f62848757af3b0f91",
+    "den_04.ranks.bin": "46fc9b153e3fc7eed7123c7f88d65a2238b220b06278bbd11792fc6ca3942cbb",
+    "den_05.ranks.bin": "87f7ca6bb9a23efb5f286922132781c5538857b6f11451c26c2a0334c5fd8abb",
+    "den_06.ranks.bin": "f9e5f7fd7d55434aa9ed9385921d2ea4d3f99fdcbd0c0d63cd91784962478ff0",
+    "den_07.ranks.bin": "5984e2adb3899cb3d0ea3e0aa1e6f2aecc56beff6b0bc9941025e8040575a6a9",
+    "den_08.ranks.bin": "6a2a8058ac73862eabd6782fa45ec71d464b9028d9a6b9088ffe789b257eb3e9",
+    "den_09.ranks.bin": "8b40e8cd8558a61c6dc2350ac61935d9ff91bc19a4cf6894c66d4b48c78e93fc",
+    "den_10.ranks.bin": "2be604a6b18f4482d99ac885fc3a2d4519d5a2746d23245cda99ae95af305078",
+    "den_11.ranks.bin": "95e4ae5d4caaef28d7cc5d6e117a50356dda78119796455d4bd30d22b28b69cb",
+    "den_12.ranks.bin": "5498598ec3e9f74d6a1e69961094fded91bbb83c00d0ef63ce6e1d89f9cf3516",
+    "den_13.ranks.bin": "7b89e53739f59598f6b2e70db238e2a4a85155f9eb43c2e24b0cd329ac6bf39c",
+    "den_14.ranks.bin": "e5ffa50200cb576a168c7c34751dbf15ecd24a055c7e3543203f02d91919aceb",
+    "den_15.ranks.bin": "1babebfbfceab3e40b75a0d945d460e23598b7d6c3cf831f87e62e9712cabe59",
+    "den_16.ranks.bin": "6f6f20268f6e640de475d4300bf46ea9d5d66e13603aaf7ba66304a50d64c688",
+    "den_17.ranks.bin": "37288cfc82dbf649393385ef74f90ccedb402b34a14021b45b748cba0595f426",
+    "den_18.ranks.bin": "15da4e7a44ba3defee4dd95956fb40ede33484afabe91f98b4260347810de1e6",
+    "den_19.ranks.bin": "862aa3afe9dee224a84f485b1db7ccd8cc697763a9078bc4b74a42fbc74b0aee",
+    "den_20.ranks.bin": "33ed231d68d3f3ba28e9cd21feb7ae1b9b8658822dcde4514b084c1c72b8d0de",
+    "den_21.ranks.bin": "6a851f4a0219585187740c0978c7d3c9a79758f7a7bb50728fca324c6515783c",
+    "den_22.ranks.bin": "66ddc7056b7d00e0a9ebe17ad9c090d8f6331603386b838d17190d37e7eaccf3",
+    "den_23.ranks.bin": "be732ba223b9af0cfb049013fbdc6c07508eb8ff78b80df23d137c2104b89b59",
+    "den_24.ranks.bin": "6e54ac02b4806773c8596c61388603f4323aeac7a9e3f12bdfdfd94e2ee9d43f",
+    "den_25.ranks.bin": "774a156e456f12f936ea8d8cd6d502a695a987b29b0eb75374241c041e0d8676",
+    "den_26.ranks.bin": "d4c648db3b882ff39ed83f28d333b0e0ec284b6f7767398624c54784615ff8c8",
+    "den_27.ranks.bin": "a6c2d381323e6d32d71aee0bc6eccac56fc54801840699b23aa90c251136b044",
+    "den_28.ranks.bin": "b35a07e9e6772ee18468cff04c76a797313dcf5df110b9f368402611ecadfadb",
+    "den_29.ranks.bin": "688af6261f515f0c7d411e8975e9c1b6b560f58420240fbe301d93fbac4125f2",
+    "den_30.ranks.bin": "dece1b3caa636d78e5dd69ce5ff7271131988691969dd4bccf3b0e7b546e321f",
+    "harmonogram.csv": "8890357b640c1e37b86c35c0e9ac9e02f0bdebfd5cd65f84fb084681ad9bc674",
+    "words.json": "d17d86a95e3d576446e75a0d21ed261a02dc40927e6d4823b09fbdf849e8938f",
+    "review.json": "38e3435504a2ff820ec8397ca4d0975429c2d0fa9ea112f5a35612c4d8255405",
+    "lexicon.json": "e8a7be72eb56edb250e8efd706fa029aba366976f5918bc13473a3eb1c3c8cb6",
+    "input-aliases.json": "5553b69b9fa645b67209aad2441443ba07bd6c984703b29885e6ad21f032b6d6",
+    "forms.pages.json": "db3c8e2af78dfe1b14e7b38ccf4f59afbec27739814117dfd8f836cb8139fbdc",
+    "accentless.pages.json": "ea3deada726b0c6dc1d15fc60730c5c75e229d6cf93f04343caa694eb0f418a2",
+    "forms.pages.001.bin": "c10285d8e302a38276fdab46f529531066abac04c080e2a933f56a25a1d96d45",
+    "forms.pages.002.bin": "fd16c845925c0b0df5d009615ef9b5207f121ac1a8ba0bd4d7da6508164738c8",
+    "forms.pages.003.bin": "ba0c1ace1d59746cdcb46af9c4ff54da49d020c69e4150ed4f7d7863a6762844",
+    "forms.pages.004.bin": "e52ee488e36c96617886db961edadde6dd77ddb4c3c99a4dac9fb886cf20a512",
+    "forms.pages.005.bin": "79790a30c55cb54c012968a255a6997af75d5a13bfdbd1289a0a89f7509b4711",
+    "accentless.pages.001.bin": "7dde76ea6d1b2090c348548afc70f8be979388703fa6875a1fd576aab72fe021",
+    "accentless.pages.002.bin": "b8255ad739deb43147e2286cea0f9172e65f05463d26ca7feeb951774978a37b",
+    "accentless.pages.003.bin": "d82a3fa67eb0530d3e0f82cec51f513a946310b2f4fab5f9d4f1d6ac16016b8b",
+    "accentless.pages.004.bin": "145584fb0632d8fff0a9e10ded41ed00ce32d95ab0dc5e42fe2a9b2d07867619"
+  },
+  "dataPacking": {
+    "dictionaryFormat": "WG-PAGES-2",
+    "maxPartBytes": 6000000,
+    "semanticContentUnchanged": true
+  }
+}
