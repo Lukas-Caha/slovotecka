@@ -1,0 +1,20 @@
+{
+  "source": "First 50000 wordfreq Czech entries restricted to 2..48 Czech letters. Includes names, foreign words, misspellings and abbreviations; does not represent all Czech words. The discovered covid gap was explicitly supplemented during development.",
+  "tested": 49741,
+  "accepted": 49741,
+  "coveragePercent": 100,
+  "commonReviewedCases": 363,
+  "commonReviewedRejected": [],
+  "rejected": [],
+  "elapsedMs": 2623.965409,
+  "p50LookupMs": 0.0693229999999403,
+  "p95LookupMs": 0.10878100000002178,
+  "measurementScope": "One local container run; OS file cache may be warm. Not a general latency or memory guarantee.",
+  "memoryAfterMiB": {
+    "rss": 178,
+    "heapTotal": 91,
+    "heapUsed": 33,
+    "external": 11,
+    "arrayBuffers": 8
+  }
+}

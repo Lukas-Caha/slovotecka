@@ -1,0 +1,47 @@
+{
+  "vectorSources": {
+    "cc": "fastText cc.cs.300.vec.gz, all 2000000 tokens",
+    "wiki": "fastText wiki.cs.vec, all 627841 tokens"
+  },
+  "morphology": "czech-morfflex2.1-250909.dict",
+  "vocabularySize": 219607,
+  "acceptedExactForms": 5386783,
+  "aliasCount": 5167176,
+  "accentlessSpellings": 4708437,
+  "wordfreq": "3.1.1",
+  "wordAcceptance": "No frequency threshold for dictionary-recognized words. Unrecognized loans/slang require an exact wordfreq entry with Zipf >= 2.2, or explicit review. Corpus fragments are not admitted using inferred compound frequency.",
+  "lemmaComposition": "85% normalized headword + 15% normalized weighted form mean; normalized. Without headword use normalized form mean.",
+  "projection": {
+    "method": "Orthogonal Procrustes on shared lemmas with Zipf >= 3",
+    "trainingLemmas": 19113,
+    "estimatedCC": 323,
+    "estimatedWiki": 62758
+  },
+  "cacheSHA256": "509b4a4364a1974b7e1f079e18ac41e85b17724c926a22fa7e079330ba7aed0f",
+  "reviewedDefinitionEmbeddings": {
+    "covid": {
+      "koronavir": 0.35,
+      "nemoc": 0.25,
+      "infekce": 0.2,
+      "epidemie": 0.2
+    },
+    "covidový": {
+      "virový": 0.6,
+      "infekční": 0.2,
+      "epidemie": 0.2
+    },
+    "chatbot": {
+      "chat": 0.3,
+      "automatický": 0.2,
+      "konverzace": 0.25,
+      "program": 0.25
+    },
+    "chatgpt": {
+      "inteligence": 0.25,
+      "umělý": 0.2,
+      "asistent": 0.2,
+      "jazykový": 0.15,
+      "konverzace": 0.2
+    }
+  }
+}
